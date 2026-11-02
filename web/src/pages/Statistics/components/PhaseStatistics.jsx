@@ -4,13 +4,7 @@ import { faMinus } from '@fortawesome/free-solid-svg-icons/faMinus';
 import { faPlus } from '@fortawesome/free-solid-svg-icons/faPlus';
 import { Plural, Trans, useLingui } from '@lingui/react/macro';
 import { fmt } from '../utils/format';
-import {
-  STATISTICS_CARD_HEADING_CLASS,
-  STATISTICS_DENSE_VALUE_CLASS,
-  STATISTICS_SECTION_TITLE_CLASS,
-  STATISTICS_SMALL_LABEL_CLASS,
-  STATISTICS_TABLE_NUMBER_CLASS,
-} from './statisticsUi';
+import { CardHeading, DenseValue, NumberCell, SectionTitle, SmallLabel } from './statisticsUi.jsx';
 
 const DELTA_COLOR = 'var(--analyzer-pred-info-blue)';
 const EXIT_REASON_UNKNOWN_STYLE = {
@@ -52,12 +46,12 @@ function fmtDelta(val) {
 }
 
 function TargetDeltaCell({ entry, unit }) {
-  if (!entry) return <td className={STATISTICS_TABLE_NUMBER_CLASS}>-</td>;
+  if (!entry) return <NumberCell>-</NumberCell>;
   return (
-    <td className={STATISTICS_TABLE_NUMBER_CLASS} style={{ color: DELTA_COLOR }}>
+    <NumberCell style={{ color: DELTA_COLOR }}>
       {fmt(entry.target)}
       {unit} ({fmtDelta(entry.delta)})
-    </td>
+    </NumberCell>
   );
 }
 
@@ -70,6 +64,14 @@ function PhaseSection({ phase, hideExitReasons = false }) {
   const durationDelta = td.duration ? fmtDelta(td.duration.delta) : '';
   const waterTarget = td.water ? fmt(td.water.target) : '';
   const waterDelta = td.water ? fmtDelta(td.water.delta) : '';
+  const phaseHeading = (
+    <>
+      {phaseLabel}
+      <span className='ml-2 text-xs opacity-50'>
+        <Plural value={phase.shotCount} one='(# entry)' other='(# entries)' />
+      </span>
+    </>
+  );
 
   return (
     <div className='app-card-surface rounded-xl transition-shadow'>
@@ -79,12 +81,11 @@ function PhaseSection({ phase, hideExitReasons = false }) {
         onClick={() => setOpen(o => !o)}
         aria-expanded={open}
       >
-        <span className={phase.isTotal ? STATISTICS_CARD_HEADING_CLASS : 'text-sm font-medium'}>
-          {phaseLabel}
-          <span className='ml-2 text-xs opacity-50'>
-            <Plural value={phase.shotCount} one='(# entry)' other='(# entries)' />
-          </span>
-        </span>
+        {phase.isTotal ? (
+          <CardHeading>{phaseHeading}</CardHeading>
+        ) : (
+          <span className='text-sm font-medium'>{phaseHeading}</span>
+        )}
         <span className='text-xs opacity-45' aria-hidden='true'>
           <FontAwesomeIcon icon={open ? faMinus : faPlus} className='h-3 w-3' />
         </span>
@@ -97,36 +98,28 @@ function PhaseSection({ phase, hideExitReasons = false }) {
               <span className='text-xs opacity-50'>
                 <Trans>Avg Duration:</Trans>
               </span>
-              <span className={`text-xs ${STATISTICS_DENSE_VALUE_CLASS}`}>
-                {fmt(phase.avgDuration)}s
-              </span>
+              <DenseValue className='text-xs'>{fmt(phase.avgDuration)}s</DenseValue>
               {td.duration && (
-                <span
-                  className={`text-xs ${STATISTICS_DENSE_VALUE_CLASS}`}
-                  style={{ color: DELTA_COLOR }}
-                >
+                <DenseValue className='text-xs' style={{ color: DELTA_COLOR }}>
                   <Trans>
                     (target {durationTarget}s, {durationDelta}s)
                   </Trans>
-                </span>
+                </DenseValue>
               )}
             </div>
             <div className='flex items-center gap-1.5'>
               <span className='text-xs opacity-50'>
                 <Trans>Avg Pumped Water:</Trans>
               </span>
-              <span className={`text-xs ${STATISTICS_DENSE_VALUE_CLASS}`}>
+              <DenseValue className='text-xs'>
                 {fmt(td.water ? td.water.actual : phase.avgWater)}ml
-              </span>
+              </DenseValue>
               {td.water && (
-                <span
-                  className={`text-xs ${STATISTICS_DENSE_VALUE_CLASS}`}
-                  style={{ color: DELTA_COLOR }}
-                >
+                <DenseValue className='text-xs' style={{ color: DELTA_COLOR }}>
                   <Trans>
                     (target {waterTarget}ml, {waterDelta}ml)
                   </Trans>
-                </span>
+                </DenseValue>
               )}
             </div>
           </div>
@@ -171,9 +164,9 @@ function PhaseSection({ phase, hideExitReasons = false }) {
                       <td className='font-semibold'>
                         {row.label} <span className='opacity-50'>({row.unit})</span>
                       </td>
-                      <td className={STATISTICS_TABLE_NUMBER_CLASS}>{fmt(m.avg)}</td>
-                      <td className={STATISTICS_TABLE_NUMBER_CLASS}>{fmt(m.min)}</td>
-                      <td className={STATISTICS_TABLE_NUMBER_CLASS}>{fmt(m.max)}</td>
+                      <NumberCell>{fmt(m.avg)}</NumberCell>
+                      <NumberCell>{fmt(m.min)}</NumberCell>
+                      <NumberCell>{fmt(m.max)}</NumberCell>
                       <TargetDeltaCell entry={td[row.key]} unit={row.unit} />
                     </tr>
                   );
@@ -184,9 +177,9 @@ function PhaseSection({ phase, hideExitReasons = false }) {
 
           {!hideExitReasons && (
             <div>
-              <div className={`mb-1 opacity-55 ${STATISTICS_SMALL_LABEL_CLASS}`}>
+              <SmallLabel className='mb-1 opacity-55'>
                 <Trans>Exit Reasons</Trans>
-              </div>
+              </SmallLabel>
               <div className='flex flex-wrap gap-1'>
                 {Object.entries(phase.exitReasonDistribution ?? {})
                   .sort((a, b) => b[1] - a[1])
@@ -218,9 +211,9 @@ export function PhaseStatistics({ phaseStats, showTitle = true, hideExitReasons 
   return (
     <div>
       {showTitle && (
-        <h3 className={`mb-2 ${STATISTICS_SECTION_TITLE_CLASS}`}>
+        <SectionTitle className='mb-2'>
           <Trans>Per-phase statistics</Trans>
-        </h3>
+        </SectionTitle>
       )}
       <div className='space-y-3'>
         {phases.map(phase => (

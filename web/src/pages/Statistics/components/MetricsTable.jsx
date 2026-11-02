@@ -11,7 +11,7 @@ import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react/macro';
 import { fmt } from '../utils/format';
 import { StatisticsMetricHeader } from './StatisticsMetricHeader';
-import { STATISTICS_DENSE_VALUE_CLASS, STATISTICS_SMALL_LABEL_CLASS } from './statisticsUi';
+import { DenseValue, SmallLabel } from './statisticsUi.jsx';
 
 const METRIC_ROWS = [
   {
@@ -208,23 +208,23 @@ function MetricRangeViz({ row, metric }) {
         }}
       >
         <div className='flex items-center justify-between gap-2'>
-          <div className={STATISTICS_SMALL_LABEL_CLASS}>
+          <SmallLabel>
             <Trans>Range</Trans>
-          </div>
+          </SmallLabel>
           <div className='text-right'>
             <div className='text-base-content/60 text-[10px]'>
               <Trans>Std Dev</Trans>
             </div>
-            <div className={`text-xs ${STATISTICS_DENSE_VALUE_CLASS}`}>
+            <DenseValue as='div' className='text-xs'>
               {fmt(metric.stdDev, row.digits)}
-            </div>
+            </DenseValue>
           </div>
         </div>
 
         <div className='mt-2 flex items-center gap-2'>
-          <div className={`shrink-0 text-[11px] opacity-65 ${STATISTICS_DENSE_VALUE_CLASS}`}>
+          <DenseValue as='div' className='shrink-0 text-[11px] opacity-65'>
             {fmt(metric.min, row.digits)}
-          </div>
+          </DenseValue>
           <div className='relative h-5 min-w-0 flex-1'>
             <div className='bg-base-content/20 absolute top-1/2 right-0 left-0 h-px -translate-y-1/2' />
             <div className='bg-base-content/30 absolute top-1/2 left-0 h-2 w-px -translate-y-1/2' />
@@ -252,9 +252,9 @@ function MetricRangeViz({ row, metric }) {
               }}
             />
           </div>
-          <div className={`shrink-0 text-[11px] opacity-65 ${STATISTICS_DENSE_VALUE_CLASS}`}>
+          <DenseValue as='div' className='shrink-0 text-[11px] opacity-65'>
             {fmt(metric.max, row.digits)}
-          </div>
+          </DenseValue>
         </div>
       </div>
     </div>

@@ -8,8 +8,6 @@ import { PhaseStatistics } from '../PhaseStatistics';
 import { TrendChart } from '../TrendChart';
 import { ActivityHeatmap } from '../ActivityHeatmap';
 
-const STATISTICS_SECTION_TITLE_CLASS = 'text-xs font-semibold uppercase tracking-widest opacity-90';
-
 function StatisticsDetailHeader({
   hasCompareStatistics,
   hasMetricStatistics,
@@ -48,7 +46,7 @@ function StatisticsDetailHeader({
   }
 
   const title = availableTabs[0]?.label || t`Statistics`;
-  return <h3 className={STATISTICS_SECTION_TITLE_CLASS}>{title}</h3>;
+  return <h3 className='text-xs font-semibold tracking-widest uppercase opacity-90'>{title}</h3>;
 }
 
 export function StatisticsDetailSectionPanel({

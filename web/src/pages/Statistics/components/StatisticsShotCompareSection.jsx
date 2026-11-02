@@ -1,6 +1,6 @@
 import { Trans } from '@lingui/react/macro';
 import { CompareShotCharts } from '../../ShotAnalyzer/components/shotChart/CompareShotCharts';
-import { STATISTICS_SECTION_TITLE_CLASS } from './statisticsUi';
+import { SectionTitle } from './statisticsUi.jsx';
 
 const STATISTICS_COMPARE_PANEL_CLASS = 'app-card-surface rounded-xl';
 
@@ -39,9 +39,9 @@ export function StatisticsShotCompareSection({
     return (
       <div className='space-y-2'>
         {showTitle && (
-          <h3 className={STATISTICS_SECTION_TITLE_CLASS}>
+          <SectionTitle>
             <Trans>Shot Charts</Trans>
-          </h3>
+          </SectionTitle>
         )}
         {content}
       </div>
@@ -51,9 +51,9 @@ export function StatisticsShotCompareSection({
   return (
     <div className='space-y-2'>
       {showTitle && (
-        <h3 className={STATISTICS_SECTION_TITLE_CLASS}>
+        <SectionTitle>
           <Trans>Shot Charts</Trans>
-        </h3>
+        </SectionTitle>
       )}
 
       <div className={`${STATISTICS_COMPARE_PANEL_CLASS} px-1.5 py-2 sm:px-2`}>{content}</div>

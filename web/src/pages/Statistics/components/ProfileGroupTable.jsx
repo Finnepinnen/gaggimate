@@ -1,6 +1,6 @@
 import { Trans } from '@lingui/react/macro';
 import { fmt } from '../utils/format';
-import { STATISTICS_SECTION_TITLE_CLASS, STATISTICS_TABLE_NUMBER_CLASS } from './statisticsUi';
+import { NumberCell, SectionTitle } from './statisticsUi.jsx';
 
 export function ProfileGroupTable({ profileGroups, showTitle = true }) {
   if (!profileGroups || profileGroups.length === 0) return null;
@@ -8,9 +8,9 @@ export function ProfileGroupTable({ profileGroups, showTitle = true }) {
   return (
     <div>
       {showTitle && (
-        <h3 className={`mb-2 ${STATISTICS_SECTION_TITLE_CLASS}`}>
+        <SectionTitle className='mb-2'>
           <Trans>Per-profile statistics</Trans>
-        </h3>
+        </SectionTitle>
       )}
       <div className='overflow-x-auto'>
         <table className='table-xs table w-full'>
@@ -43,12 +43,12 @@ export function ProfileGroupTable({ profileGroups, showTitle = true }) {
             {profileGroups.map(group => (
               <tr key={group.profileName}>
                 <td className='font-semibold'>{group.profileName}</td>
-                <td className={STATISTICS_TABLE_NUMBER_CLASS}>{group.shotCount}</td>
-                <td className={STATISTICS_TABLE_NUMBER_CLASS}>{fmt(group.avgDuration)}s</td>
-                <td className={STATISTICS_TABLE_NUMBER_CLASS}>{fmt(group.avgWeight)}g</td>
-                <td className={STATISTICS_TABLE_NUMBER_CLASS}>{fmt(group.avgWater)}ml</td>
-                <td className={STATISTICS_TABLE_NUMBER_CLASS}>{fmt(group.metrics.p?.avg)} bar</td>
-                <td className={STATISTICS_TABLE_NUMBER_CLASS}>{fmt(group.metrics.f?.avg)} ml/s</td>
+                <NumberCell>{group.shotCount}</NumberCell>
+                <NumberCell>{fmt(group.avgDuration)}s</NumberCell>
+                <NumberCell>{fmt(group.avgWeight)}g</NumberCell>
+                <NumberCell>{fmt(group.avgWater)}ml</NumberCell>
+                <NumberCell>{fmt(group.metrics.p?.avg)} bar</NumberCell>
+                <NumberCell>{fmt(group.metrics.f?.avg)} ml/s</NumberCell>
               </tr>
             ))}
           </tbody>

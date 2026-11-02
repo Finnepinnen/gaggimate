@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { STATISTICS_DENSE_VALUE_CLASS, STATISTICS_METRIC_LABEL_CLASS } from './statisticsUi';
+import { DenseValue, MetricLabel } from './statisticsUi.jsx';
 
 export function StatisticsMetricHeader({
   accentColor,
@@ -22,12 +22,10 @@ export function StatisticsMetricHeader({
 
       <div className='min-w-0 flex-1'>
         <div className='flex items-baseline gap-1.5'>
-          <span className={`truncate ${valueClassName} ${STATISTICS_DENSE_VALUE_CLASS}`}>
-            {value}
-          </span>
+          <DenseValue className={`truncate ${valueClassName}`}>{value}</DenseValue>
           {unit ? <span className='text-base-content/55 text-xs'>{unit}</span> : null}
         </div>
-        <div className={`mt-1 truncate ${STATISTICS_METRIC_LABEL_CLASS}`}>{label}</div>
+        <MetricLabel className='mt-1 truncate'>{label}</MetricLabel>
       </div>
     </div>
   );
