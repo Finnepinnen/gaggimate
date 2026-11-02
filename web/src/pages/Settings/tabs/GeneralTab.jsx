@@ -457,7 +457,7 @@ export function GeneralTab({
                 className='select select-bordered w-full'
                 value={currentTheme}
                 onChange={e => {
-                  setCurrentTheme(e.target.value);
+                  setCurrentTheme(e.currentTarget.value);
                   handleThemeChange(e);
                 }}
               >
