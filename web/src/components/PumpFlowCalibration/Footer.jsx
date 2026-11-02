@@ -4,6 +4,16 @@ import { PrimaryButton, SecondaryButton } from './Buttons.jsx';
 import { PHASE } from './constants.js';
 import { Trans, useLingui } from '@lingui/react/macro';
 
+/**
+ * @param {object} props
+ * @param {import('./constants.js').Phase} props.phase
+ * @param {boolean} props.saving
+ * @param {boolean} props.saved
+ * @param {boolean} props.connected
+ * @param {() => void} props.onClose
+ * @param {() => void} props.onStart
+ * @param {() => void} props.onApply
+ */
 export default function Footer({ phase, saving, saved, connected, onClose, onStart, onApply }) {
   const { t } = useLingui();
   return (

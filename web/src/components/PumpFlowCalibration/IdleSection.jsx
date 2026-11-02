@@ -1,5 +1,9 @@
 import { Trans } from '@lingui/react/macro';
 
+/**
+ * @param {object} props
+ * @param {string} [props.currentCoeffs]
+ */
 export default function IdleSection({ currentCoeffs }) {
   return (
     <div className='space-y-3'>

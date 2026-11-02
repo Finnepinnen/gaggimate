@@ -3,6 +3,11 @@ import { ExtendedProfileChart } from './ExtendedProfileChart.jsx';
 /**
  * ProcessProfileChart extends ExtendedProfileChart to support highlighting the currently active phase
  * during brewing. It automatically determines which phase is currently active based on the process info.
+ * @param {object} props
+ * @param {{ phases?: import('./ExtendedProfileChart.jsx').ChartPhase[] } | null} [props.data]
+ * @param {import('../types').ProcessProgress | null} [props.processInfo]
+ * @param {string} [props.className]
+ * @param {import('preact').JSX.CSSProperties} [props.style]
  */
 export function ProcessProfileChart({
   data,

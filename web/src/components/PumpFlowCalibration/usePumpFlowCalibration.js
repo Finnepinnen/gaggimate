@@ -14,6 +14,12 @@ import {
 import { CALIBRATION_PROFILE, CALIBRATION_PROFILE_ID } from './profile.js';
 import { t } from '@lingui/core/macro';
 
+/** @typedef {import('../../services/machineTypes.js').SocketMessage} SocketMessage */
+/** @typedef {'info' | 'ok' | 'warn' | 'err'} LogTone */
+/** @typedef {{ key: number, msg: string, tone: LogTone }} CalibrationLog */
+/** @typedef {ReturnType<typeof analyze>} FlowAnalysis */
+/** @typedef {{ oneBar: FlowAnalysis, nineBar: FlowAnalysis, newCoeffs: string }} CalibrationResults */
+
 /**
  * usePumpFlowCalibration
  * Drives the pump-flow calibration flow against a connected GaggiMate over
@@ -40,17 +46,21 @@ export function usePumpFlowCalibration({ currentCoeffs, onApplied }) {
   const apiService = useContext(ApiServiceContext);
 
   const [phase, setPhase] = useState(/** @type {import('./constants.js').Phase} */ (PHASE.IDLE));
-  const [logs, setLogs] = useState([]);
-  const [results, setResults] = useState(null);
+  const [logs, setLogs] = useState(/** @type {CalibrationLog[]} */ ([]));
+  const [results, setResults] = useState(/** @type {CalibrationResults | null} */ (null));
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   // WS listeners of the current run as [type, id] pairs.
+  /** @type {import('preact').RefObject<[string, string][]>} */
   const listenersRef = useRef([]);
   // Shot id reported by evt:history-shot-saved plus a wake-up for the poll loop.
+  /** @type {import('preact').RefObject<number | null>} */
   const savedShotIdRef = useRef(null);
+  /** @type {import('preact').RefObject<(() => void) | null>} */
   const savedWakeRef = useRef(null);
   // Survives Retry, where the selected profile is already the calibration profile.
+  /** @type {import('preact').RefObject<string | null>} */
   const restoreProfileRef = useRef(null);
   // Prevents start() from running concurrently with itself: the Retry button
   // on the ERROR screen (or any other re-entry path) must not be allowed to
@@ -62,7 +72,9 @@ export function usePumpFlowCalibration({ currentCoeffs, onApplied }) {
   // waitForShotEnd so detachStatusListener can clear the timer and unblock an
   // awaiting start() instead of leaking a stale 5-min reject that fires into a
   // future run's state.
+  /** @type {import('preact').RefObject<ReturnType<typeof setTimeout> | null>} */
   const safetyIdRef = useRef(null);
+  /** @type {import('preact').RefObject<((reason: Error) => void) | null>} */
   const waitRejectRef = useRef(null);
 
   const detachStatusListener = useCallback(() => {
@@ -83,7 +95,7 @@ export function usePumpFlowCalibration({ currentCoeffs, onApplied }) {
   // Always release the WS listener if the consumer unmounts mid-run.
   useEffect(() => detachStatusListener, [detachStatusListener]);
 
-  const pushLog = useCallback((msg, tone = 'info') => {
+  const pushLog = useCallback((/** @type {string} */ msg, /** @type {LogTone} */ tone = 'info') => {
     setLogs(prev => [...prev, { key: prev.length, msg, tone }]);
   }, []);
 
@@ -97,71 +109,76 @@ export function usePumpFlowCalibration({ currentCoeffs, onApplied }) {
   }, [detachStatusListener]);
 
   const listen = useCallback(
-    (type, handler) => listenersRef.current.push([type, apiService.on(type, handler)]),
+    (/** @type {string} */ type, /** @type {(message: SocketMessage) => void} */ handler) =>
+      listenersRef.current.push([type, apiService.on(type, handler)]),
     [apiService],
   );
 
   const waitForShotEnd = useCallback(
     () =>
-      new Promise((resolve, reject) => {
-        let sawActive = false;
-        // The refs let detachStatusListener cancel cleanly: it clears the
-        // safety timer and rejects this promise so an awaiting start()
-        // unblocks instead of hanging until the 5-min timeout.
-        waitRejectRef.current = reject;
-        safetyIdRef.current = setTimeout(() => {
-          // Mark as settled before detaching so detach doesn't double-reject.
-          safetyIdRef.current = null;
-          waitRejectRef.current = null;
-          detachStatusListener();
-          reject(new Error(t`Timeout waiting for shot to finish (5min).`));
-        }, SHOT_END_TIMEOUT_MS);
-        // Error-level warnings (e.g. still heating) park the start behind a confirmation only Home shows.
-        listen('evt:brew:confirm', m => {
-          const labels = activeWarnings(parseWarningStates(m.warn)).map(w => w.label);
-          const warnings = labels.join(', ') || t`unknown`;
-          pushLog(t`Starting despite warnings: ${warnings}`, 'warn');
-          apiService.send({ tp: 'req:process:activate', ignoreWarnings: true });
-        });
-        listen('evt:brew:confirm:cancel', () => {
-          waitRejectRef.current = null;
-          detachStatusListener();
-          reject(new Error(t`Shot start was cancelled on the machine.`));
-        });
-        listen('evt:status', m => {
-          // State-only frames carry no process key; only telemetry frames say whether it's active.
-          if (!Object.prototype.hasOwnProperty.call(m, 'process')) return;
-          const active = m.process?.a === 1;
-          if (active) sawActive = true;
-          if (sawActive && !active) {
-            // Listeners stay attached: the shot-saved event only arrives after this point.
-            if (safetyIdRef.current !== null) {
-              clearTimeout(safetyIdRef.current);
-              safetyIdRef.current = null;
-            }
+      /** @type {Promise<void>} */ (
+        new Promise((resolve, reject) => {
+          let sawActive = false;
+          // The refs let detachStatusListener cancel cleanly: it clears the
+          // safety timer and rejects this promise so an awaiting start()
+          // unblocks instead of hanging until the 5-min timeout.
+          waitRejectRef.current = reject;
+          safetyIdRef.current = setTimeout(() => {
+            // Mark as settled before detaching so detach doesn't double-reject.
+            safetyIdRef.current = null;
             waitRejectRef.current = null;
-            resolve();
-          }
-        });
-      }),
+            detachStatusListener();
+            reject(new Error(t`Timeout waiting for shot to finish (5min).`));
+          }, SHOT_END_TIMEOUT_MS);
+          // Error-level warnings (e.g. still heating) park the start behind a confirmation only Home shows.
+          listen('evt:brew:confirm', m => {
+            const labels = activeWarnings(parseWarningStates(m.warn)).map(w => w.label);
+            const warnings = labels.join(', ') || t`unknown`;
+            pushLog(t`Starting despite warnings: ${warnings}`, 'warn');
+            apiService.send({ tp: 'req:process:activate', ignoreWarnings: true });
+          });
+          listen('evt:brew:confirm:cancel', () => {
+            waitRejectRef.current = null;
+            detachStatusListener();
+            reject(new Error(t`Shot start was cancelled on the machine.`));
+          });
+          listen('evt:status', m => {
+            // State-only frames carry no process key; only telemetry frames say whether it's active.
+            if (!Object.prototype.hasOwnProperty.call(m, 'process')) return;
+            const active = m.process?.a === 1;
+            if (active) sawActive = true;
+            if (sawActive && !active) {
+              // Listeners stay attached: the shot-saved event only arrives after this point.
+              if (safetyIdRef.current !== null) {
+                clearTimeout(safetyIdRef.current);
+                safetyIdRef.current = null;
+              }
+              waitRejectRef.current = null;
+              resolve();
+            }
+          });
+        })
+      ),
     [apiService, detachStatusListener, listen, pushLog],
   );
 
   // The index entry lands after extended recording: take the saved event, poll index.bin as fallback.
-  const waitForSavedShot = useCallback(async preIds => {
+  const waitForSavedShot = useCallback(async (/** @type {Set<number>} */ preIds) => {
     for (let attempt = 1; attempt <= SHOT_SAVED_POLL_RETRIES; attempt++) {
       if (savedShotIdRef.current !== null) return savedShotIdRef.current;
       const index = await fetchShotIndex();
       const fresh = index.filter(e => !preIds.has(e.id)).sort((a, b) => b.timestamp - a.timestamp);
       if (fresh.length) return fresh[0].id;
       if (attempt === SHOT_SAVED_POLL_RETRIES) break;
-      await new Promise(resolve => {
-        const timer = setTimeout(resolve, SHOT_SAVED_POLL_DELAY_MS);
-        savedWakeRef.current = () => {
-          clearTimeout(timer);
-          resolve();
-        };
-      });
+      await /** @type {Promise<void>} */ (
+        new Promise(resolve => {
+          const timer = setTimeout(resolve, SHOT_SAVED_POLL_DELAY_MS);
+          savedWakeRef.current = () => {
+            clearTimeout(timer);
+            resolve();
+          };
+        })
+      );
       savedWakeRef.current = null;
     }
     throw new Error(t`New shot did not appear in history — was it cancelled?`);
@@ -253,7 +270,9 @@ export function usePumpFlowCalibration({ currentCoeffs, onApplied }) {
         if (!profileToRestore) {
           // Never leave the machine on the profile we are about to delete.
           const list = await apiService.request({ tp: 'req:profiles:list', minimal: true });
-          profileToRestore = list.profiles?.find(p => p.id !== CALIBRATION_PROFILE_ID)?.id;
+          profileToRestore = list.profiles?.find(
+            (/** @type {import('../../types').Profile} */ p) => p.id !== CALIBRATION_PROFILE_ID,
+          )?.id;
         }
         if (profileToRestore) {
           await apiService.request({ tp: 'req:profiles:select', id: profileToRestore });

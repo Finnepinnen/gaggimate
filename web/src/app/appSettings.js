@@ -7,13 +7,24 @@ import { isApp } from './platform.js';
 const STORAGE_KEY = 'gaggimate.appSettings';
 
 // `label` and `help` are getters so they read in the active locale.
-export const NOTIFICATION_EVENTS = [
+/**
+ * @typedef {object} NotificationEventDef
+ * @property {NotificationEventKey} key
+ * @property {import('@lingui/core').MessageDescriptor} labelMsg
+ * @property {import('@lingui/core').MessageDescriptor} helpMsg
+ */
+
+export const NOTIFICATION_EVENTS = /** @type {NotificationEventDef[]} */ ([
   {
     key: 'preheated',
     labelMsg: msg`Machine preheated`,
     helpMsg: msg`The boiler reached brew temperature.`,
   },
-  { key: 'shotStarted', labelMsg: msg`Shot started`, helpMsg: msg`A brew started on the machine.` },
+  {
+    key: 'shotStarted',
+    labelMsg: msg`Shot started`,
+    helpMsg: msg`A brew started on the machine.`,
+  },
   { key: 'shotFinished', labelMsg: msg`Shot finished`, helpMsg: msg`With shot time and weight.` },
   {
     key: 'steamLeftOn',
@@ -30,7 +41,7 @@ export const NOTIFICATION_EVENTS = [
     labelMsg: msg`Errors`,
     helpMsg: msg`Controller errors and error-level warnings.`,
   },
-].map(e => ({
+]).map(e => ({
   ...e,
   get label() {
     return i18n._(e.labelMsg);
@@ -40,6 +51,29 @@ export const NOTIFICATION_EVENTS = [
   },
 }));
 
+/** @typedef {'stable' | 'nightly'} UpdateChannel */
+
+/**
+ * Which events raise a local notification; `enabled` is the master switch.
+ * @typedef {object} NotificationSettings
+ * @property {boolean} enabled
+ * @property {boolean} preheated
+ * @property {boolean} shotStarted
+ * @property {boolean} shotFinished
+ * @property {boolean} steamLeftOn
+ * @property {boolean} warnings
+ * @property {boolean} errors
+ */
+
+/** @typedef {Exclude<keyof NotificationSettings, 'enabled'>} NotificationEventKey */
+
+/**
+ * @typedef {object} AppSettings
+ * @property {UpdateChannel} updateChannel
+ * @property {NotificationSettings} notifications
+ */
+
+/** @type {AppSettings} */
 const DEFAULTS = {
   // Release channel for web UI updates (see updates.js).
   updateChannel: 'stable',
@@ -73,6 +107,7 @@ export async function loadAppSettings() {
   }
 }
 
+/** @param {Partial<NotificationSettings>} changes */
 export function updateNotificationSettings(changes) {
   return saveAppSettings({
     ...appSettings.value,
@@ -80,10 +115,12 @@ export function updateNotificationSettings(changes) {
   });
 }
 
+/** @param {UpdateChannel} updateChannel */
 export function setUpdateChannel(updateChannel) {
   return saveAppSettings({ ...appSettings.value, updateChannel });
 }
 
+/** @param {AppSettings} next */
 async function saveAppSettings(next) {
   const { Preferences } = await import('@capacitor/preferences');
   await Preferences.set({ key: STORAGE_KEY, value: JSON.stringify(next) });

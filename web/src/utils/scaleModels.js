@@ -26,6 +26,10 @@ const SCALE_MODELS = [
   [/^my_scale/i, 'MyScale'],
 ];
 
+/**
+ * @param {string | null | undefined} bleName
+ * @returns {string | null}
+ */
 export function scaleModelName(bleName) {
   if (!bleName) return null;
   const match = SCALE_MODELS.find(([pattern]) => pattern.test(bleName));

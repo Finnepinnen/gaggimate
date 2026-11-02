@@ -9,8 +9,7 @@ const useApiService = () => {
 const connected = computed(() => machine.value.connected);
 const selectedProfileId = computed(() => machine.value.status.selectedProfileId);
 
-// Full profile shape is schema/profile.json; only what this module touches is typed so far.
-/** @typedef {{ id: string, selected?: boolean, [key: string]: any }} ProfileSummary */
+/** @typedef {import('../types').Profile & { id: string }} ProfileSummary */
 
 /** @type {import('@preact/signals').Signal<ProfileSummary[]>} */
 const profiles = signal([]);

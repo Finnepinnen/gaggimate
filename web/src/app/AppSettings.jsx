@@ -119,7 +119,9 @@ export function AppSettings() {
             className='select w-full'
             value={appSettings.value.updateChannel}
             onChange={async e => {
-              await setUpdateChannel(e.currentTarget.value);
+              await setUpdateChannel(
+                /** @type {import('./appSettings.js').UpdateChannel} */ (e.currentTarget.value),
+              );
               checkForUpdate();
             }}
           >

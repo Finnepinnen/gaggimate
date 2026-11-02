@@ -9,6 +9,11 @@ import { usePumpFlowCalibration } from './usePumpFlowCalibration.js';
 
 const connected = computed(() => machine.value.connected);
 
+/**
+ * @param {object} props
+ * @param {string} props.currentCoeffs Current `pumpModelCoeffs`, "X,Y".
+ * @param {(newCoeffs: string) => void} [props.onApplied]
+ */
 export default function PumpFlowCalibration({ currentCoeffs, onApplied }) {
   const { phase, logs, results, saving, saved, start, apply, reset } = usePumpFlowCalibration({
     currentCoeffs,

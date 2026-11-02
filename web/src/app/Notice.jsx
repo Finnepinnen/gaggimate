@@ -9,7 +9,10 @@ const VARIANTS = {
   error: { icon: faCircleExclamation, color: 'text-error' },
 };
 
+/** @typedef {keyof typeof VARIANTS} NoticeVariant */
+
 // Readable inline note: regular text on a neutral surface, the variant only colours the icon.
+/** @param {{ variant?: NoticeVariant, children?: import('preact').ComponentChildren }} props */
 export function Notice({ variant = 'info', children }) {
   const { icon, color } = VARIANTS[variant];
   return (

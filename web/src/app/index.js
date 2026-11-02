@@ -24,6 +24,7 @@ export async function initApp() {
 }
 
 // Starts app-only services once the UI and its machine connection exist.
+/** @param {import('../services/ApiService.js').default} apiService */
 export function onAppRendered(apiService) {
   // The UI rendered, so this web bundle works; only then look for a newer one.
   markBundleHealthy()
@@ -36,6 +37,7 @@ export function onAppRendered(apiService) {
 }
 
 // Asks for the firmware version on every (re)connect so the machine selector's warning stays current.
+/** @param {import('../services/ApiService.js').default} apiService */
 function trackFirmwareVersion(apiService) {
   apiService.on('res:ota-settings', message => {
     updateMachineVersion(activeMachineId.value, message.displayVersion);

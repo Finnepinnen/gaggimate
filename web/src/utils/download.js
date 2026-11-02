@@ -1,5 +1,11 @@
 import { isApp } from '../app/platform.js';
 
+/** @typedef {{ blob: Blob, filename: string }} DownloadFile */
+
+/**
+ * @param {Blob} blob
+ * @param {string} filename
+ */
 function anchorDownload(blob, filename) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -18,6 +24,7 @@ function anchorDownload(blob, filename) {
 }
 
 // In the native app the share sheet replaces downloads; older app builds without the plugins fall back.
+/** @param {DownloadFile[]} files */
 async function appDownload(files) {
   try {
     const { shareFiles } = await import('../app/shareFiles.js');
@@ -29,20 +36,34 @@ async function appDownload(files) {
   files.forEach(({ blob, filename }) => anchorDownload(blob, filename));
 }
 
+/**
+ * @param {Blob} blob
+ * @param {string} filename
+ * @returns {Promise<void>}
+ */
 export function downloadBlob(blob, filename) {
   if (isApp) return appDownload([{ blob, filename }]);
   anchorDownload(blob, filename);
   return Promise.resolve();
 }
 
+/** @param {unknown} json */
 function jsonBlob(json) {
   return new Blob([JSON.stringify(json, undefined, 2)], { type: 'application/json' });
 }
 
+/**
+ * @param {unknown} json Serialized with JSON.stringify.
+ * @param {string} filename
+ */
 export function downloadJson(json, filename) {
   return downloadBlob(jsonBlob(json), filename);
 }
 
+/**
+ * @param {{ json: unknown, filename: string }[]} files
+ * @param {number} [delayMs]
+ */
 export async function downloadJsonQueue(files, delayMs = 500) {
   if (isApp) {
     await appDownload(files.map(file => ({ blob: jsonBlob(file.json), filename: file.filename })));

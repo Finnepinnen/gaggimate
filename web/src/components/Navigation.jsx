@@ -87,11 +87,19 @@ const NAVIGATION_SECTIONS = [
   },
 ];
 
+/**
+ * @param {object} props
+ * @param {string} [props.editLink]
+ * @param {import('@fortawesome/fontawesome-svg-core').IconDefinition} props.editIcon
+ * @param {boolean} [props.editActive]
+ * @param {boolean} [props.isActive]
+ */
 function DashboardModeDropdown({ editLink, editIcon, editActive, isActive }) {
   const { t } = useLingui();
   const mode = dashboardModeSignal.value;
 
   // daisyUI dropdowns are focus-driven — blur to close after a selection.
+  /** @param {Parameters<typeof setDashboardMode>[0]} value */
   const selectMode = value => {
     setDashboardMode(value);
     /** @type {HTMLElement | null} */ (document.activeElement)?.blur();
@@ -224,6 +232,11 @@ function MenuItem({
   );
 }
 
+/**
+ * @param {object} props
+ * @param {boolean} [props.collapsed]
+ * @param {() => void} props.onToggleCollapsed
+ */
 export function Navigation({ collapsed = false, onToggleCollapsed }) {
   const { t, i18n } = useLingui();
   // Compute the icon once per mount so the avatar doesn't reshuffle on every render.
