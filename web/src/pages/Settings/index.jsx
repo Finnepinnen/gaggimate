@@ -238,7 +238,7 @@ export function Settings() {
   const { profiles } = useProfileList();
   const [submitting, setSubmitting] = useState(false);
   const [smartDoseSaving, setSmartDoseSaving] = useState(false);
-  const [formData, setFormData] = useState({});
+  const [formData, setFormData] = useState(/** @type {Record<string, any>} */ ({}));
   const [currentTheme, setCurrentTheme] = useState('light');
   const [showWifiPassword, setShowWifiPassword] = useState(false);
   const [showApPassword, setShowApPassword] = useState(false);
@@ -310,10 +310,10 @@ export function Settings() {
       }
       if (key === 'standbyDisplayEnabled') {
         value = !formData.standbyDisplayEnabled;
-        const newFormData = {
+        const newFormData = /** @type {Record<string, any>} */ ({
           ...formData,
           [key]: value,
-        };
+        });
         if (!value) {
           newFormData.standbyBrightness = 0;
         }
