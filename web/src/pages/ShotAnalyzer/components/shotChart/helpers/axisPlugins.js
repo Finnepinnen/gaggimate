@@ -390,7 +390,8 @@ function drawAxisUnitLabel(
       baseline,
     });
   }
-  ctx.fillText(text, x, y);
+  // Non-empty: the early return only lets an empty text through with an iconDef.
+  ctx.fillText(/** @type {string} */ (text), x, y);
   ctx.restore();
 }
 

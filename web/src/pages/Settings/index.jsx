@@ -331,8 +331,7 @@ export function Settings() {
     }
   }, [fetchedSettings]);
 
-  /** @type {import('preact').RefObject<HTMLFormElement>} */
-  const formRef = useRef();
+  const formRef = useRef(/** @type {HTMLFormElement | null} */ (null));
   const dropdownRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -524,7 +523,11 @@ export function Settings() {
       if (fields.dashboardLayout !== undefined) setDashboardLayout(fields.dashboardLayout);
       setImportNotice({ error: false, name: file.name, count, ignored });
     } catch (error) {
-      setImportNotice({ error: true, name: file.name, message: error.message });
+      setImportNotice({
+        error: true,
+        name: file.name,
+        message: /** @type {Error} */ (error).message,
+      });
     } finally {
       // Lets the same file be picked again.
       input.value = '';

@@ -102,7 +102,8 @@ export class MachineMonitor {
     if (!current.shotActive && previous.shotActive) {
       // The finished frame carries the final duration; fall back to the last running frame.
       const seconds = Math.round(((current.process ?? previous.process)?.e ?? 0) / 1000);
-      const weight = current.weight > 0 ? `, ${current.weight.toFixed(1)} g` : '';
+      const grams = current.weight;
+      const weight = grams !== undefined && grams > 0 ? `, ${grams.toFixed(1)} g` : '';
       this.emit('shotFinished', t`Shot finished`, `${seconds} s${weight}`);
     }
     if (current.systemError && !previous.systemError) {
@@ -167,7 +168,10 @@ export class MachineMonitor {
 }
 
 // Brews only: flushes, backflushes and descaling run as utility brews, grinding isn't a shot.
-/** @param {ProcessProgress | null | undefined} process */
+/**
+ * @param {ProcessProgress | null | undefined} process
+ * @returns {process is ProcessProgress}
+ */
 const isShot = process =>
   !!process && (process.s === 'brew' || process.s === 'infusion') && !process.u;
 
@@ -217,7 +221,10 @@ export class NotificationService {
 
   resume() {
     this.suspended = false;
-    const { enabled, saved, active } = this.current;
+    // Always set: the constructor's effect runs restart() synchronously.
+    const { enabled, saved, active } = /** @type {NonNullable<typeof this.current>} */ (
+      this.current
+    );
     this.restart(enabled, saved, active);
   }
 

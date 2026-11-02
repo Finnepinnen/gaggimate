@@ -132,7 +132,7 @@ export function areTooltipLayoutsEqual(a, b) {
  * @returns {number | undefined}
  */
 export function getFiniteTooltipBound(primaryBound, fallbackBound) {
-  if (Number.isFinite(primaryBound)) return primaryBound;
-  if (Number.isFinite(fallbackBound)) return fallbackBound;
+  if (Number.isFinite(primaryBound)) return /** @type {number} */ (primaryBound);
+  if (Number.isFinite(fallbackBound)) return /** @type {number} */ (fallbackBound);
   return undefined;
 }

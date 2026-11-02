@@ -70,7 +70,7 @@ export interface AnalyzerPhase {
   exit?: AnalyzerPhaseExit;
   profilePhase?: (Partial<ProfilePhase> & { targets?: PhaseTarget[] }) | null;
   prediction?: { finalWeight?: number | null };
-  targetCalcValues?: Record<string, { value?: number; isStopReason?: boolean } | undefined>;
+  targetCalcValues?: Record<string, { value?: number; isStopReason?: boolean } | undefined> | null;
   isFinalExecuted?: boolean;
   skipped?: boolean;
 }

@@ -10,7 +10,10 @@ const capabilities = computed(() => machine.value.capabilities);
 const connected = computed(() => machine.value.connected);
 
 export function useDashboardState() {
-  const apiService = useContext(ApiServiceContext);
+  // Provided at the app root, so never null here.
+  const apiService = /** @type {import('../../services/ApiService.js').default} */ (
+    useContext(ApiServiceContext)
+  );
   const [flushPending, setFlushPending] = useState(false); // flush requested, status not caught up yet
 
   const s = status.value;
@@ -22,7 +25,7 @@ export function useDashboardState() {
   // Only a not-ready state carries a message; ready leaves the default standby text in place.
   const systemMessage = !connected.value
     ? t`Connecting to the machine...`
-    : systemReady
+    : systemReady || !s.system
       ? ''
       : s.system.message || s.system.state;
   const mode = systemReady ? s.mode : 0;
@@ -70,7 +73,9 @@ export function useDashboardState() {
           0,
           Math.min(
             100,
-            ((emptyTankDistance - s.tofDistance) / (emptyTankDistance - fullTankDistance)) * 100,
+            ((emptyTankDistance - /** @type {number} */ (s.tofDistance)) /
+              (emptyTankDistance - fullTankDistance)) *
+              100,
           ),
         )
       : null;

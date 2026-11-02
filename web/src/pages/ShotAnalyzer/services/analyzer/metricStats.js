@@ -17,7 +17,7 @@ export function getMetricStats(samples, key) {
 
   // Start and End values
   const start = normalizeMetricValue(samples[0][key]);
-  const end = normalizeMetricValue(samples.at(-1)[key]);
+  const end = normalizeMetricValue(samples[samples.length - 1][key]);
 
   // Min, Max, and Time-Weighted Average
   let previousSample = null;

@@ -357,12 +357,12 @@ export function parseBinaryShot(arrayBuffer, id) {
   const lastT = samples.length ? samples[samples.length - 1].t : 0;
   const headerIncomplete = sampleCountHeader === 0;
   const inferredIncomplete =
-    trailingBytes !== 0 || (sampleCountHeader && sampleCountHeader > inferredSamples);
+    trailingBytes !== 0 || (sampleCountHeader !== 0 && sampleCountHeader > inferredSamples);
   const incomplete = headerIncomplete || inferredIncomplete;
   const effectiveDuration = !incomplete && durationHeader ? durationHeader : lastT;
 
   const headerVolume = finalWeightHeader ? finalWeightHeader / WEIGHT_SCALE : 0;
-  const sampleVolume = samples.length ? samples[samples.length - 1].v : 0;
+  const sampleVolume = samples.length ? (samples[samples.length - 1].v ?? 0) : 0;
   const volume = headerVolume > 0 ? headerVolume : sampleVolume > 0 ? sampleVolume : null;
 
   return {

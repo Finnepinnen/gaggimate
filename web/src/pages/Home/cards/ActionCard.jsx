@@ -112,7 +112,8 @@ export function ActionCard({
           {shownWarnings.map(w => (
             <WarningIcon
               key={w.key}
-              icon={w.icon}
+              // activeWarnings drops entries without an icon.
+              icon={/** @type {string} */ (w.icon)}
               title={w.label}
               className={`text-xl ${w.level === WARNING_LEVEL.ERROR ? 'text-error' : 'text-warning'}`}
             />

@@ -8,6 +8,8 @@ import { Trans, useLingui } from '@lingui/react/macro';
 
 /** @typedef {import('../../types').Shot} Shot */
 /** @typedef {import('../../types').ShotNotes} ShotNotes */
+/** Every field is filled from the defaults below. */
+/** @typedef {Required<ShotNotes>} FilledShotNotes */
 
 /**
  * @param {object} props
@@ -17,10 +19,13 @@ import { Trans, useLingui } from '@lingui/react/macro';
  */
 export default function ShotNotesCard({ shot, onNotesUpdate, onNotesLoaded }) {
   const { t } = useLingui();
-  const apiService = useContext(ApiServiceContext);
+  // Provided at the app root, so never null here.
+  const apiService = /** @type {import('../../services/ApiService.js').default} */ (
+    useContext(ApiServiceContext)
+  );
 
   const [notes, setNotes] = useState(
-    /** @type {ShotNotes} */ ({
+    /** @type {FilledShotNotes} */ ({
       id: shot.id,
       rating: 0,
       beanType: '',
@@ -63,7 +68,7 @@ export default function ShotNotesCard({ shot, onNotesUpdate, onNotesLoaded }) {
           id: shot.id,
         });
 
-        /** @type {ShotNotes} */
+        /** @type {FilledShotNotes} */
         let loadedNotes = {
           id: shot.id,
           rating: 0,
@@ -112,7 +117,7 @@ export default function ShotNotesCard({ shot, onNotesUpdate, onNotesLoaded }) {
         console.error('Failed to load notes:', error);
 
         // Even if loading fails, set up defaults
-        /** @type {ShotNotes} */
+        /** @type {FilledShotNotes} */
         const defaultNotes = {
           id: shot.id,
           rating: 0,

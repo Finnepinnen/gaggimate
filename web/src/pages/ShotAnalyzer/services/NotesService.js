@@ -59,11 +59,12 @@ class NotesService {
   }
 
   /**
-   * @param {ShotId} shotId
+   * `null` builds the placeholder used while no shot is loaded; its id stays null at runtime.
+   * @param {ShotId | null} shotId
    * @returns {AnalyzerNotes}
    */
   getDefaults(shotId) {
-    return { ...DEFAULT_NOTES, id: shotId };
+    return { ...DEFAULT_NOTES, id: /** @type {ShotId} */ (shotId) };
   }
 
   /**
@@ -79,18 +80,18 @@ class NotesService {
   // this channel keeps those local hook instances in sync before persistence finishes.
   /**
    * @param {ShotId} shotId
-   * @param {LibrarySource} source
+   * @param {LibrarySource | null | undefined} source
    * @param {NotesSubscriber} callback
    * @returns {() => void} Unsubscribe
    */
   subscribeNotes(shotId, source, callback) {
     if (typeof callback !== 'function') return () => {};
     const channelKey = this.getChannelKey(shotId, source);
-    if (!this._subscribers.has(channelKey)) {
-      this._subscribers.set(channelKey, new Set());
+    let subscribers = this._subscribers.get(channelKey);
+    if (!subscribers) {
+      subscribers = new Set();
+      this._subscribers.set(channelKey, subscribers);
     }
-
-    const subscribers = this._subscribers.get(channelKey);
     subscribers.add(callback);
 
     return () => {
@@ -103,7 +104,7 @@ class NotesService {
 
   /**
    * @param {ShotId} shotId
-   * @param {LibrarySource} source
+   * @param {LibrarySource | null | undefined} source
    * @param {Partial<ShotNotes>} notes
    * @param {string | null} [originId]
    */

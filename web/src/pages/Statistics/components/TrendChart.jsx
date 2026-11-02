@@ -251,7 +251,9 @@ export function TrendChart({ trends }) {
               bodyFont: CHART_TOOLTIP_BODY_FONT,
               callbacks: {
                 title: ctx => {
-                  const raw = ctx[0]?.raw;
+                  const raw = /** @type {import('../types').TrendBucketPoint | undefined} */ (
+                    ctx[0]?.raw
+                  );
                   return formatTrendBucketTooltipTitle(raw, selectedGranularity);
                 },
                 label: ctx =>

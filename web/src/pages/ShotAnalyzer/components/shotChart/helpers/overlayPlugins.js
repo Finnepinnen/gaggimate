@@ -62,7 +62,7 @@ export const hoverGuidePlugin = {
     const x = Number.isFinite(chart?.$fixedTooltipPointerX)
       ? chart.$fixedTooltipPointerX
       : active[0]?.element?.x;
-    if (!Number.isFinite(x)) return;
+    if (x == null || !Number.isFinite(x)) return;
 
     const overflow = Number(pluginOptions?.overflow) || 6;
     const { top, bottom } = chart.chartArea;

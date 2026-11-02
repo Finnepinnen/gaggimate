@@ -71,7 +71,10 @@ ProfileMiniCard.propTypes = {
  * @param {boolean} [props.compact]
  */
 export function FavoriteProfilesCard({ selectedProfileId, inCard = false, compact = false }) {
-  const apiService = useContext(ApiServiceContext);
+  // Provided at the app root, so never null here.
+  const apiService = /** @type {import('../../../services/ApiService.js').default} */ (
+    useContext(ApiServiceContext)
+  );
   const { profiles, loading } = useProfileList();
   const favorites = profiles.filter(p => p.favorite).slice(0, 3);
 

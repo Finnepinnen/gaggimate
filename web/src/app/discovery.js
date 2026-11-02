@@ -42,20 +42,21 @@ let listeners = [];
 export async function startDiscovery() {
   await loadPlugin();
   await stopDiscovery();
+  const plugin = /** @type {MachineDiscoveryPlugin} */ (MachineDiscovery);
   discoveredMachines.value = [];
   try {
     listeners = await Promise.all([
-      MachineDiscovery.addListener('machineFound', machine => {
+      plugin.addListener('machineFound', machine => {
         discoveredMachines.value = [
           ...discoveredMachines.value.filter(m => m.name !== machine.name),
           machine,
         ];
       }),
-      MachineDiscovery.addListener('machineLost', ({ name }) => {
+      plugin.addListener('machineLost', ({ name }) => {
         discoveredMachines.value = discoveredMachines.value.filter(m => m.name !== name);
       }),
     ]);
-    await MachineDiscovery.start();
+    await plugin.start();
   } catch {
     discoveryAvailable.value = false;
   }

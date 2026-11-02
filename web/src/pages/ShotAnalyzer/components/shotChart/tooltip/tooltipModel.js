@@ -188,7 +188,9 @@ function buildCompareWaterRows({
  * @returns {number}
  */
 function resolveTooltipAnchorX(chart, tooltip) {
-  if (Number.isFinite(chart.$fixedTooltipPointerX)) return chart.$fixedTooltipPointerX;
+  if (Number.isFinite(chart.$fixedTooltipPointerX)) {
+    return /** @type {number} */ (chart.$fixedTooltipPointerX);
+  }
   if (Number.isFinite(tooltip.caretX)) return tooltip.caretX;
   return chart.chartArea.left + EXTERNAL_TOOLTIP_FALLBACK_OFFSET_X;
 }
@@ -199,7 +201,9 @@ function resolveTooltipAnchorX(chart, tooltip) {
  * @returns {number}
  */
 function resolveTooltipAnchorY(chart, tooltip) {
-  if (Number.isFinite(chart.$fixedTooltipPointerY)) return chart.$fixedTooltipPointerY;
+  if (Number.isFinite(chart.$fixedTooltipPointerY)) {
+    return /** @type {number} */ (chart.$fixedTooltipPointerY);
+  }
   if (Number.isFinite(tooltip.caretY)) return tooltip.caretY;
   return chart.chartArea.top;
 }
@@ -298,7 +302,7 @@ function buildCompareExternalTooltipRows({ chart, xValue }) {
       if (!Number.isFinite(value)) return null;
 
       const shotOrder = Number.isFinite(dataset.compareTooltipShotOrder)
-        ? dataset.compareTooltipShotOrder
+        ? /** @type {number} */ (dataset.compareTooltipShotOrder)
         : 999;
       const shotNumber = shotOrder + 1;
       const shotLabel = t`Shot ${shotNumber}`;
@@ -326,7 +330,7 @@ function buildCompareExternalTooltipRows({ chart, xValue }) {
         color: /** @type {string} */ (dataset.borderColor) || '#94a3b8',
       };
     })
-    .filter(/** @returns {row is TooltipRow} */ row => Boolean(row));
+    .filter(row => row !== null);
 
   waterByShotOrder.forEach(waterValues => {
     compareRows.push(...buildCompareWaterRows(waterValues));
@@ -372,11 +376,13 @@ function buildCompareExternalTooltipRows({ chart, xValue }) {
  */
 function resolveCompareXValue(chart, tooltip, tooltipItems, isCompareTooltipMode) {
   if (!isCompareTooltipMode) return null;
-  if (Number.isFinite(chart?.$fixedTooltipXValue)) return chart.$fixedTooltipXValue;
+  if (Number.isFinite(chart?.$fixedTooltipXValue)) {
+    return /** @type {number} */ (chart.$fixedTooltipXValue);
+  }
   if (Number.isFinite(tooltipItems[0]?.parsed?.x)) return tooltipItems[0].parsed.x;
 
   const scaleXValue = chart.scales?.x?.getValueForPixel?.(tooltip.caretX);
-  return Number.isFinite(scaleXValue) ? scaleXValue : null;
+  return Number.isFinite(scaleXValue) ? /** @type {number} */ (scaleXValue) : null;
 }
 
 /**
@@ -418,10 +424,12 @@ function resolveTooltipRows({
  * @returns {number | null}
  */
 function resolveSingleXValue(chart, tooltip, tooltipItems) {
-  if (Number.isFinite(chart?.$fixedTooltipXValue)) return chart.$fixedTooltipXValue;
+  if (Number.isFinite(chart?.$fixedTooltipXValue)) {
+    return /** @type {number} */ (chart.$fixedTooltipXValue);
+  }
   if (Number.isFinite(tooltipItems?.[0]?.parsed?.x)) return tooltipItems[0].parsed.x;
   const scaleXValue = chart?.scales?.x?.getValueForPixel?.(tooltip?.caretX);
-  return Number.isFinite(scaleXValue) ? scaleXValue : null;
+  return Number.isFinite(scaleXValue) ? /** @type {number} */ (scaleXValue) : null;
 }
 
 /**
@@ -503,7 +511,7 @@ function buildPhaseTooltipSummaries({ xValue, phaseTooltipGroups, showPhaseNames
 }
 
 /**
- * @param {number | string | undefined} phaseNumber
+ * @param {number | string} phaseNumber
  * @param {string} phaseName
  * @returns {string}
  */

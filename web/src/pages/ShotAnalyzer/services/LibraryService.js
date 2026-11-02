@@ -285,7 +285,9 @@ class LibraryService {
     const merged = results.flat();
 
     // Sort by timestamp (newest first)
-    return merged.sort((a, b) => b.timestamp - a.timestamp);
+    return merged.sort(
+      (a, b) => /** @type {number} */ (b.timestamp) - /** @type {number} */ (a.timestamp),
+    );
   }
 
   /**
@@ -366,7 +368,7 @@ class LibraryService {
   /**
    * Load full shot data
    * @param {string | number} id - Shot ID
-   * @param {LibrarySource} source - 'gaggimate' or 'browser'
+   * @param {LibrarySource | undefined} source - 'gaggimate' or 'browser' (anything else: browser)
    * @param {{ signal?: AbortSignal }} [options] - Optional request controls for GaggiMate fetches
    * @returns {Promise<AnalyzerShot>} Full shot data with samples
    */
@@ -400,7 +402,7 @@ class LibraryService {
   /**
    * Load full profile data
    * @param {string} nameOrId - Profile name/ID (for GM: use label)
-   * @param {LibrarySource} source - 'gaggimate' or 'browser'
+   * @param {LibrarySource | undefined} source - 'gaggimate' or 'browser' (anything else: browser)
    * @returns {Promise<AnalyzerProfile>} Full profile data
    */
   async loadProfile(nameOrId, source) {
@@ -508,7 +510,7 @@ class LibraryService {
   /**
    * Delete a shot
    * @param {string} id - Shot ID
-   * @param {LibrarySource} source - 'gaggimate' or 'browser'
+   * @param {LibrarySource | undefined} source - 'gaggimate' or 'browser' (anything else: browser)
    */
   async deleteShot(id, source) {
     if (source === 'gaggimate') {
@@ -523,7 +525,7 @@ class LibraryService {
   /**
    * Delete a profile
    * @param {string} id - Profile ID (gaggimate: internal API id, browser: name)
-   * @param {LibrarySource} source - 'gaggimate' or 'browser'
+   * @param {LibrarySource | undefined} source - 'gaggimate' or 'browser' (anything else: browser)
    */
   async deleteProfile(id, source) {
     if (source === 'gaggimate') {

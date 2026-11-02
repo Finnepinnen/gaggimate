@@ -10,6 +10,7 @@ import { machineSocketUrl } from '../app/machines.js';
 /** @typedef {import('./machineTypes.js').Capabilities} Capabilities */
 /** @typedef {import('./machineTypes.js').ScaleState} ScaleState */
 /** @typedef {import('./machineTypes.js').StatusFrame} StatusFrame */
+/** @typedef {import('./machineTypes.js').HistoryEntry} HistoryEntry */
 /** @typedef {import('./machineTypes.js').SocketMessage} SocketMessage */
 /** @typedef {(message: SocketMessage) => void} SocketListener */
 
@@ -283,22 +284,22 @@ export default class ApiService {
     status.timestamp = new Date();
 
     const capabilities = { ...this.state.value.capabilities };
-    if (has('cd')) capabilities.dimming = message.cd;
-    if (has('cp')) capabilities.pressure = message.cp;
+    if (has('cd')) capabilities.dimming = /** @type {boolean} */ (message.cd);
+    if (has('cp')) capabilities.pressure = /** @type {boolean} */ (message.cp);
     if (has('led')) capabilities.ledControl = message.led;
     if (has('tofc')) capabilities.tof = message.tofc;
     if (has('gp')) capabilities.gearpumpAddon = !!message.gp;
-    if (has('db')) capabilities.dualBoiler = message.db;
+    if (has('db')) capabilities.dualBoiler = /** @type {boolean} */ (message.db);
     if (has('hs')) capabilities.hardwareScale = !!message.hs;
     if (has('sd')) capabilities.sdCard = !!message.sd;
 
     // Only telemetry frames extend the chart history; state-only frames would duplicate points.
     let history = this.state.value.history;
     if (has('ct')) {
-      const historyEntry = { ...status };
+      const historyEntry = /** @type {Partial<MachineStatus>} */ ({ ...status });
       delete historyEntry.process;
       delete historyEntry.warnings;
-      history = [...history, historyEntry].slice(-600);
+      history = [...history, /** @type {HistoryEntry} */ (historyEntry)].slice(-600);
     }
 
     this.state.value = { ...this.state.value, connected: true, status, capabilities, history };

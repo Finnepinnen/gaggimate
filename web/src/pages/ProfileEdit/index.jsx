@@ -36,7 +36,10 @@ const pressureAvailable = computed(() => machine.value.capabilities.pressure);
 export function ProfileEdit() {
   const { t } = useLingui();
   const isConnected = connected.value;
-  const apiService = useContext(ApiServiceContext);
+  // Provided at the app root, so never null here.
+  const apiService = /** @type {import('../../services/ApiService.js').default} */ (
+    useContext(ApiServiceContext)
+  );
   const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -122,7 +125,8 @@ export function ProfileEdit() {
   );
   const onConvert = useCallback(() => {
     setData({
-      ...data,
+      // Only offered while a standard profile is loaded.
+      .../** @type {import('./types').EditorProfile} */ (data),
       type: 'pro',
     });
   }, [data, setData]);
@@ -155,7 +159,14 @@ export function ProfileEdit() {
         )}
       </div>
 
-      {!data?.type && <ProfileTypeSelection onSelect={type => setData({ ...data, type })} />}
+      {!data?.type && (
+        <ProfileTypeSelection
+          // `data` is set before `loading` clears.
+          onSelect={type =>
+            setData({ .../** @type {import('./types').EditorProfile} */ (data), type })
+          }
+        />
+      )}
       {data?.type === 'standard' && (
         <StandardProfileForm
           data={data}

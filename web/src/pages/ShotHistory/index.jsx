@@ -40,7 +40,10 @@ const connected = computed(() => machine.value.connected);
 export function ShotHistory() {
   const { t } = useLingui();
   const isConnected = connected.value;
-  const apiService = useContext(ApiServiceContext);
+  // Provided at the app root, so never null here.
+  const apiService = /** @type {import('../../services/ApiService.js').default} */ (
+    useContext(ApiServiceContext)
+  );
   const [history, setHistory] = useState(/** @type {Shot[]} */ ([]));
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -49,7 +52,7 @@ export function ShotHistory() {
   const [filterBy, setFilterBy] = useState('all'); // all, rated, unrated
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const loadHistoryAbortRef = useRef(null);
+  const loadHistoryAbortRef = useRef(/** @type {AbortController | null} */ (null));
   const loadHistory = async () => {
     // Abort any in-flight fetch to prevent request pileup on the ESP32.
     loadHistoryAbortRef.current?.abort();
@@ -94,7 +97,7 @@ export function ShotHistory() {
       });
       setLoading(false);
     } catch (error) {
-      if (error.name === 'AbortError') return; // Intentional abort, not an error.
+      if (/** @type {Error} */ (error).name === 'AbortError') return; // Intentional abort, not an error.
       console.error('Failed to load shot history:', error);
       setHistory([]);
       setLoading(false);
@@ -313,7 +316,9 @@ export function ShotHistory() {
                           ...parsed,
                           // Preserve index metadata over shot file data
                           volume: h.volume ?? parsed.volume, // Use index volume if available, fallback to shot volume
-                          rating: h.rating ?? parsed.rating, // Use index rating if available
+                          // Use index rating if available. parseBinaryShot never sets one, so an
+                          // unrated shot ends up undefined here; Shot types it number | null.
+                          rating: /** @type {number | null} */ (h.rating ?? parsed.rating),
                           incomplete: h.incomplete ?? parsed.incomplete,
                           loaded: true,
                         }

@@ -71,6 +71,8 @@ export function AnalysisTable({
   useVerticalWheelForwarding(tableContainerRef);
 
   if (!results?.phases && !compareMode) return null;
+  // Outside compare mode the check above guarantees results.
+  const singleResults = /** @type {import('../../types').ShotAnalysisResult} */ (results);
 
   // --- Styles ---
   const touchInteractionStyle = getAnalysisTouchInteractionStyle(isTouchOptimized);
@@ -292,7 +294,7 @@ export function AnalysisTable({
             ) : (
               <>
                 <tbody>
-                  {results.phases.map((phase, idx) => (
+                  {singleResults.phases.map((phase, idx) => (
                     <tr
                       key={
                         /** @type {{ key?: string }} */ (phase).key ||

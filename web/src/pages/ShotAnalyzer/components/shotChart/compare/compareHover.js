@@ -128,8 +128,11 @@ function resolveCompareTitleOnlyDatasetIndex(chart) {
     }
   });
 
-  chart.$compareTitleOnlyDatasetIndex = bestCandidate?.datasetIndex ?? -1;
-  return chart.$compareTitleOnlyDatasetIndex;
+  // TS can't see the forEach assignments, so it narrows bestCandidate to null.
+  const best = /** @type {{ datasetIndex: number, endX: number } | null} */ (bestCandidate);
+  const resolvedIndex = best?.datasetIndex ?? -1;
+  chart.$compareTitleOnlyDatasetIndex = resolvedIndex;
+  return resolvedIndex;
 }
 
 /**
@@ -164,13 +167,13 @@ function resolveCompareHoverGeometry(chart, clientX, clientY) {
   const sourceX = clampedClientX - chartRect.left;
   const xValue = xScale.getValueForPixel(sourceX);
 
-  if (!Number.isFinite(xValue)) return null;
+  if (xValue === undefined || !Number.isFinite(xValue)) return null;
 
   const xPixel = xScale.getPixelForValue(xValue);
   const minClientY = chartRect.top + chart.chartArea.top;
   const maxClientY = chartRect.top + chart.chartArea.bottom;
   const clampedClientY = Number.isFinite(clientY)
-    ? Math.min(maxClientY, Math.max(minClientY, clientY))
+    ? Math.min(maxClientY, Math.max(minClientY, /** @type {number} */ (clientY)))
     : minClientY;
 
   return {
@@ -188,7 +191,8 @@ function resolveCompareHoverGeometry(chart, clientX, clientY) {
  */
 export function applyCompareTitleOnlyHover(chart, clientX, clientY, setExternalTooltipState) {
   const hoverGeometry = resolveCompareHoverGeometry(chart, clientX, clientY);
-  if (!hoverGeometry) {
+  // Geometry is null whenever chart is missing; checking chart too lets TS narrow it.
+  if (!chart || !hoverGeometry) {
     clearCompareChartHover(chart);
     return;
   }
@@ -228,7 +232,8 @@ export function applyCompareTitleOnlyHover(chart, clientX, clientY, setExternalT
  */
 export function applyCompareHover(chart, clientX, clientY, { titleOnly = false } = {}) {
   const hoverGeometry = resolveCompareHoverGeometry(chart, clientX, clientY);
-  if (!hoverGeometry) {
+  // Geometry is null whenever chart is missing; checking chart too lets TS narrow it.
+  if (!chart || !hoverGeometry) {
     clearCompareChartHover(chart);
     return;
   }
@@ -286,7 +291,7 @@ export function applyCompareHoverAtX(chart, xValue, { titleOnly = false } = {}) 
 }
 
 /**
- * @param {EventTarget} hoverSurface
+ * @param {HTMLElement} hoverSurface
  * @param {boolean} supportsPointerEvents
  * @param {HoverListener} handleHoverMove
  * @param {HoverListener} clearHover
@@ -315,7 +320,7 @@ export function addCompareHoverListeners(
 }
 
 /**
- * @param {EventTarget} hoverSurface
+ * @param {HTMLElement} hoverSurface
  * @param {boolean} supportsPointerEvents
  * @param {HoverListener} handleHoverMove
  * @param {HoverListener} clearHover

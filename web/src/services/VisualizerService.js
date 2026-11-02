@@ -191,7 +191,7 @@ export class VisualizerService {
 
       return await response.json();
     } catch (fetchError) {
-      if (fetchError.name === 'TypeError') {
+      if (/** @type {Error} */ (fetchError).name === 'TypeError') {
         throw new Error(t`Network error: Unable to connect to visualizer.coffee`);
       }
       throw fetchError;

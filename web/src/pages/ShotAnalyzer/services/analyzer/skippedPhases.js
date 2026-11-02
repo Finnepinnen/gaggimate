@@ -11,11 +11,12 @@ import { formatStopReason, isTargetHit, isWeightTarget } from './targetMatching'
 /** @typedef {import('../../types').SamplesByPhase} SamplesByPhase */
 /** @typedef {import('../../types').TargetCalcValues} TargetCalcValues */
 /** @typedef {{ reason: string, type: string, value: number | null }} SkipInfo */
+/** @typedef {AnalyzerProfile & { phases: AnalyzerProfilePhase[] }} ProfileWithPhases */
 /**
  * @typedef {object} SkippedPhaseLookup
  * @property {Map<string, AnalyzedPhase>} analyzedByName
  * @property {SamplesByPhase} phases
- * @property {AnalyzerProfile} profileData
+ * @property {ProfileWithPhases} profileData
  * @property {number} profileIndex
  */
 
@@ -243,7 +244,7 @@ function findMatchingProfilePhaseIndex(profilePhases, phase, startIndex) {
  * @param {AnalyzedPhase[]} options.orderedPhases
  * @param {SamplesByPhase} options.phases
  * @param {AnalyzedPhase | null} options.prevPhase
- * @param {AnalyzerProfile} options.profileData
+ * @param {ProfileWithPhases} options.profileData
  * @param {number} options.startIndex
  */
 function appendSkippedProfilePhases({
@@ -280,6 +281,7 @@ function appendSkippedProfilePhases({
  */
 export function mergeSkippedProfilePhases({ analyzedPhases, phases, profileData }) {
   if (!profileData?.phases?.length) return;
+  const profile = /** @type {ProfileWithPhases} */ (profileData);
 
   const executedPhases = [...analyzedPhases];
   const analyzedByName = buildAnalyzedPhaseLookup(executedPhases);
@@ -291,7 +293,7 @@ export function mergeSkippedProfilePhases({ analyzedPhases, phases, profileData 
 
   for (const executedPhase of executedPhases) {
     const matchingProfileIndex = findMatchingProfilePhaseIndex(
-      profileData.phases,
+      profile.phases,
       executedPhase,
       profileIndex,
     );
@@ -303,7 +305,7 @@ export function mergeSkippedProfilePhases({ analyzedPhases, phases, profileData 
         orderedPhases,
         phases,
         prevPhase: previousExecutedPhase,
-        profileData,
+        profileData: profile,
         startIndex: profileIndex,
       });
       profileIndex = matchingProfileIndex + 1;
@@ -315,11 +317,11 @@ export function mergeSkippedProfilePhases({ analyzedPhases, phases, profileData 
 
   appendSkippedProfilePhases({
     analyzedByName,
-    endIndex: profileData.phases.length,
+    endIndex: profile.phases.length,
     orderedPhases,
     phases,
     prevPhase: previousExecutedPhase,
-    profileData,
+    profileData: profile,
     startIndex: profileIndex,
   });
 

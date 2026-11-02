@@ -2,4 +2,4 @@
 export const SYSTEM_PROFILE_IDS = ['flush', 'descale'];
 
 /** @param {string | undefined} id */
-export const isSystemProfile = id => SYSTEM_PROFILE_IDS.includes(id);
+export const isSystemProfile = id => id !== undefined && SYSTEM_PROFILE_IDS.includes(id);

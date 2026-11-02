@@ -52,6 +52,7 @@ import { useDesktopShotDetailsHeight } from './useDesktopShotDetailsHeight';
 /** @typedef {import('../types').ProfileSelectionMode} ProfileSelectionMode */
 /** @typedef {import('../types').ShotAnalysisResult} ShotAnalysisResult */
 /** @typedef {import('../types').ShotSelectionRequest} ShotSelectionRequest */
+/** @typedef {import('./compareSelection').CompareSelectionRequest} CompareSelectionRequest */
 /** @typedef {AnalyzerShot | Partial<ShotSelectionRequest>} ShotSelectionInput Bare shot or (partial) selection request */
 /** @typedef {{ preserveCompare?: boolean, requestSelectionScroll?: boolean }} PrimaryShotLoadOptions */
 
@@ -547,7 +548,7 @@ export function ShotAnalyzer() {
         return true;
       } catch (error) {
         if (requestId !== primarySelectionRequestIdRef.current) return false;
-        if (error?.name === 'AbortError') {
+        if (/** @type {Error | null | undefined} */ (error)?.name === 'AbortError') {
           abortPrimarySelectionLoad(requestId);
           updatePendingPrimarySelection(null);
           setLoading(false);
@@ -666,7 +667,11 @@ export function ShotAnalyzer() {
     if (handledDeepLinkKeyRef.current === deepLinkKey) return undefined;
     handledDeepLinkKeyRef.current = deepLinkKey;
 
-    const requestId = handleShotSelectRef.current({
+    // Both refs are assigned during render, before this effect runs.
+    const handleShotSelectLatest = /** @type {NonNullable<typeof handleShotSelectRef.current>} */ (
+      handleShotSelectRef.current
+    );
+    const requestId = handleShotSelectLatest({
       item: {
         id: params.id,
         source: /** @type {LibrarySource} */ (serviceSource),
@@ -677,14 +682,17 @@ export function ShotAnalyzer() {
 
     return () => {
       if (requestId == null || requestId !== primarySelectionRequestIdRef.current) return;
-      clearPendingPrimarySelectionRef.current();
+      const clearPendingPrimarySelectionLatest = /** @type {() => void} */ (
+        clearPendingPrimarySelectionRef.current
+      );
+      clearPendingPrimarySelectionLatest();
     };
   }, [apiService, params.id, params.source]);
 
   /**
    * @param {AnalyzerProfile} data
    * @param {string} name
-   * @param {LibrarySource} source
+   * @param {LibrarySource} [source]
    */
   const handleProfileLoad = (data, name, source) => {
     cancelPrimaryProfileSearch();
@@ -776,7 +784,7 @@ export function ShotAnalyzer() {
   const tryLoadCompareSelection = useCallback(
     /**
      * @param {number} requestId
-     * @param {ShotSelectionRequest} selectionRequest
+     * @param {CompareSelectionRequest} selectionRequest
      */
     (requestId, selectionRequest) =>
       executeCompareSelectionLoad({
@@ -798,7 +806,7 @@ export function ShotAnalyzer() {
   const launchCompareSelectionLoad = useCallback(
     /**
      * @param {number} requestId
-     * @param {ShotSelectionRequest} selectionRequest
+     * @param {CompareSelectionRequest} selectionRequest
      */
     (requestId, selectionRequest) => {
       tryLoadCompareSelection(requestId, selectionRequest)
@@ -892,7 +900,7 @@ export function ShotAnalyzer() {
   /**
    * @param {AnalyzerProfile} data
    * @param {string} name
-   * @param {LibrarySource} source
+   * @param {LibrarySource} [source]
    */
   const handleCompareProfileLoad = (data, name, source) => {
     cancelCompareProfileSearch();

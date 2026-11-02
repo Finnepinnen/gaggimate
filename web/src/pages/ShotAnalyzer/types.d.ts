@@ -180,7 +180,7 @@ export interface AnalyzedPhase {
   /** ml */
   water: number;
   /** g */
-  weight: number;
+  weight: number | undefined;
   stats: PhaseStats;
   exit: PhaseExit;
   profilePhase: AnalyzerProfilePhase | null;
@@ -263,24 +263,32 @@ export interface PhaseDelayTracker {
   setPhaseDelayReviewHint: (delayMs: number | null | undefined, reason?: string) => void;
 }
 
+/**
+ * A sample whose cp / fl / v the analyzer reads as numbers. A missing field stays
+ * undefined at runtime and turns the arithmetic into NaN, which never hits a target
+ * and fails the Number.isFinite checks downstream.
+ */
+export type MeasuredSample = ShotSample & { cp: number; fl: number; v: number };
+
 /** Values compared against targets. */
 export interface TargetValues {
-  pressure: number;
-  flow: number;
-  weight: number;
+  /** undefined when the sample lacks the field */
+  pressure: number | undefined;
+  flow: number | undefined;
+  weight: number | undefined;
   pumped: number;
 }
 
 /** Context for evaluating a phase's targets at its anchor sample. */
 export interface TargetContext {
-  anchor?: ShotSample;
-  anchorPumped?: number;
-  flowSlope?: number;
-  pressureSlope?: number;
-  weightRate?: number;
+  anchor: ShotSample;
+  anchorPumped: number;
+  flowSlope: number;
+  pressureSlope: number;
+  weightRate: number;
   isBrewByWeight?: boolean;
   isLastPhase: boolean;
-  lastNonExtendedSample?: ShotSample;
+  lastNonExtendedSample: ShotSample;
   phaseSamples?: ShotSample[];
   pumpedWaterSource?: PumpedWaterSource;
   scaleConnectionBrokenPermanently?: boolean;

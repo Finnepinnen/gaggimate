@@ -549,7 +549,7 @@ export const getDashboardMode = () => {
   if (!globalThis.window?.localStorage) return DASHBOARD_MODES.SIMPLE;
   try {
     const stored = localStorage.getItem(DASHBOARD_MODE_KEY);
-    if (Object.values(DASHBOARD_MODES).includes(stored)) return stored;
+    if (stored !== null && Object.values(DASHBOARD_MODES).includes(stored)) return stored;
     // No mode stored yet: keep existing customizations on Customize; new users
     // start on the Simple preset (identical to the previous default dashboard).
     const hasCustomization = Object.keys(localStorage).some(

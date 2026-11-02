@@ -40,7 +40,7 @@ export function buildPhaseHoverRanges(
           startSampleIndexFloor >= 0 ? cumulativeWaterTotalBySample[startSampleIndexFloor] || 0 : 0,
       };
     })
-    .filter(Boolean);
+    .filter(range => range !== null);
 }
 
 /**

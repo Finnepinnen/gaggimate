@@ -103,6 +103,9 @@ export function StatisticsDetailSectionPanel({
     return null;
   }
 
+  // Every has*Statistics flag except compare is derived from a non-null result.
+  const stats = /** @type {StatisticsResult} */ (result);
+
   const shouldUsePanelSurface =
     resolvedStatisticsDetailSection !== 'metrics' &&
     resolvedStatisticsDetailSection !== 'compare' &&
@@ -123,23 +126,23 @@ export function StatisticsDetailSectionPanel({
       )}
 
       {hasMetricStatistics && resolvedStatisticsDetailSection === 'metrics' && (
-        <MetricsTable metrics={result.metrics} />
+        <MetricsTable metrics={stats.metrics} />
       )}
 
       {hasTrendStatistics && resolvedStatisticsDetailSection === 'trends' && (
         <div className='space-y-4'>
-          <TrendChart key={`statistics-trends-${chartRunKey}`} trends={result.trends} />
-          <ActivityHeatmap trends={result.trends} />
+          <TrendChart key={`statistics-trends-${chartRunKey}`} trends={stats.trends} />
+          <ActivityHeatmap trends={stats.trends} />
         </div>
       )}
 
       {hasProfileGroupStatistics && resolvedStatisticsDetailSection === 'profile' && (
-        <ProfileGroupTable profileGroups={result.profileGroups} showTitle={false} />
+        <ProfileGroupTable profileGroups={stats.profileGroups} showTitle={false} />
       )}
 
       {hasPhaseStatistics && resolvedStatisticsDetailSection === 'phase' && (
         <PhaseStatistics
-          phaseStats={result.phaseStats}
+          phaseStats={stats.phaseStats}
           showTitle={false}
           hideExitReasons={hidePhaseExitReasons}
         />

@@ -6,8 +6,9 @@ import { t } from '@lingui/core/macro';
  * @returns {string}
  */
 export function getPhaseName(shot, phaseNumber) {
-  if (shot.phaseTransitions?.length > 0) {
-    const transition = shot.phaseTransitions.find(t => t.phaseNumber === phaseNumber);
+  const transitions = shot.phaseTransitions;
+  if (transitions && transitions.length > 0) {
+    const transition = transitions.find(t => t.phaseNumber === phaseNumber);
     if (transition?.phaseName) {
       return transition.phaseName;
     }

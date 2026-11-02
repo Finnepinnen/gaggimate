@@ -56,7 +56,7 @@ function buildPhaseNameMap(phaseTransitions = []) {
  */
 function groupSamplesByPhase(samples) {
   return samples.reduce((groups, sample) => {
-    const pNum = sample.phaseNumber;
+    const pNum = String(sample.phaseNumber);
     if (!groups[pNum]) groups[pNum] = [];
     groups[pNum].push(sample);
     return groups;
@@ -130,10 +130,10 @@ function getDelayReviewSummary(analyzedPhases) {
       : null;
   const hideLastPhaseDelayReview = primaryDelayReview?.tablePhaseNumber === analyzedPhases.length;
   const shouldExposeDelayReview = Boolean(primaryDelayReview) && !hideLastPhaseDelayReview;
-  const delayReviewPhaseNumber = shouldExposeDelayReview
-    ? primaryDelayReview.tablePhaseNumber
-    : null;
-  const delayReviewMs = shouldExposeDelayReview ? primaryDelayReview.delayReviewMs : null;
+  const delayReviewPhaseNumber =
+    shouldExposeDelayReview && primaryDelayReview ? primaryDelayReview.tablePhaseNumber : null;
+  const delayReviewMs =
+    shouldExposeDelayReview && primaryDelayReview ? primaryDelayReview.delayReviewMs : null;
 
   return {
     delayReviewHint: shouldExposeDelayReview,
@@ -153,7 +153,10 @@ function resolveRatioTargets(profileData, shotData) {
   if (!profileData?.phases?.some(phase => phase.targets?.some(t => t.type === 'ratio')))
     return profileData;
 
-  const dose = Number.parseFloat(shotData.notes?.doseIn) || Number(profileData.dose) || 0;
+  const dose =
+    Number.parseFloat(/** @type {string} */ (shotData.notes?.doseIn)) ||
+    Number(profileData.dose) ||
+    0;
   return {
     ...profileData,
     phases: profileData.phases.map(phase => ({
@@ -185,6 +188,7 @@ export function calculateShotMetrics(shotData, rawProfileData, settings) {
   const debugEnabled = isAnalyzerDebugEnabled();
   const gSamples = shotData.samples;
   const globalStartTime = gSamples[0].t;
+  const lastSample = gSamples[gSamples.length - 1];
   const pumpedWaterSource = createPumpedWaterSource(gSamples);
 
   // --- 1. PHASE SEPARATION ---
@@ -192,7 +196,8 @@ export function calculateShotMetrics(shotData, rawProfileData, settings) {
   const phases = groupSamplesByPhase(gSamples);
 
   const sortedPhaseKeys = Object.keys(phases).sort((a, b) => Number(a) - Number(b));
-  const lastPhaseKey = sortedPhaseKeys.at(-1);
+  // gSamples is non-empty, so there is at least one phase key.
+  const lastPhaseKey = /** @type {string} */ (sortedPhaseKeys.at(-1));
   const recordedExitReasonByPhase = buildRecordedExitReasonByPhase(shotData);
 
   // --- 2. BREW MODE DETECTION ---
@@ -207,10 +212,10 @@ export function calculateShotMetrics(shotData, rawProfileData, settings) {
   const { hasSlowSampleInterval, maxSampleIntervalMs } = getSlowSampleIntervalSummary(gSamples);
 
   // --- 3. GLOBAL TOTALS ---
-  const gDuration = (gSamples.at(-1).t - gSamples[0].t) / 1000;
+  const gDuration = (lastSample.t - gSamples[0].t) / 1000;
   const gWater = calculatePumpedWater(gSamples, gSamples.length - 1, null, pumpedWaterSource);
   const gWeightSamples = getFinalWeightSamples(gSamples);
-  const gWeight = (getFinalWeightSample(gSamples) || gSamples.at(-1)).v;
+  const gWeight = (getFinalWeightSample(gSamples) || lastSample).v;
 
   // --- 4. PHASE-BY-PHASE ANALYSIS ---
   /** @type {AnalyzedPhase[]} */
@@ -271,13 +276,14 @@ export function calculateShotMetrics(shotData, rawProfileData, settings) {
   });
 
   // --- 5. TOTAL STATS ---
-  const finalSysInfo = gSamples.at(-1).systemInfo || /** @type {Partial<ShotSystemInfo>} */ ({});
+  const finalSysInfo = lastSample.systemInfo || /** @type {Partial<ShotSystemInfo>} */ ({});
 
   /** @type {TotalStats} */
   const totalStats = {
     duration: gDuration,
     water: gWater,
-    weight: gWeight,
+    // TotalStats.weight is typed number; undefined when no sample carries `v`.
+    weight: /** @type {number} */ (gWeight),
     p: getMetricStats(gSamples, 'cp'),
     tp: getMetricStats(gSamples, 'tp'),
     f: getMetricStats(gSamples, 'fl'),

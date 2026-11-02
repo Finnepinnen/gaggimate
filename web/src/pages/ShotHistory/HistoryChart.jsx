@@ -71,7 +71,7 @@ function getChartData(shot) {
   /** @type {PhaseMarker[]} */
   let phaseTransitions = [];
 
-  if (shot.version >= 5 && shot.phaseTransitions) {
+  if (shot.version !== undefined && shot.version >= 5 && shot.phaseTransitions) {
     // Use phase transitions directly from header
     phaseTransitions = shot.phaseTransitions.map(t => ({
       time: (t.sampleIndex * (shot.sampleInterval || 250)) / 1000.0,
@@ -81,7 +81,8 @@ function getChartData(shot) {
     }));
   }
   // No phase tracking for versions before v5
-  const tempValues = ct.map(i => i.y).concat(tt.map(i => i.y));
+  // Math.min/max turn a missing temperature into NaN, as before.
+  const tempValues = /** @type {number[]} */ (ct.map(i => i.y).concat(tt.map(i => i.y)));
   const timeValues = ct.map(i => i.x);
   const minTemp = Math.floor(Math.min(...tempValues));
   const maxTemp = Math.ceil(Math.max(...tempValues));
@@ -90,8 +91,8 @@ function getChartData(shot) {
   const padding = maxTemp - minTemp > 10 ? 2 : 5;
 
   // Check if weight data has any non-zero values
-  const hasWeight = v.some(point => point.y > 0);
-  const hasWeightFlow = vf.some(point => point.y > 0);
+  const hasWeight = v.some(point => (point.y ?? 0) > 0);
+  const hasWeightFlow = vf.some(point => (point.y ?? 0) > 0);
 
   // Create phase annotations
   /** @type {Record<string, object>} */

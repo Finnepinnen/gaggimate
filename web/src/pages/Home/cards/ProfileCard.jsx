@@ -13,7 +13,7 @@ import { parseBinaryIndex, indexToShotList } from '../../ShotHistory/parseBinary
 
 /** @typedef {import('../../../types').ProcessProgress} ProcessProgress */
 /** @typedef {import('../../../types').Profile} Profile */
-/** @typedef {{ maxPressure: number | null, avgFlow: number | null }} FinishedStats */
+/** @typedef {{ maxPressure?: number | null, avgFlow?: number | null }} FinishedStats */
 
 /**
  * @param {object} props
@@ -89,7 +89,7 @@ function FinishedProcessCard({ processInfo, isBrewing, selectedProfile, stats, w
     weightLabel && { key: 'weight', label: t`Weight`, value: weightLabel },
     pressureLabel && { key: 'pressure', label: t`Pressure`, value: pressureLabel },
     flowLabel && { key: 'flow', label: t`Flow`, value: flowLabel },
-  ].filter(Boolean);
+  ].filter(item => !!item);
 
   return (
     <div className='card bg-success/10 border-success/30 flex flex-col gap-1 rounded-xl border p-3'>

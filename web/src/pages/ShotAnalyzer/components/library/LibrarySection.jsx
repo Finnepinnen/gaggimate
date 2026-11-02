@@ -152,7 +152,7 @@ function getLibraryCompareState({
  * @param {string} props.title
  * @param {LibraryItem[]} props.items
  * @param {boolean} props.isShot
- * @param {number | string} props.sectionHeight
+ * @param {number | string | undefined} props.sectionHeight
  * @param {string} props.searchValue
  * @param {string} props.sortKey
  * @param {string} props.sortOrder

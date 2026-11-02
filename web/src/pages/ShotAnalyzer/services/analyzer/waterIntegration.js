@@ -62,7 +62,8 @@ function getIntervalSeconds(startSample, endSample) {
  * @param {number | undefined} endIndex
  */
 function resolveLastIndex(samples, endIndex) {
-  const requestedEndIndex = Number.isInteger(endIndex) ? endIndex : samples.length - 1;
+  const requestedEndIndex =
+    typeof endIndex === 'number' && Number.isInteger(endIndex) ? endIndex : samples.length - 1;
   return Math.min(Math.max(requestedEndIndex, 0), samples.length - 1);
 }
 
@@ -119,12 +120,7 @@ function calculateRecordedPumpedWater(samples, lastIndex, closingSample) {
  * @param {PumpedWaterSource | null} [waterSource]
  * @returns {number} ml
  */
-export function calculatePumpedWater(
-  samples,
-  endIndex = samples?.length - 1,
-  closingSample = null,
-  waterSource = null,
-) {
+export function calculatePumpedWater(samples, endIndex, closingSample = null, waterSource = null) {
   if (!Array.isArray(samples) || samples.length === 0) return 0;
 
   const lastIndex = resolveLastIndex(samples, endIndex);

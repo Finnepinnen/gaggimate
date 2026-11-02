@@ -9,7 +9,10 @@ import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 /** @typedef {import('./StatusBar').StatusBarProps} StatusBarProps */
 /** @typedef {import('../analyzerActionBar/AnalyzerActionBar').AnalyzerActionBarProps} AnalyzerActionBarProps */
 
-/** @param {DragEvent} event */
+/**
+ * @param {DragEvent} event
+ * @returns {event is DragEvent & { dataTransfer: DataTransfer }}
+ */
 function hasFileDrag(event) {
   const types = event?.dataTransfer?.types;
   if (!types) return false;

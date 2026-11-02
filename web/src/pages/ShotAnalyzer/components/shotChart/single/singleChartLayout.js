@@ -272,7 +272,8 @@ export function getSurfaceExternalTooltipState({
   const pointerClientY = Number(sourceChart.$externalTooltipClientY);
   const minClientY = mainRect.top + tooltipState.chartAreaTop;
   const maxClientY = tempRect
-    ? tempRect.top + tempChart.chartArea.bottom
+    ? // tempRect is only set when tempChart has a chartArea.
+      tempRect.top + /** @type {NonNullable<typeof tempChart>} */ (tempChart).chartArea.bottom
     : mainRect.top + tooltipState.chartAreaBottom;
   const fallbackClientY = mainRect.top + tooltipState.anchorY;
   const clampedClientY = Math.min(

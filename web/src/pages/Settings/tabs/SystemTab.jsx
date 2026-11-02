@@ -30,8 +30,8 @@ const imageUrlToBase64 = async blob => {
   });
 };
 
-/** @param {number} rssi dBm */
-const getRssiStatusClass = rssi => {
+/** @param {number} [rssi] dBm; unknown until the first status frame. */
+const getRssiStatusClass = (rssi = 0) => {
   if (rssi < -90) return 'status-error';
   if (rssi < -80) return 'status-warning';
   return 'status-success';
@@ -84,6 +84,9 @@ function OtaProgressView({ phase, progress }) {
 /** @param {{ formData: OtaSettings }} props */
 function StorageAndMemorySection({ formData }) {
   const { t } = useLingui();
+  // The firmware sends heapFree and heapLargest together with heapTotal.
+  const heapFree = /** @type {number} */ (formData.heapFree);
+  const heapLargest = /** @type {number} */ (formData.heapLargest);
   return (
     <Section title={t`Storage & Memory`} className='h-full'>
       <div className='grid grid-cols-1 gap-6'>
@@ -132,22 +135,18 @@ function StorageAndMemorySection({ formData }) {
               <div
                 className='bg-primary h-full transition-all'
                 style={{
-                  width: `${formData.heapTotal > 0 ? ((formData.heapTotal - formData.heapFree) / formData.heapTotal) * 100 : 0}%`,
+                  width: `${formData.heapTotal > 0 ? ((formData.heapTotal - heapFree) / formData.heapTotal) * 100 : 0}%`,
                 }}
               />
             </div>
             <div className='text-base-content/60 text-xs'>
-              {((formData.heapTotal - formData.heapFree || 0) / 1024).toFixed(1)} kB /{' '}
+              {((formData.heapTotal - heapFree || 0) / 1024).toFixed(1)} kB /{' '}
               {(formData.heapTotal / 1024).toFixed(1)} kB (
               {(formData.heapTotal > 0
-                ? ((formData.heapTotal - formData.heapFree) / formData.heapTotal) * 100
+                ? ((formData.heapTotal - heapFree) / formData.heapTotal) * 100
                 : 0
               ).toFixed(2)}
-              %) ({t`Frag:`}{' '}
-              {(formData.heapFree > 0
-                ? 100 - (formData.heapLargest * 100) / formData.heapFree
-                : 0
-              ).toFixed(2)}
+              %) ({t`Frag:`} {(heapFree > 0 ? 100 - (heapLargest * 100) / heapFree : 0).toFixed(2)}
               %)
             </div>
           </div>
@@ -262,7 +261,10 @@ function MaintenanceSection({
 
 export function SystemTab() {
   const { t } = useLingui();
-  const apiService = useContext(ApiServiceContext);
+  // Provided at the app root, so never null here.
+  const apiService = /** @type {import('../../../services/ApiService.js').default} */ (
+    useContext(ApiServiceContext)
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState(/** @type {OtaSettings} */ ({}));
@@ -338,15 +340,14 @@ export function SystemTab() {
     }, 500);
   }, [apiService]);
 
-  /** @type {import('preact').RefObject<HTMLFormElement>} */
-  const formRef = useRef();
+  const formRef = useRef(/** @type {HTMLFormElement | null} */ (null));
 
   const onSubmit = useCallback(
     /** @param {import('preact').JSX.TargetedSubmitEvent<HTMLFormElement>} e */
     async e => {
       e.preventDefault();
       setSubmitting(true);
-      const form = formRef.current;
+      const form = /** @type {HTMLFormElement} */ (formRef.current);
       const data = new FormData(form);
       apiService.send({ tp: 'req:ota-settings', update: true, channel: data.get('channel') });
     },

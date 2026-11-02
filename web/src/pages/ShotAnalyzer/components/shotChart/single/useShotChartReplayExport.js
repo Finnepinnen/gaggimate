@@ -794,7 +794,8 @@ export function useShotChartReplayExport({
       );
       restoreReplayVisualSnapshot(visualSnapshot);
       setReplayExportStatusSafely({ status: 'idle', error: null });
-    } catch (error) {
+    } catch (caught) {
+      const error = /** @type {Error | null | undefined} */ (caught);
       restoreReplayVisualSnapshot(visualSnapshot);
       setReplayExportStatusSafely({
         status: 'error',
@@ -846,7 +847,8 @@ export function useShotChartReplayExport({
       downloadBlob(blob, buildReplayImageFilename(shotData, exportConfig.includeLegend));
       restoreReplayVisualSnapshot(visualSnapshot);
       setReplayExportStatusSafely({ status: 'idle', error: null });
-    } catch (error) {
+    } catch (caught) {
+      const error = /** @type {Error | null | undefined} */ (caught);
       restoreReplayVisualSnapshot(visualSnapshot);
       setReplayExportStatusSafely({
         status: 'error',
@@ -949,7 +951,7 @@ export function useShotChartReplayExport({
       } catch (error) {
         setReplayExportStatusSafely({
           status: 'error',
-          error: error?.message || t`File export failed.`,
+          error: /** @type {Error | null | undefined} */ (error)?.message || t`File export failed.`,
         });
       }
       return;

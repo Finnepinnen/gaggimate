@@ -94,8 +94,11 @@ function getChartData(data) {
   const tempMax = tempValues.length > 0 ? Math.ceil(Math.max(...tempValues) + 10) : 160;
 
   const pressureFlowMin = 0; // Always start at 0 for pressure/flow
+  // Telemetry frames always carry pr/pt, so pressures are set on every history entry.
   const pressureFlowMax =
-    pressureFlowValues.length > 0 ? Math.ceil(Math.max(...pressureFlowValues) + 2) : 16;
+    pressureFlowValues.length > 0
+      ? Math.ceil(Math.max(.../** @type {number[]} */ (pressureFlowValues)) + 2)
+      : 16;
 
   // Create a state key to detect when a new brew starts
   const processState = currentProcess

@@ -25,12 +25,13 @@ import { Trans, useLingui } from '@lingui/react/macro';
 /** @typedef {import('../../types').ShotNotes} ShotNotes */
 
 /**
- * @param {number | null | undefined} v
- * @returns {number | null | undefined}
+ * @template {number | null | undefined} T
+ * @param {T} v
+ * @returns {T}
  */
 function round2(v) {
   if (v == null || Number.isNaN(v)) return v;
-  return Math.round((v + Number.EPSILON) * 100) / 100;
+  return /** @type {T} */ (Math.round((v + Number.EPSILON) * 100) / 100);
 }
 
 /**
@@ -140,7 +141,7 @@ export default function HistoryCard({ shot, onDelete, onLoad, onNotesChanged }) 
         alert(t`Shot uploaded successfully to visualizer.coffee!`);
       } catch (error) {
         console.error('Upload failed:', error);
-        const errorMessage = error.message;
+        const errorMessage = /** @type {Error} */ (error).message;
         alert(t`Upload failed: ${errorMessage}`);
         throw error; // Re-throw to prevent modal from closing
       } finally {

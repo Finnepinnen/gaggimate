@@ -49,12 +49,13 @@ export async function watchAppLifecycle(apiService, notificationService) {
 
   if (nativePlatform() !== 'android') return;
   await loadBackgroundMonitor();
+  const monitor = /** @type {BackgroundMonitorPlugin} */ (BackgroundMonitor);
   const warningLabels = Object.fromEntries(
     WARNINGS.map((/** @type {{ key: string, label: string }} */ w) => [w.key, w.label]),
   );
   effect(() => {
     const { enabled, ...events } = appSettings.value.notifications;
-    BackgroundMonitor.configure({
+    monitor.configure({
       enabled: enabled && machines.value.length > 0,
       machines: machines.value.map(({ name, host }) => ({ name, host })),
       events,

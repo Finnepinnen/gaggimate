@@ -395,7 +395,7 @@ export function useStatisticsSelectionModel({
       const canonical = shotKeyToCanonicalProfile.get(key);
       if (!canonical) continue;
       if (!map.has(canonical)) map.set(canonical, []);
-      map.get(canonical).push(key);
+      /** @type {string[]} */ (map.get(canonical)).push(key);
     }
     return map;
   }, [selectionScopeShots, shotKeyToCanonicalProfile]);
@@ -555,7 +555,7 @@ export function useStatisticsSelectionModel({
     let maxTs = -Infinity;
     for (const shot of candidateFilterState.filteredShots || []) {
       const ts = resolveShotEffectiveTimestampMs(shot, dateBasisMode);
-      if (!Number.isFinite(ts)) continue;
+      if (ts === null || !Number.isFinite(ts)) continue;
       if (ts < minTs) minTs = ts;
       if (ts > maxTs) maxTs = ts;
     }
@@ -592,7 +592,7 @@ export function useStatisticsSelectionModel({
               if (!canonical) return null;
               return nextProfileSet.has(cleanName(canonical).toLowerCase()) ? key : null;
             })
-            .filter(Boolean);
+            .filter(/** @returns {key is string} */ key => Boolean(key));
     setSelectedShotKeys(nextShotKeys);
   };
 
@@ -766,6 +766,7 @@ export function useStatisticsRunExecution({
 }) {
   useEffect(() => {
     if (!runRequest) return;
+    const currentRunRequest = runRequest;
 
     const loadId = ++analyzeLoadIdRef.current;
     let cancelled = false;
@@ -780,7 +781,7 @@ export function useStatisticsRunExecution({
         const entries = await runStatisticsAnalysis({
           isCurrentRun: () => !cancelled && loadId === analyzeLoadIdRef.current,
           onProgress: setProgress,
-          runRequest,
+          runRequest: currentRunRequest,
         });
         if (!entries) return;
 
@@ -870,8 +871,8 @@ export function useStatisticsResultViewState({
     statisticsDetailSection,
   ]);
 
-  const hasProfileGroupStatistics = result?.profileGroups?.length > 0;
-  const hasPhaseStatistics = result?.phaseStats?.length > 0;
+  const hasProfileGroupStatistics = (result?.profileGroups?.length ?? 0) > 0;
+  const hasPhaseStatistics = (result?.phaseStats?.length ?? 0) > 0;
   const hasMetricStatistics = Boolean(result?.metrics && Object.keys(result.metrics).length > 0);
   const hasTrendStatistics = Array.isArray(result?.trends) && result.trends.length > 1;
   const hasStatisticsCompare = Array.isArray(entriesRef.current) && entriesRef.current.length > 0;
@@ -901,8 +902,9 @@ export function useStatisticsResultViewState({
     [entriesRef, result, runRequest],
   );
   const shouldHidePhaseExitReasons = statisticsCompareEntries.length > 2;
-  const builtShotCount = Number.isFinite(result?.summary?.totalShots)
-    ? result.summary.totalShots
+  const builtTotalShots = result?.summary?.totalShots;
+  const builtShotCount = Number.isFinite(builtTotalShots)
+    ? /** @type {number} */ (builtTotalShots)
     : 0;
   const builtProfileCount = useMemo(
     () => getBuiltProfileCount(entriesRef),

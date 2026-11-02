@@ -26,6 +26,8 @@ import {
   removeCompareHoverListeners,
 } from './compareHover';
 
+/** @typedef {import('../tooltip/tooltipTypes').ShotChartInstance} ShotChartInstance */
+
 const HIDDEN_STATIC_TOOLTIP_STATE = createHiddenExternalTooltipState();
 
 /**
@@ -66,22 +68,25 @@ export function CompareChartCanvas({
   useStaticTooltip = false,
 }) {
   const { t } = useLingui();
-  const canvasRef = useRef(null);
-  const chartRef = useRef(null);
-  const containerRef = useRef(null);
-  const scrubberRef = useRef(null);
-  const tooltipRef = useRef(null);
+  const canvasRef = useRef(/** @type {HTMLCanvasElement | null} */ (null));
+  const chartRef = useRef(/** @type {ShotChartInstance | null} */ (null));
+  const containerRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const scrubberRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const tooltipRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const ignoreScrubInputUntilRef = useRef(0);
   const lastPointerScrubAtRef = useRef(0);
-  const hoverFrameRef = useRef(null);
-  const pendingHoverPointRef = useRef(null);
+  // requestAnimationFrame id, or a setTimeout id where rAF is unavailable.
+  const hoverFrameRef = useRef(/** @type {number | null} */ (null));
+  const pendingHoverPointRef = useRef(
+    /** @type {{ clientX: number, clientY: number } | null} */ (null),
+  );
   const [externalTooltipState, setExternalTooltipState] = useState(
     createHiddenExternalTooltipState,
   );
   const [externalTooltipLayout, setExternalTooltipLayout] = useState(
     createHiddenExternalTooltipLayout,
   );
-  const [scrubXValue, setScrubXValue] = useState(null);
+  const [scrubXValue, setScrubXValue] = useState(/** @type {number | null} */ (null));
   const [scrubberInsets, setScrubberInsets] = useState({ left: 0, right: 0 });
 
   const scrubberMin = Number(mobileScrubberRange?.min);
@@ -201,7 +206,7 @@ export function CompareChartCanvas({
         return;
       }
 
-      const xPixel = xScale.getPixelForValue(activeScrubXValue);
+      const xPixel = xScale.getPixelForValue(/** @type {number} */ (activeScrubXValue));
       if (!Number.isFinite(xPixel)) {
         clearCompareChartHover(chart);
         return;
@@ -285,7 +290,9 @@ export function CompareChartCanvas({
       if (!pendingHoverPointRef.current || hoverFrameRef.current != null) return;
       hoverFrameRef.current = globalThis.requestAnimationFrame
         ? globalThis.requestAnimationFrame(flushHoverMove)
-        : globalThis.setTimeout(flushHoverMove, 16);
+        : /** @type {number} */ (
+            /** @type {unknown} */ (globalThis.setTimeout(flushHoverMove, 16))
+          );
     };
     const supportsPointerEvents = Boolean(globalThis.window?.PointerEvent);
     const shouldAttachHover = enableHoverInfo && !(disableDirectHoverOnMobile && useStaticTooltip);
@@ -366,7 +373,7 @@ export function CompareChartCanvas({
       return { display: 'none' };
     }
 
-    const xPixel = xScale.getPixelForValue(activeScrubXValue);
+    const xPixel = xScale.getPixelForValue(/** @type {number} */ (activeScrubXValue));
     if (!Number.isFinite(xPixel)) return { display: 'none' };
 
     const containerRect = containerElement.getBoundingClientRect();

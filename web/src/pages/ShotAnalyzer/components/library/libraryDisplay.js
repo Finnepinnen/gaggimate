@@ -195,9 +195,15 @@ export function getProfileCompareBadgeNumber({
   return null;
 }
 
-/** @param {LibraryProfileItem} item */
+/**
+ * @param {LibraryProfileItem} item
+ * @returns {string}
+ */
 export function getLibraryProfileDeleteKey(item) {
-  return item.source === 'gaggimate' ? item.profileId || item.id : item.label || item.name;
+  // Device profiles always carry an id, browser profiles their name (the IndexedDB key).
+  return /** @type {string} */ (
+    item.source === 'gaggimate' ? item.profileId || item.id : item.label || item.name
+  );
 }
 
 /**

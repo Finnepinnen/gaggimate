@@ -11,6 +11,8 @@ import { calculatePumpedWaterAtSample } from './waterIntegration';
 /** @typedef {import('../../types').TargetValues} TargetValues */
 /** @typedef {import('../../types').TargetCalcValues} TargetCalcValues */
 /** @typedef {{ anchorValue: number, nextValue: number, predictedValue: number }} LookAheadValues */
+/** @typedef {TargetContext & { normalizedScaleDelayMs: number, normalizedSensorDelayMs: number }} ManualTargetContext */
+/** @typedef {import('../../types').MeasuredSample} MeasuredSample */
 
 export const PREDICTION_INTERVAL_MS = 100;
 
@@ -45,14 +47,15 @@ function shouldSkipTarget(target, context) {
   if (context.scaleConnectionBrokenPermanently) return true;
   return (
     context.isLastPhase &&
-    context.lastNonExtendedSample.v > target.value + LAST_PHASE_OVERSHOOT_MAX_G
+    /** @type {number} */ (context.lastNonExtendedSample.v) >
+      target.value + LAST_PHASE_OVERSHOOT_MAX_G
   );
 }
 
 /**
  * @param {AnalyzerTarget} target
  * @param {number} value
- * @param {TargetContext} context
+ * @param {Pick<TargetContext, 'isLastPhase'>} context
  * @returns {boolean}
  */
 export function isTargetHit(target, value, context) {
@@ -125,37 +128,38 @@ export function findTargetMatch(targets, values, delayMs, context) {
  */
 function getLookAheadTargetValues(target, nextSample, delayMs, context) {
   const horizon = Math.max(0, delayMs) / 1000;
+  const anchor = /** @type {MeasuredSample} */ (context.anchor);
+  const next = /** @type {MeasuredSample} */ (nextSample);
 
   if (target.type === 'pressure') {
     return {
-      anchorValue: context.anchor.cp,
-      nextValue: nextSample.cp,
-      predictedValue: Math.max(0, context.anchor.cp + context.pressureSlope * horizon),
+      anchorValue: anchor.cp,
+      nextValue: next.cp,
+      predictedValue: Math.max(0, anchor.cp + context.pressureSlope * horizon),
     };
   }
   if (target.type === 'flow') {
     return {
-      anchorValue: context.anchor.fl,
-      nextValue: nextSample.fl,
-      predictedValue: Math.max(0, context.anchor.fl + context.flowSlope * horizon),
+      anchorValue: anchor.fl,
+      nextValue: next.fl,
+      predictedValue: Math.max(0, anchor.fl + context.flowSlope * horizon),
     };
   }
   if (isWeightTarget(target)) {
     return {
-      anchorValue: context.anchor.v,
-      nextValue: nextSample.v,
-      predictedValue:
-        context.anchor.v + (context.weightRate > 0 ? context.weightRate * horizon : 0),
+      anchorValue: anchor.v,
+      nextValue: next.v,
+      predictedValue: anchor.v + (context.weightRate > 0 ? context.weightRate * horizon : 0),
     };
   }
   if (target.type === 'pumped') {
     const observedPumped = Array.isArray(context.phaseSamples)
       ? calculatePumpedWaterAtSample(context.phaseSamples, nextSample, context.pumpedWaterSource)
-      : context.anchorPumped + context.anchor.fl * horizon;
+      : context.anchorPumped + anchor.fl * horizon;
     return {
       anchorValue: context.anchorPumped,
       nextValue: observedPumped,
-      predictedValue: context.anchorPumped + Math.max(0, context.anchor.fl) * horizon,
+      predictedValue: context.anchorPumped + Math.max(0, anchor.fl) * horizon,
     };
   }
   return null;
@@ -210,45 +214,47 @@ export function findTargetMatchWithDirection(targets, nextSample, context) {
  */
 export function predictTargetValuesAtDelay(delayMs, context) {
   const horizon = Math.max(0, delayMs) / 1000;
+  const anchor = /** @type {MeasuredSample} */ (context.anchor);
   return {
-    pressure: Math.max(0, context.anchor.cp + context.pressureSlope * horizon),
-    flow: Math.max(0, context.anchor.fl + context.flowSlope * horizon),
-    weight: context.anchor.v + (context.weightRate > 0 ? context.weightRate * horizon : 0),
-    pumped: context.anchorPumped + Math.max(0, context.anchor.fl) * horizon,
+    pressure: Math.max(0, anchor.cp + context.pressureSlope * horizon),
+    flow: Math.max(0, anchor.fl + context.flowSlope * horizon),
+    weight: anchor.v + (context.weightRate > 0 ? context.weightRate * horizon : 0),
+    pumped: context.anchorPumped + Math.max(0, anchor.fl) * horizon,
   };
 }
 
 /**
  * @param {AnalyzerTarget} target
- * @param {TargetContext} context
+ * @param {ManualTargetContext} context
  * @returns {{ delayMs: number, value: number } | null}
  */
 function getManualTargetValue(target, context) {
   const scaleDelaySec = context.normalizedScaleDelayMs / 1000;
   const sensorDelaySec = context.normalizedSensorDelayMs / 1000;
+  const anchor = /** @type {MeasuredSample} */ (context.anchor);
 
   if (target.type === 'pressure') {
     return {
       delayMs: context.normalizedSensorDelayMs,
-      value: Math.max(0, context.anchor.cp + context.pressureSlope * sensorDelaySec),
+      value: Math.max(0, anchor.cp + context.pressureSlope * sensorDelaySec),
     };
   }
   if (target.type === 'flow') {
     return {
       delayMs: context.normalizedSensorDelayMs,
-      value: Math.max(0, context.anchor.fl + context.flowSlope * sensorDelaySec),
+      value: Math.max(0, anchor.fl + context.flowSlope * sensorDelaySec),
     };
   }
   if (isWeightTarget(target)) {
     return {
       delayMs: context.normalizedScaleDelayMs,
-      value: context.anchor.v + (context.weightRate > 0 ? context.weightRate * scaleDelaySec : 0),
+      value: anchor.v + (context.weightRate > 0 ? context.weightRate * scaleDelaySec : 0),
     };
   }
   if (target.type === 'pumped') {
     return {
       delayMs: context.normalizedSensorDelayMs,
-      value: context.anchorPumped + Math.max(0, context.anchor.fl) * sensorDelaySec,
+      value: context.anchorPumped + Math.max(0, anchor.fl) * sensorDelaySec,
     };
   }
   return null;
@@ -256,7 +262,7 @@ function getManualTargetValue(target, context) {
 
 /**
  * @param {AnalyzerTarget[]} targets
- * @param {TargetContext} context
+ * @param {ManualTargetContext} context
  * @returns {TargetMatch | null}
  */
 export function findManualTargetMatch(targets, context) {
@@ -279,11 +285,13 @@ export function findManualTargetMatch(targets, context) {
  * @returns {number | undefined}
  */
 function getCalculatedTargetValueAtDelay(target, context) {
+  // Set by buildTargetCalcValues, the only caller.
+  const matchDelayMs = /** @type {number} */ (context.matchDelayMs);
   if (context.observedSample) {
-    return getLookAheadMatchedValue(target, context.observedSample, context.matchDelayMs, context);
+    return getLookAheadMatchedValue(target, context.observedSample, matchDelayMs, context);
   }
 
-  return getTargetValue(target, predictTargetValuesAtDelay(context.matchDelayMs, context));
+  return getTargetValue(target, predictTargetValuesAtDelay(matchDelayMs, context));
 }
 
 /**

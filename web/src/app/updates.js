@@ -58,7 +58,10 @@ export async function checkForUpdate() {
     await CapacitorUpdater.next({ id: bundle.id });
     pendingUpdate.value = manifest.version;
   } catch (err) {
-    console.warn('Update check failed', err?.message || err);
+    console.warn(
+      'Update check failed',
+      /** @type {Error | null | undefined} */ (err)?.message || err,
+    );
   } finally {
     checking = false;
   }

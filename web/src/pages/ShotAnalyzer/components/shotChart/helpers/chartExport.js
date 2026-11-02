@@ -97,7 +97,7 @@ function resolveShotExportStem(shotData, fallbackStem) {
 /**
  * @param {ExportShotNameSource | null | undefined} shotData
  * @param {boolean} includeLegend
- * @param {string} [exportFormat]
+ * @param {string | null} [exportFormat]
  * @returns {string}
  */
 export function buildReplayExportFilename(shotData, includeLegend, exportFormat = 'mp4') {

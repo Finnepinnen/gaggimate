@@ -25,7 +25,7 @@ import {
  *   visibility: import('./types').ChartVisibility,
  *   colors: import('./types').ShotChartColors,
  *   brewModeMeta?: import('./types').BrewModeMeta | null,
- *   usePhaseNumbers?: boolean,
+ *   usePhaseNumbers: boolean,
  * }} params
  */
 export function buildShotChartModel({

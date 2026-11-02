@@ -15,7 +15,10 @@ import { SettingsFormField } from '../../../components/SettingsFormField.jsx';
  */
 export function CalibrationTab({ formData, setField }) {
   const { t } = useLingui();
-  const apiService = useContext(ApiServiceContext);
+  // Provided at the app root, so never null here.
+  const apiService = /** @type {import('../../../services/ApiService.js').default} */ (
+    useContext(ApiServiceContext)
+  );
 
   // Autotune state
   const [autotuneActive, setAutotuneActive] = useState(false);

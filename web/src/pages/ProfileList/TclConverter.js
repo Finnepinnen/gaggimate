@@ -350,7 +350,7 @@ export class TclConverter {
           operator = 'lte';
           valueKey = `exit_${targetType}_under`;
         }
-        if (targetType && operator) {
+        if (targetType && operator && valueKey) {
           const exitValue = this._toSafeFloat(phaseData[valueKey], NaN);
           if (Number.isFinite(exitValue) && exitValue >= 0) {
             targets.push({ type: targetType, operator, value: exitValue });

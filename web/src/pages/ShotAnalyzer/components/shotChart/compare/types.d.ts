@@ -301,7 +301,7 @@ export interface CompareControlsProps {
   legendColorByLabel: Record<string, string>;
   onCompareAlignmentModeChange: ((mode: string) => void) | null;
   onCompareSwap: (() => void) | null;
-  onCompareTargetDisplayModeChange:
+  onCompareTargetDisplayModeChange?:
     | ((mode: import('../../../utils/constants.js').CompareTargetDisplayMode) => void)
     | null;
   onFullDisplayToggle: () => void;

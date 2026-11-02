@@ -124,7 +124,7 @@ export default function VisualizerUploadModal({
                 </strong>{' '}
                 {(shotInfo.duration / 1000).toFixed(1)}s
               </p>
-              {shotInfo.volume > 0 && (
+              {shotInfo.volume != null && shotInfo.volume > 0 && (
                 <p className='text-sm text-gray-600 dark:text-gray-300'>
                   <strong>
                     <Trans>Yield:</Trans>

@@ -136,7 +136,8 @@ export function MobileMetricPager({
 
     const width = event.currentTarget.getBoundingClientRect().width;
     const deltaX = event.clientX - pointerStartXRef.current;
-    const deltaY = event.clientY - pointerStartYRef.current;
+    // Set alongside pointerStartXRef, which was just checked.
+    const deltaY = event.clientY - /** @type {number} */ (pointerStartYRef.current);
     // Let vertical page scrolling win once the gesture is clearly not a horizontal page swipe.
     if (Math.abs(deltaY) > Math.abs(deltaX) * 1.15) {
       setDragOffset(0);
@@ -155,7 +156,8 @@ export function MobileMetricPager({
   const handlePointerEnd = event => {
     if (pointerStartXRef.current === null) return;
     const deltaX = event.clientX - pointerStartXRef.current;
-    const deltaY = event.clientY - pointerStartYRef.current;
+    // Set alongside pointerStartXRef, which was just checked.
+    const deltaY = event.clientY - /** @type {number} */ (pointerStartYRef.current);
     resetDrag();
     if (Math.abs(deltaX) < 32 || Math.abs(deltaX) <= Math.abs(deltaY) * 1.2) return;
 

@@ -21,7 +21,10 @@ const MAHLKONIG_MIN_RECIPES = 4;
  */
 function MahlkonigRecipeProfiles({ formData, onChange }) {
   const { t } = useLingui();
-  const apiService = useContext(ApiServiceContext);
+  // Provided at the app root, so never null here.
+  const apiService = /** @type {import('../../services/ApiService.js').default} */ (
+    useContext(ApiServiceContext)
+  );
   const [lastRecipe, setLastRecipe] = useState(/** @type {number | null} */ (null));
   const { profiles: allProfiles } = useProfileList();
   const profiles = allProfiles.filter(p => !p.utility);

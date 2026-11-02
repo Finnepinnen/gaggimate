@@ -127,12 +127,15 @@ function convertJsonProfile(input) {
  */
 function parseJsonProfile(input) {
   if (input.waterTemperature) {
-    let profile = /** @type {ImportedProfile} */ ({
-      label: input.name,
-      type: 'pro',
-      temperature: input.waterTemperature,
-      phases: [],
-    });
+    // No description (and possibly no name) in a Gaggiuino profile; imported as-is.
+    let profile = /** @type {ImportedProfile} */ (
+      /** @type {unknown} */ ({
+        label: input.name,
+        type: 'pro',
+        temperature: input.waterTemperature,
+        phases: [],
+      })
+    );
 
     /**
      * @param {unknown} v
@@ -144,30 +147,33 @@ function parseJsonProfile(input) {
 
     for (let i = 0; i < input.phases.length; i++) {
       let p = input.phases[i];
-      let phase = /** @type {ProfilePhase} */ ({
-        name: p && typeof p.name === 'string' && p.name.trim() ? p.name : `Phase ${i + 1}`,
-        valve: 1,
-        pump: /** @type {PumpSettings} */ (0),
-        duration: Math.max(p.target.time, p.stopConditions.time) / 1000,
-        targets: [],
-        temperature: isPositive(p.waterTemperature) ? p.waterTemperature : 0,
-        transition: {
-          type: p.target.curve.toLowerCase().replace('_', '-'),
-          duration: p.target.time / 1000,
-          adaptive: true,
-        },
-      });
+      // Gaggiuino phases carry no phase type, so `phase` stays unset as before.
+      let phase = /** @type {ProfilePhase & { targets: PhaseTarget[] }} */ (
+        /** @type {unknown} */ ({
+          name: p && typeof p.name === 'string' && p.name.trim() ? p.name : `Phase ${i + 1}`,
+          valve: 1,
+          pump: /** @type {PumpSettings} */ (0),
+          duration: Math.max(p.target.time, /** @type {number} */ (p.stopConditions.time)) / 1000,
+          targets: [],
+          temperature: isPositive(p.waterTemperature) ? p.waterTemperature : 0,
+          transition: {
+            type: p.target.curve.toLowerCase().replace('_', '-'),
+            duration: p.target.time / 1000,
+            adaptive: true,
+          },
+        })
+      );
       if (p.target.end > 0) {
         if (p.type == 'PRESSURE') {
           phase.pump = {
             target: 'pressure',
             pressure: p.target.end,
-            flow: p.restriction,
+            flow: /** @type {number} */ (p.restriction),
           };
         } else {
           phase.pump = {
             target: 'flow',
-            pressure: p.restriction,
+            pressure: /** @type {number} */ (p.restriction),
             flow: p.target.end,
           };
         }
@@ -359,8 +365,10 @@ function convertStage(stage, index, profileTemperature, resolve) {
       adaptive: false,
     },
   };
-  if (isPositive(stage.temperature_delta) || isPositive(-stage.temperature_delta)) {
-    const overridden = profileTemperature + stage.temperature_delta;
+  // Undefined fails both checks (-undefined is NaN), so the body only sees a number.
+  const delta = /** @type {number} */ (stage.temperature_delta);
+  if (isPositive(delta) || isPositive(-delta)) {
+    const overridden = profileTemperature + delta;
     if (overridden > 0) phase.temperature = Number(overridden.toFixed(2));
   }
   const targets = buildTargets(stage, resolve);
@@ -385,12 +393,13 @@ function pickDescription(display) {
  */
 function convertMeticulousProfile(input) {
   const resolve = buildVariableResolver(input.variables);
+  const temperature = isPositive(input.temperature) ? input.temperature : 93;
   /** @type {ImportedProfile} */
   const profile = {
     label: typeof input.name === 'string' && input.name.trim() ? input.name : 'Imported Profile',
     type: 'pro',
     description: pickDescription(input.display),
-    temperature: isPositive(input.temperature) ? input.temperature : 93,
+    temperature,
     phases: [],
   };
   // Carried as the GaggiMate "image" field; the importer uploads it when the device has an SD card.
@@ -399,7 +408,7 @@ function convertMeticulousProfile(input) {
   }
 
   for (let i = 0; i < input.stages.length; i++) {
-    profile.phases.push(convertStage(input.stages[i], i, profile.temperature, resolve));
+    profile.phases.push(convertStage(input.stages[i], i, temperature, resolve));
   }
 
   // Apply final_weight to every phase as a global overflow cap.

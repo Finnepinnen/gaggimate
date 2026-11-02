@@ -59,7 +59,7 @@ export const METRIC_DEFINITIONS = /** @type {MetricDefinition[]} */ ([
     required: false,
     available: () => true,
     getValue: ds => `${(ds.currentFlow ?? 0).toFixed(1)} ml/s`,
-    getTarget: ds => (ds.targetFlow > 0 ? (ds.targetFlow ?? 0).toFixed(1) : null),
+    getTarget: ds => ((ds.targetFlow ?? 0) > 0 ? (ds.targetFlow ?? 0).toFixed(1) : null),
     unit: ' ml/s',
     adjustable: () => false,
   },
@@ -145,7 +145,11 @@ export const METRIC_DEFINITIONS = /** @type {MetricDefinition[]} */ ([
     labelMsg: msg`Water Level`,
     required: false,
     available: ds => !!ds.tofDistance,
-    getValue: ds => (ds.waterLevelPercent !== null ? `${Math.round(ds.waterLevelPercent)}%` : '—'),
+    // useDashboardState always sets waterLevelPercent (number | null).
+    getValue: ds => {
+      const pct = /** @type {number | null} */ (ds.waterLevelPercent);
+      return pct !== null ? `${Math.round(pct)}%` : '—';
+    },
     getTarget: () => null,
     unit: '%',
     adjustable: () => false,

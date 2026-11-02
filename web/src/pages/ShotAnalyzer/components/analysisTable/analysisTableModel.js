@@ -45,7 +45,7 @@ export function buildAnalysisWarningBadges(results) {
     const rawMaxIntervalMs = results.maxSampleIntervalMs;
     const maxIntervalMs = rawMaxIntervalMs == null ? null : Number(rawMaxIntervalMs);
     const intervalSuffix =
-      Number.isFinite(maxIntervalMs) && maxIntervalMs > 0
+      maxIntervalMs !== null && Number.isFinite(maxIntervalMs) && maxIntervalMs > 0
         ? ` (${Math.round(maxIntervalMs)} ms)`
         : '';
     badges.push({
@@ -142,7 +142,8 @@ function getCompareAccentColor(entry, index) {
 
 /** @param {AnalysisCompareEntry | null | undefined} entry */
 function getCompareAccentStrength(entry) {
-  return Number.isFinite(Number(entry?.accentStrength)) ? Number(entry.accentStrength) : 1;
+  const accentStrength = Number(entry?.accentStrength);
+  return Number.isFinite(accentStrength) ? accentStrength : 1;
 }
 
 /**

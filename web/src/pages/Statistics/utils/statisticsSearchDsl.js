@@ -144,8 +144,9 @@ export function parseStatisticsQuery(queryString) {
       clauses.push({
         field: '__free',
         op: null,
-        value: freeValue.value,
-        exact: freeValue.exact,
+        // error-free results always carry value and exact
+        value: /** @type {string} */ (freeValue.value),
+        exact: /** @type {boolean} */ (freeValue.exact),
         raw: trimmed,
       });
       return;
@@ -210,8 +211,8 @@ export function parseStatisticsQuery(queryString) {
     clauses.push({
       field,
       op: null,
-      value: parsedValue.value,
-      exact: parsedValue.exact,
+      value: /** @type {string} */ (parsedValue.value),
+      exact: /** @type {boolean} */ (parsedValue.exact),
       raw: trimmed,
     });
   });
@@ -336,7 +337,12 @@ export function parseDateExpressionToEpochMs(expr, now = new Date()) {
     return { valueMs: null, hasTime: false, error: absolute.error };
   }
 
-  return { valueMs: absolute.valueMs, hasTime: absolute.hasTime, error: null };
+  // error-free results always carry valueMs and hasTime
+  return {
+    valueMs: /** @type {number} */ (absolute.valueMs),
+    hasTime: /** @type {boolean} */ (absolute.hasTime),
+    error: null,
+  };
 }
 
 /** @param {number} ms */
@@ -443,16 +449,17 @@ function compileDateClause(clause, options) {
     };
   }
 
-  const { valueMs, hasTime } = parsed;
+  const valueMs = /** @type {number} */ (parsed.valueMs);
+  const { hasTime } = parsed;
   const bounds = hasTime ? null : getDayBounds(valueMs);
   const op = clause.op;
 
   /** @type {ShotMetaPredicate} */
   const matcher = shotMeta => {
     const ts = resolveShotEffectiveTimestampMs(shotMeta, options.dateBasisMode);
-    if (!Number.isFinite(ts)) return false;
+    if (ts === null || !Number.isFinite(ts)) return false;
 
-    if (!hasTime) {
+    if (bounds) {
       if (op === '=') return ts >= bounds.start && ts <= bounds.end;
       if (op === '>') return ts > bounds.end;
       if (op === '>=') return ts >= bounds.start;
@@ -545,7 +552,8 @@ function groupShotCandidateClauses({ clauses, now, dateBasisMode, errors }) {
               return null;
             }
 
-            return { ...clause, pinnedValue: parsedPinned.value };
+            // value is only null alongside an error
+            return { ...clause, pinnedValue: /** @type {boolean} */ (parsedPinned.value) };
           })()
         : clause;
 

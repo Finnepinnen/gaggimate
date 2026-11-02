@@ -90,7 +90,7 @@ export function getPhaseWeightRate(samples, isLastPhase) {
 export function getSampleInstantWeightRate(sample) {
   if (!sample) return 0;
   if (sample.vf !== undefined && sample.vf > 0.1) return sample.vf;
-  if (sample.fl > 0.1) return sample.fl;
+  if (sample.fl !== undefined && sample.fl > 0.1) return sample.fl;
   return 0;
 }
 
@@ -200,5 +200,6 @@ export function isPositiveFiniteRate(value) {
  * @returns {ShotSample}
  */
 export function getPhaseEndSample(samples) {
-  return samples.at(-1);
+  // Phase sample arrays are never empty.
+  return /** @type {ShotSample} */ (samples.at(-1));
 }

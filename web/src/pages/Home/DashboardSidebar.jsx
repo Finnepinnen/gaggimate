@@ -10,6 +10,9 @@ import {
   stickyTopSignal,
 } from '../../utils/dashboardManager.js';
 
+/** @typedef {import('../../utils/panelDefinitions.js').PanelDefinition} PanelDefinition */
+/** @typedef {PanelDefinition & Required<Pick<PanelDefinition, 'component' | 'props'>>} RenderablePanel */
+
 function Divider() {
   return <div className='border-base-content/10 border-t' />;
 }
@@ -29,10 +32,10 @@ export function DashboardSidebar({ unified = false }) {
     ...PANEL_DEFINITIONS.filter(p => p.required && !panelOrder.includes(p.id)).map(p => p.id),
   ];
 
-  const visiblePanels = orderedIds
-    .map(id => PANEL_DEFINITIONS.find(p => p.id === id))
-    .filter(Boolean)
-    .filter(p => p.available(ds));
+  // Every PANEL_DEFINITIONS entry has component + props; only the spacer (not in that list) lacks them.
+  const visiblePanels = /** @type {RenderablePanel[]} */ (
+    orderedIds.map(id => PANEL_DEFINITIONS.find(p => p.id === id)).filter(Boolean)
+  ).filter(p => p.available(ds));
 
   // Spacer is excluded here so its position never affects which real panel
   // is considered "first"/"last" for sticky anchoring.
@@ -57,8 +60,10 @@ export function DashboardSidebar({ unified = false }) {
   const spacerIndex = orderedIds.indexOf(SPACER_ID);
   const hasSpacer = spacerIndex !== -1;
   const idsBeforeSpacer = hasSpacer ? new Set(orderedIds.slice(0, spacerIndex)) : null;
-  const topGroup = hasSpacer ? middlePanels.filter(p => idsBeforeSpacer.has(p.id)) : middlePanels;
-  const bottomGroup = hasSpacer ? middlePanels.filter(p => !idsBeforeSpacer.has(p.id)) : [];
+  const topGroup = idsBeforeSpacer
+    ? middlePanels.filter(p => idsBeforeSpacer.has(p.id))
+    : middlePanels;
+  const bottomGroup = idsBeforeSpacer ? middlePanels.filter(p => !idsBeforeSpacer.has(p.id)) : [];
 
   if (unified) {
     return (

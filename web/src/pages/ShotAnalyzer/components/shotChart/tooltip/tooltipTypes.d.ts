@@ -56,13 +56,13 @@ export interface TooltipPhaseSummary {
 export interface PhaseTooltipRow {
   start?: number;
   end?: number;
-  phaseNumber?: number | string;
+  phaseNumber: number | string;
   phaseName?: string;
-  skipNotice?: string;
+  skipNotice?: string | null;
   stopReason?: string;
   stopValue?: string;
-  stopTargetValue?: string;
-  stopType?: string;
+  stopTargetValue?: string | null;
+  stopType?: string | null;
 }
 
 export interface PhaseTooltipGroup {
@@ -101,7 +101,7 @@ export interface ExternalTooltipLayout {
 /** Which metric page a compact static tooltip shows. */
 export interface TooltipMetricContext {
   label?: string;
-  page?: string;
+  page?: string | null;
 }
 
 /** 'default' | 'comparePreview' | 'singleLine' | 'singlePaged' | 'statisticsCompact' | 'titleOnly' */

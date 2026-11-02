@@ -624,7 +624,7 @@ function canvasToBlob(canvas, mimeType) {
 }
 
 /**
- * @param {string} targetFormat 'mp4' | 'webm'
+ * @param {string | null} targetFormat 'mp4' | 'webm' (anything else: webm)
  * @returns {string | null} First MediaRecorder-supported mime type
  */
 function resolveRecorderMimeType(targetFormat) {
@@ -727,10 +727,17 @@ async function recordCanvas(canvas, fps, renderFrames, signal, recorderMimeType)
     recorder.addEventListener('stop', stopHandler);
   });
 
+  // The Promise executor above ran synchronously, so all three handlers are set.
   const cleanup = () => {
-    recorder.removeEventListener('dataavailable', dataHandler);
-    recorder.removeEventListener('error', errorHandler);
-    recorder.removeEventListener('stop', stopHandler);
+    recorder.removeEventListener(
+      'dataavailable',
+      /** @type {(event: BlobEvent) => void} */ (dataHandler),
+    );
+    recorder.removeEventListener(
+      'error',
+      /** @type {(event: Event & { error?: unknown }) => void} */ (errorHandler),
+    );
+    recorder.removeEventListener('stop', /** @type {() => void} */ (stopHandler));
     stream.getTracks().forEach(track => track.stop());
   };
 
@@ -804,13 +811,13 @@ export async function exportReplayVideo({
   const totalDurationSec = Math.max(
     0,
     Number.isFinite(runtime.totalDurationSec)
-      ? runtime.totalDurationSec
+      ? /** @type {number} */ (runtime.totalDurationSec)
       : runtime.maxTime - runtime.shotStartSec,
   );
   const totalFrames = Math.max(
     1,
     Number.isFinite(runtime.frameCount)
-      ? runtime.frameCount
+      ? /** @type {number} */ (runtime.frameCount)
       : Math.ceil(totalDurationSec * EXPORT_FPS),
   );
   const frameDurationMs =

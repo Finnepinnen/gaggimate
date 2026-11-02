@@ -90,7 +90,8 @@ const setProfiles = update => {
 };
 
 const useProfileList = () => {
-  const apiService = useApiService();
+  // Only used under ApiServiceContext.Provider, which always has the service.
+  const apiService = /** @type {import('./ApiService.js').default} */ (useApiService());
 
   const invalidate = useCallback(async () => {
     if (profilesInflight) await profilesInflight;

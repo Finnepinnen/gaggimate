@@ -203,7 +203,12 @@ export function BluetoothTab() {
       console.error('Scan failed:', error);
       updateScaleState({
         scanning: false,
-        connectError: { address: null, reason: 'request_failed', at: Date.now() },
+        // No scale address for a failed scan; ScaleState types `address` as string only.
+        connectError: {
+          address: /** @type {string} */ (/** @type {unknown} */ (null)),
+          reason: 'request_failed',
+          at: Date.now(),
+        },
       });
     }
   }, []);
@@ -242,7 +247,7 @@ export function BluetoothTab() {
 
   const loading = isLoading || isInfoLoading;
   const errorAddress = connectError?.address;
-  const errorMessage = CONNECT_ERROR_MESSAGES[connectError?.reason];
+  const errorMessage = connectError ? CONNECT_ERROR_MESSAGES[connectError.reason] : undefined;
   const scaleName =
     (disconnected && (scaleModelName(disconnected.name) || disconnected.name)) || t`Scale`;
 

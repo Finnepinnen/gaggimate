@@ -15,6 +15,7 @@ import { CALIBRATION_PROFILE, CALIBRATION_PROFILE_ID } from './profile.js';
 import { t } from '@lingui/core/macro';
 
 /** @typedef {import('../../services/machineTypes.js').SocketMessage} SocketMessage */
+/** @typedef {import('../../services/ApiService.js').default} ApiService */
 /** @typedef {'info' | 'ok' | 'warn' | 'err'} LogTone */
 /** @typedef {{ key: number, msg: string, tone: LogTone }} CalibrationLog */
 /** @typedef {ReturnType<typeof analyze>} FlowAnalysis */
@@ -52,7 +53,7 @@ export function usePumpFlowCalibration({ currentCoeffs, onApplied }) {
   const [saved, setSaved] = useState(false);
 
   // WS listeners of the current run as [type, id] pairs.
-  /** @type {import('preact').RefObject<[string, string][]>} */
+  /** @type {import('preact/hooks').MutableRef<[string, string][]>} */
   const listenersRef = useRef([]);
   // Shot id reported by evt:history-shot-saved plus a wake-up for the poll loop.
   /** @type {import('preact').RefObject<number | null>} */
@@ -78,7 +79,9 @@ export function usePumpFlowCalibration({ currentCoeffs, onApplied }) {
   const waitRejectRef = useRef(null);
 
   const detachStatusListener = useCallback(() => {
-    for (const [type, id] of listenersRef.current) apiService.off(type, id);
+    // Listeners are only added by a run, which start() begins after checking apiService.
+    const api = /** @type {ApiService} */ (apiService);
+    for (const [type, id] of listenersRef.current) api.off(type, id);
     listenersRef.current = [];
     savedWakeRef.current?.();
     if (safetyIdRef.current !== null) {
@@ -110,7 +113,8 @@ export function usePumpFlowCalibration({ currentCoeffs, onApplied }) {
 
   const listen = useCallback(
     (/** @type {string} */ type, /** @type {(message: SocketMessage) => void} */ handler) =>
-      listenersRef.current.push([type, apiService.on(type, handler)]),
+      // Only called from a run, which start() begins after checking apiService.
+      listenersRef.current.push([type, /** @type {ApiService} */ (apiService).on(type, handler)]),
     [apiService],
   );
 
@@ -135,7 +139,8 @@ export function usePumpFlowCalibration({ currentCoeffs, onApplied }) {
             const labels = activeWarnings(parseWarningStates(m.warn)).map(w => w.label);
             const warnings = labels.join(', ') || t`unknown`;
             pushLog(t`Starting despite warnings: ${warnings}`, 'warn');
-            apiService.send({ tp: 'req:process:activate', ignoreWarnings: true });
+            const api = /** @type {ApiService} */ (apiService);
+            api.send({ tp: 'req:process:activate', ignoreWarnings: true });
           });
           listen('evt:brew:confirm:cancel', () => {
             waitRejectRef.current = null;
@@ -257,7 +262,7 @@ export function usePumpFlowCalibration({ currentCoeffs, onApplied }) {
       setPhase(PHASE.DONE);
     } catch (err) {
       detachStatusListener();
-      const message = err.message;
+      const message = /** @type {Error} */ (err).message;
       pushLog(t`Error: ${message}`, 'err');
       setPhase(PHASE.ERROR);
     } finally {
@@ -280,14 +285,14 @@ export function usePumpFlowCalibration({ currentCoeffs, onApplied }) {
           pushLog(t`No other profile found to switch back to.`, 'warn');
         }
       } catch (e) {
-        const message = e.message;
+        const message = /** @type {Error} */ (e).message;
         pushLog(t`Could not restore previous profile: ${message}`, 'warn');
       }
       try {
         pushLog(t`Removing calibration profile...`);
         await apiService.request({ tp: 'req:profiles:delete', id: CALIBRATION_PROFILE_ID });
       } catch (e) {
-        const message = e.message;
+        const message = /** @type {Error} */ (e).message;
         pushLog(t`Could not delete calibration profile: ${message}`, 'warn');
       }
       inFlightRef.current = false;
@@ -312,7 +317,7 @@ export function usePumpFlowCalibration({ currentCoeffs, onApplied }) {
       setSaved(true);
       onApplied?.(results.newCoeffs);
     } catch (err) {
-      const message = err.message;
+      const message = /** @type {Error} */ (err).message;
       pushLog(t`Save failed: ${message}`, 'err');
     } finally {
       setSaving(false);

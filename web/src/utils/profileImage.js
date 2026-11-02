@@ -28,7 +28,8 @@ export async function drawToCanvas(blob) {
   const canvas = document.createElement('canvas');
   canvas.width = PROFILE_IMAGE_SIZE;
   canvas.height = PROFILE_IMAGE_SIZE;
-  const ctx = canvas.getContext('2d');
+  // A fresh canvas always yields a 2d context.
+  const ctx = /** @type {CanvasRenderingContext2D} */ (canvas.getContext('2d'));
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, PROFILE_IMAGE_SIZE, PROFILE_IMAGE_SIZE);
   ctx.imageSmoothingQuality = 'high';
@@ -52,9 +53,13 @@ export async function drawToCanvas(blob) {
  * @returns {ArrayBuffer}
  */
 export function canvasToDeviceImage(canvas) {
-  const px = canvas
-    .getContext('2d')
-    .getImageData(0, 0, PROFILE_IMAGE_SIZE, PROFILE_IMAGE_SIZE).data;
+  // The canvas comes from drawToCanvas, which already uses a 2d context.
+  const px = /** @type {CanvasRenderingContext2D} */ (canvas.getContext('2d')).getImageData(
+    0,
+    0,
+    PROFILE_IMAGE_SIZE,
+    PROFILE_IMAGE_SIZE,
+  ).data;
   const out = new DataView(new ArrayBuffer(4 + PROFILE_IMAGE_SIZE * PROFILE_IMAGE_SIZE * 2));
   out.setUint32(0, HEADER, true);
   for (let i = 0, o = 4; i < px.length; i += 4, o += 2) {
@@ -69,7 +74,8 @@ export function deviceImageToCanvas(buffer) {
   const canvas = document.createElement('canvas');
   canvas.width = PROFILE_IMAGE_SIZE;
   canvas.height = PROFILE_IMAGE_SIZE;
-  const ctx = canvas.getContext('2d');
+  // A fresh canvas always yields a 2d context.
+  const ctx = /** @type {CanvasRenderingContext2D} */ (canvas.getContext('2d'));
   const image = ctx.createImageData(PROFILE_IMAGE_SIZE, PROFILE_IMAGE_SIZE);
   for (let i = 0, o = 4; o + 1 < buffer.byteLength; i += 4, o += 2) {
     const v = view.getUint16(o, true);

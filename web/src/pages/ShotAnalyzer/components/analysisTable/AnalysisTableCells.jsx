@@ -298,14 +298,9 @@ function findPhaseTarget(phase, col) {
  * @param {CSSProperties} options.subTextSize
  */
 function getTargetDisplay({ phase, col, unit, subTextSize }) {
-  if (col.id === 'duration' && phase?.profilePhase?.duration > 0) {
-    return (
-      <TargetDeltaDisplay
-        targetVal={phase.profilePhase.duration}
-        unit={unit}
-        subTextSize={subTextSize}
-      />
-    );
+  const profileDuration = phase?.profilePhase?.duration;
+  if (col.id === 'duration' && profileDuration !== undefined && profileDuration > 0) {
+    return <TargetDeltaDisplay targetVal={profileDuration} unit={unit} subTextSize={subTextSize} />;
   }
 
   if (!col.targetType) return null;
@@ -432,7 +427,8 @@ function getCellHitState({ phase, col }) {
  * @param {CSSProperties} options.subTextSize
  */
 function renderBooleanCellContent({ booleanContent, booleanAnomaly, subTextSize }) {
-  const sampleNumber = booleanAnomaly?.sampleInPhase;
+  // Only rendered below when booleanAnomaly is set.
+  const sampleNumber = /** @type {number} */ (booleanAnomaly?.sampleInPhase);
   const sampleValue = String(booleanAnomaly?.value);
   return (
     <div className='flex h-full flex-col items-end justify-center pb-1'>
@@ -525,8 +521,10 @@ export function CellContent({ phase, col, results, isTotal = false }) {
     });
   }
 
+  // Not a total row, so `data` (checked above) is `phase`.
+  const analyzedPhase = /** @type {AnalyzedPhase} */ (phase);
   const isWeightCol = col.id === 'weight';
-  const isHit = getCellHitState({ phase, col });
+  const isHit = getCellHitState({ phase: analyzedPhase, col });
 
   // Keep secondary text proportional to the table text.
   const subTextSize = { fontSize: '0.85em' };
@@ -545,7 +543,7 @@ export function CellContent({ phase, col, results, isTotal = false }) {
     subTextSize,
   });
   const calcIsStopReason = Boolean(calcEntry?.isStopReason);
-  const warningDisplays = getWeightWarnings({ phase, isWeightCol, subTextSize });
+  const warningDisplays = getWeightWarnings({ phase: analyzedPhase, isWeightCol, subTextSize });
 
   return (
     <div className='flex min-h-[2em] flex-col items-end justify-center'>

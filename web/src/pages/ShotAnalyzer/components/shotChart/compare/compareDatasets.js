@@ -465,7 +465,7 @@ function buildMainChartDatasetSpecs({
       showWeightInMainChart,
       showWeightFlowInMainChart,
     }),
-  ].filter(Boolean);
+  ].filter(dataset => dataset !== null);
 }
 
 /**
@@ -478,7 +478,7 @@ function buildMainChartDatasetSpecs({
  *   shotStyle: CompareShotStyle,
  *   compareDatasetMeta: CompareDatasetMeta,
  *   visibility: ChartVisibility,
- *   showTargets: boolean,
+ *   showTargets: boolean | null | undefined,
  * }} params
  * @returns {CompareDataset[]}
  */
@@ -524,7 +524,7 @@ function buildDetailChartDatasetSpecs({
           ...compareDatasetMeta,
         }
       : null,
-  ].filter(Boolean);
+  ].filter(dataset => dataset !== null);
 }
 
 /**

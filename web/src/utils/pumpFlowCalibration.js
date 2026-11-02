@@ -10,7 +10,7 @@ import { t } from '@lingui/core/macro';
 // reported pump flow). Caller multiplies the existing coefficient for that
 // pressure point by this factor to get the new coefficient.
 /**
- * @param {Partial<import('../types').ShotSample>[]} samples Partial until parseBinaryShot is typed.
+ * @param {import('../types').ShotSample[]} samples
  * @param {number} targetPressure bar
  */
 export function analyze(samples, targetPressure) {
@@ -22,12 +22,14 @@ export function analyze(samples, targetPressure) {
   }
   const first = measure[0];
   const last = measure[measure.length - 1];
-  const volume = last.v - first.v;
+  // `v`/`fl` are absent when the shot didn't log them; the NaN flows are rejected below.
+  const volume = /** @type {number} */ (last.v) - /** @type {number} */ (first.v);
   const time = (last.t - first.t) / 1000;
   let pumped = 0;
   let lastT = 0;
   for (const s of measure) {
-    if (lastT !== 0) pumped += (s.fl / 1000) * (s.t - lastT);
+    const fl = /** @type {number} */ (s.fl);
+    if (lastT !== 0) pumped += (fl / 1000) * (s.t - lastT);
     lastT = s.t;
   }
   const actualFlow = volume / time;
@@ -59,7 +61,7 @@ export function analyze(samples, targetPressure) {
 }
 
 /**
- * @param {string | null | undefined} raw "c1,c9"
+ * @param {string} raw "c1,c9"
  * @returns {[number, number]}
  */
 export function parseCoeffs(raw) {
