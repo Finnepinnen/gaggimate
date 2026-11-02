@@ -96,7 +96,7 @@ function DashboardModeDropdown({ editLink, editIcon, editActive, isActive }) {
   // daisyUI dropdowns are focus-driven — blur to close after a selection.
   const selectMode = value => {
     setDashboardMode(value);
-    document.activeElement?.blur();
+    /** @type {HTMLElement | null} */ (document.activeElement)?.blur();
   };
 
   const options = [
@@ -153,6 +153,17 @@ function DashboardModeDropdown({ editLink, editIcon, editActive, isActive }) {
   );
 }
 
+/**
+ * @param {object} props
+ * @param {boolean} [props.collapsed]
+ * @param {import('@fortawesome/fontawesome-svg-core').IconDefinition} props.icon
+ * @param {boolean} [props.isNew]
+ * @param {boolean} [props.isUnread]
+ * @param {string} props.label
+ * @param {string} props.link
+ * @param {string} [props.editLink]
+ * @param {import('@fortawesome/fontawesome-svg-core').IconDefinition} [props.editIcon]
+ */
 function MenuItem({
   collapsed = false,
   icon,
