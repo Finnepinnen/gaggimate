@@ -1,4 +1,3 @@
-// @ts-check
 /* global globalThis */
 /**
  * useShotChartReplayExport.js

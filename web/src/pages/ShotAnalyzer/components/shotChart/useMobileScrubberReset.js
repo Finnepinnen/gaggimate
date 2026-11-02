@@ -1,4 +1,3 @@
-// @ts-check
 /* global globalThis */
 
 import { useEffect } from 'preact/hooks';

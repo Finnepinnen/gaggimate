@@ -1,4 +1,3 @@
-// @ts-check
 import { machine } from '../services/ApiService.js';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { Chart } from 'chart.js';
