@@ -7,9 +7,18 @@ const STORAGE_KEY = 'gaggimate.machines';
 const PROBE_TIMEOUT_MS = 5000;
 const VERSION_TIMEOUT_MS = 3000;
 
+/**
+ * A machine saved in the native app.
+ * @typedef {object} SavedMachine
+ * @property {string} id
+ * @property {string} host "host[:port]"
+ * @property {string} name
+ * @property {string | null} version Last seen display firmware version.
+ */
+
 // PURE annotations let the firmware (non-app) build drop this module entirely.
-export const machines = /* @__PURE__ */ signal([]);
-export const activeMachineId = /* @__PURE__ */ signal(null);
+export const machines = /* @__PURE__ */ signal(/** @type {SavedMachine[]} */ ([]));
+export const activeMachineId = /* @__PURE__ */ signal(/** @type {string | null} */ (null));
 export const activeMachine = /* @__PURE__ */ computed(
   () => machines.value.find(m => m.id === activeMachineId.value) ?? null,
 );
@@ -32,6 +41,10 @@ export async function loadMachines() {
 }
 
 // Persists the new state, then reloads so the UI only ever reflects what's actually stored.
+/**
+ * @param {SavedMachine[]} nextMachines
+ * @param {string | null} nextActiveId
+ */
 async function commit(nextMachines, nextActiveId) {
   const { Preferences } = await import('@capacitor/preferences');
   await Preferences.set({
@@ -46,6 +59,10 @@ async function commit(nextMachines, nextActiveId) {
 const restartUi = () => window.location.assign('/');
 
 // Accepts "gaggimate.local", "192.168.1.20:8080" or a pasted URL and returns "host[:port]".
+/**
+ * @param {string} input
+ * @returns {string}
+ */
 export function normalizeHost(input) {
   const trimmed = input.trim();
   if (!trimmed) return '';
@@ -59,12 +76,20 @@ export function normalizeHost(input) {
 }
 
 // Resolves with the machine's settings and firmware version once both the HTTP API and the live WebSocket answer.
+/**
+ * @param {string} host
+ * @returns {Promise<{ settings: import('../types').Settings, version: string | null }>}
+ */
 export async function probeMachine(host) {
   const settings = await probeHttp(host);
   const version = await probeSocket(host);
   return { settings, version };
 }
 
+/**
+ * @param {string} host
+ * @returns {Promise<import('../types').Settings>}
+ */
 async function probeHttp(host) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
@@ -85,9 +110,15 @@ async function probeHttp(host) {
   }
 }
 
+/**
+ * Resolves with the display firmware version, or null if the machine doesn't report it in time.
+ * @param {string} host
+ * @returns {Promise<string | null>}
+ */
 function probeSocket(host) {
   return new Promise((resolve, reject) => {
     const socket = new WebSocket(`ws://${host}/ws`);
+    /** @param {string} reason */
     const fail = reason => {
       clearTimeout(timeout);
       socket.onopen = socket.onclose = socket.onerror = null;
@@ -98,12 +129,14 @@ function probeSocket(host) {
       () => fail(t({ message: 'timed out', context: 'connection failure' })),
       PROBE_TIMEOUT_MS,
     );
+    /** @param {string | null} version */
     const done = version => {
       clearTimeout(versionTimeout);
       socket.onmessage = socket.onclose = socket.onerror = null;
       socket.close();
       resolve(version);
     };
+    /** @type {ReturnType<typeof setTimeout> | undefined} */
     let versionTimeout;
     // Connected; also ask for the firmware version (read-only), but don't fail if it never answers.
     socket.onopen = () => {
@@ -128,6 +161,9 @@ function probeSocket(host) {
   });
 }
 
+/**
+ * @param {{ host: string, name?: string, version?: string | null }} machine
+ */
 export async function addMachine({ host, name, version = null }) {
   const existing = machines.value.find(m => m.host === host);
   const id = existing?.id ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -139,6 +175,7 @@ export async function addMachine({ host, name, version = null }) {
   restartUi();
 }
 
+/** @param {string} id */
 export async function selectMachine(id) {
   // Picking the machine that's already active just returns to it.
   if (id === activeMachineId.value) {
@@ -149,6 +186,10 @@ export async function selectMachine(id) {
   restartUi();
 }
 
+/**
+ * @param {string} id
+ * @param {string} name
+ */
 export async function renameMachine(id, name) {
   const trimmed = name.trim();
   if (!trimmed) return;
@@ -159,6 +200,10 @@ export async function renameMachine(id, name) {
 }
 
 // Remembers a machine's firmware version so the selector can warn about outdated machines.
+/**
+ * @param {string} id
+ * @param {string | null | undefined} version
+ */
 export async function updateMachineVersion(id, version) {
   const current = machines.value.find(m => m.id === id);
   if (!current || !version || current.version === version) return;
@@ -168,6 +213,7 @@ export async function updateMachineVersion(id, version) {
   );
 }
 
+/** @param {string} id */
 export async function removeMachine(id) {
   const wasActive = id === activeMachineId.value;
   await commit(
@@ -192,6 +238,10 @@ export function machineSocketUrl() {
 export function installMachineApiRewrite() {
   if (!isApp) return;
   const baseFetch = window.fetch;
+  /**
+   * @param {string} url
+   * @returns {string | null} The machine URL, or null to leave the request alone.
+   */
   const rewrite = url => {
     const host = activeMachine.value?.host;
     const resolved = new URL(url, window.location.href);

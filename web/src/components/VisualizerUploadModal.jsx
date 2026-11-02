@@ -5,6 +5,14 @@ import { faEyeSlash } from '@fortawesome/free-solid-svg-icons/faEyeSlash';
 import { faSpinner } from '@fortawesome/free-solid-svg-icons/faSpinner';
 import { Trans, useLingui } from '@lingui/react/macro';
 
+/**
+ * @param {object} props
+ * @param {boolean} props.isOpen
+ * @param {() => void} props.onClose
+ * @param {(username: string, password: string, remember: boolean) => Promise<void>} props.onUpload Rejects to keep the modal open.
+ * @param {boolean} [props.isUploading]
+ * @param {Pick<import('../types').Shot, 'profile' | 'timestamp' | 'duration' | 'volume'>} [props.shotInfo]
+ */
 export default function VisualizerUploadModal({
   isOpen,
   onClose,
@@ -18,6 +26,7 @@ export default function VisualizerUploadModal({
   const [showPassword, setShowPassword] = useState(false);
   const [rememberCredentials, setRememberCredentials] = useState(false);
 
+  /** @param {import('preact').JSX.TargetedEvent<HTMLFormElement, Event>} e */
   const handleSubmit = async e => {
     e.preventDefault();
     if (!username.trim() || !password.trim()) {

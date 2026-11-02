@@ -104,14 +104,19 @@ export function ToggleField({ label, htmlFor, checked, onChange, helpText }) {
   );
 }
 
+/** @typedef {{ id: string, label: import('preact').ComponentChildren, required?: boolean }} SortableDefinition */
+/** @typedef {'visible' | 'available'} DragSource */
+/** @typedef {{ id: string, pos: 'before' | 'after' }} DragOverInfo */
+
 /**
+ * @template {SortableDefinition} D
  * @param {object} props
  * @param {string[]} props.order
- * @param {Record<string, any>} props.definitions
- * @param {{id: string, label: import('preact').ComponentChildren}[]} props.hidden - Definitions not in `order`
+ * @param {D[]} props.definitions
+ * @param {SortableDefinition[]} props.hidden - Definitions not in `order`
  * @param {(order: string[]) => void} props.onOrderChange
  * @param {import('preact').ComponentChildren} [props.emptyMessage]
- * @param {(def: any) => import('preact').ComponentChildren} [props.extraControls]
+ * @param {(def: D) => import('preact').ComponentChildren} [props.extraControls]
  */
 export function SortableConfigurator({
   order,
@@ -124,24 +129,33 @@ export function SortableConfigurator({
   const orderRef = useRef(order);
   orderRef.current = order;
 
+  /** @type {import('preact').RefObject<string | null>} */
   const draggingIdRef = useRef(null);
+  /** @type {import('preact').RefObject<DragSource | null>} */
   const draggingSourceRef = useRef(null);
-  const [draggingId, setDraggingId] = useState(null);
-  const [draggingSource, setDraggingSource] = useState(null);
+  const [draggingId, setDraggingId] = useState(/** @type {string | null} */ (null));
+  const [draggingSource, setDraggingSource] = useState(/** @type {DragSource | null} */ (null));
+  /** @type {import('preact').RefObject<DragOverInfo | null>} */
   const dragOverInfoRef = useRef(null);
-  const [dragOverInfo, setDragOverInfo] = useState(null);
+  const [dragOverInfo, setDragOverInfo] = useState(/** @type {DragOverInfo | null} */ (null));
 
+  /** @param {DragOverInfo | null} info */
   const updateDragOver = info => {
     dragOverInfoRef.current = info;
     setDragOverInfo(info);
   };
 
+  /**
+   * @param {DragEvent} e
+   * @param {string} id
+   * @param {DragSource} source
+   */
   const startDrag = (e, id, source) => {
     draggingIdRef.current = id;
     draggingSourceRef.current = source;
     setDraggingId(id);
     setDraggingSource(source);
-    e.dataTransfer.effectAllowed = 'move';
+    /** @type {DataTransfer} */ (e.dataTransfer).effectAllowed = 'move';
   };
 
   const endDrag = () => {
@@ -152,6 +166,10 @@ export function SortableConfigurator({
     updateDragOver(null);
   };
 
+  /**
+   * @param {string} id
+   * @param {'up' | 'down'} dir
+   */
   const move = (id, dir) => {
     const idx = order.indexOf(id);
     if (idx === -1) return;
@@ -162,12 +180,14 @@ export function SortableConfigurator({
     onOrderChange(next);
   };
 
+  /** @param {string} id */
   const remove = id => {
     const def = definitions.find(d => d.id === id);
     if (def?.required) return;
     onOrderChange(order.filter(oid => oid !== id));
   };
 
+  /** @param {string} id */
   const add = id => {
     if (order.includes(id)) return;
     onOrderChange([...order, id]);

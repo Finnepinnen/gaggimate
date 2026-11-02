@@ -7,6 +7,7 @@ import { useLingui } from '@lingui/react/macro';
  */
 export function Spinner({ size = 8, className = '' }) {
   const { t } = useLingui();
+  /** @type {Record<number, string>} */
   const sizeMap = {
     4: 'loading-xs',
     8: 'loading-md',

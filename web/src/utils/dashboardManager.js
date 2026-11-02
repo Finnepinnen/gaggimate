@@ -26,6 +26,7 @@ export const getDashboardLayout = () => {
 
 export const dashboardLayoutSignal = signal(getDashboardLayout());
 
+/** @param {string | null | undefined} layout */
 export const setDashboardLayout = layout => {
   if (layout === null || layout === undefined) return false;
   try {
@@ -50,6 +51,7 @@ export const getDashboardCardMode = () => {
 
 export const dashboardCardModeSignal = signal(getDashboardCardMode());
 
+/** @param {string} mode */
 export const setDashboardCardMode = mode => {
   try {
     localStorage.setItem(DASHBOARD_CARD_MODE_KEY, mode);
@@ -72,6 +74,7 @@ const isMobileViewport = () =>
     '(max-width: 768px), (max-height: 768px) and (orientation: landscape)',
   ).matches;
 
+/** @returns {string[]} */
 export const getMetricOrder = () => {
   const isMobile = isMobileViewport();
   const defaultOrder = isMobile ? [...DEFAULT_METRIC_ORDER_MOBILE] : [...DEFAULT_METRIC_ORDER];
@@ -89,6 +92,7 @@ export const getMetricOrder = () => {
 
 export const metricOrderSignal = signal(getMetricOrder());
 
+/** @param {string[]} ids */
 export const setMetricOrder = ids => {
   if (!Array.isArray(ids)) return false;
   try {
@@ -107,6 +111,7 @@ const DOSE_PANEL_INITIALIZED_KEY = 'smartDosePanelInitialized';
 
 const DEFAULT_PANEL_ORDER = ['mode', 'profile', 'metrics', 'dose', 'watertank', 'action'];
 
+/** @returns {string[]} */
 export const getPanelOrder = () => {
   if (!globalThis.window?.localStorage) {
     return [...DEFAULT_PANEL_ORDER];
@@ -131,6 +136,7 @@ export const getPanelOrder = () => {
 
 export const panelOrderSignal = signal(getPanelOrder());
 
+/** @param {string[]} ids */
 export const setPanelOrder = ids => {
   if (!Array.isArray(ids)) return false;
   try {
@@ -157,6 +163,7 @@ export const getStickyBottom = () => {
 
 export const stickyBottomSignal = signal(getStickyBottom());
 
+/** @param {boolean} value */
 export const setStickyBottom = value => {
   try {
     localStorage.setItem(DASHBOARD_STICKY_BOTTOM_KEY, String(value));
@@ -182,6 +189,7 @@ export const getStickyTop = () => {
 
 export const stickyTopSignal = signal(getStickyTop());
 
+/** @param {boolean} value */
 export const setStickyTop = value => {
   try {
     localStorage.setItem(DASHBOARD_STICKY_TOP_KEY, String(value));
@@ -207,6 +215,7 @@ export const getShowRecentShots = () => {
 
 export const showRecentShotsSignal = signal(getShowRecentShots());
 
+/** @param {boolean} value */
 export const setShowRecentShots = value => {
   try {
     localStorage.setItem(DASHBOARD_SHOW_RECENT_SHOTS_KEY, String(value));
@@ -234,6 +243,7 @@ export const getMetricsColumns = () => {
 
 export const metricsColumnsSignal = signal(getMetricsColumns());
 
+/** @param {number} n */
 export const setMetricsColumns = n => {
   if (!Number.isInteger(n) || n < 1 || n > 4) return false;
   try {
@@ -250,6 +260,7 @@ export const setMetricsColumns = n => {
 const DASHBOARD_COMPACT_PANELS_KEY = 'dashboardCompactPanels';
 const DEFAULT_COMPACT_PANELS_MOBILE = ['profile', 'favorites', 'metrics'];
 
+/** @returns {string[]} */
 export const getCompactPanels = () => {
   const isMobile = isMobileViewport();
   const defaultPanels = isMobile ? [...DEFAULT_COMPACT_PANELS_MOBILE] : [];
@@ -265,6 +276,7 @@ export const getCompactPanels = () => {
 
 export const compactPanelsSignal = signal(getCompactPanels());
 
+/** @param {string[]} ids */
 export const setCompactPanels = ids => {
   if (!Array.isArray(ids)) return false;
   try {
@@ -276,6 +288,7 @@ export const setCompactPanels = ids => {
   }
 };
 
+/** @param {string} id */
 export const toggleCompactPanel = id => {
   const current = compactPanelsSignal.value;
   const next = current.includes(id) ? current.filter(x => x !== id) : [...current, id];
@@ -306,6 +319,7 @@ export const getMetricsLastRowFill = () => {
 
 export const metricsLastRowFillSignal = signal(getMetricsLastRowFill());
 
+/** @param {string} value */
 export const setMetricsLastRowFill = value => {
   if (!Object.values(METRICS_LAST_ROW_FILLS).includes(value)) return false;
   try {
@@ -334,6 +348,7 @@ export const getProfileChartHeight = () => {
 
 export const profileChartHeightSignal = signal(getProfileChartHeight());
 
+/** @param {number} n */
 export const setProfileChartHeight = n => {
   if (!Number.isInteger(n) || n < 64 || n > 256) return false;
   try {
@@ -369,6 +384,7 @@ export const getColumnSpacing = () => {
 
 export const columnSpacingSignal = signal(getColumnSpacing());
 
+/** @param {string} value */
 export const setColumnSpacing = value => {
   if (!Object.values(COLUMN_SPACINGS).includes(value)) return false;
   try {
@@ -385,6 +401,7 @@ export const setColumnSpacing = value => {
 const DASHBOARD_SHOT_METRIC_SLOTS_KEY = 'dashboardShotMetricSlots';
 const DEFAULT_SHOT_METRIC_SLOTS = ['duration', 'weight', 'maxPressure'];
 
+/** @returns {string[]} */
 export const getShotMetricSlots = () => {
   if (!globalThis.window?.localStorage) {
     return [...DEFAULT_SHOT_METRIC_SLOTS];
@@ -399,6 +416,7 @@ export const getShotMetricSlots = () => {
 
 export const shotMetricSlotsSignal = signal(getShotMetricSlots());
 
+/** @param {string[]} slots Exactly three slot ids. */
 export const setShotMetricSlots = slots => {
   if (!Array.isArray(slots) || slots.length !== 3) return false;
   try {
@@ -414,6 +432,7 @@ export const setShotMetricSlots = slots => {
 
 export const clock24hSignal = signal(false);
 
+/** @param {unknown} value Coerced to boolean. */
 export const setClock24h = value => {
   clock24hSignal.value = !!value;
 };
@@ -435,6 +454,7 @@ export const getRecentShotCount = () => {
 
 export const recentShotCountSignal = signal(getRecentShotCount());
 
+/** @param {number} n */
 export const setRecentShotCount = n => {
   if (!Number.isInteger(n) || n < 1 || n > 8) return false;
   try {
@@ -456,8 +476,27 @@ export const DASHBOARD_MODES = {
   CUSTOM: 'custom',
 };
 
+/**
+ * @typedef {object} DashboardPreset
+ * @property {string} layout
+ * @property {string} cardMode
+ * @property {() => string[]} metricOrder
+ * @property {string[]} panelOrder
+ * @property {boolean} stickyTop
+ * @property {boolean} stickyBottom
+ * @property {boolean} showRecentShots
+ * @property {number} recentShotCount
+ * @property {number} metricsColumns
+ * @property {string} metricsLastRowFill
+ * @property {() => string[]} compactPanels
+ * @property {number} profileChartHeight
+ * @property {string} columnSpacing
+ * @property {string[]} shotMetricSlots
+ */
+
 // Preset values per mode; function values are resolved at apply time so
 // viewport-dependent choices track the device the preset is applied on.
+/** @type {Record<string, DashboardPreset>} */
 const DASHBOARD_PRESETS = {
   [DASHBOARD_MODES.SIMPLE]: {
     // Matches the pre-preset default dashboard.
@@ -499,6 +538,7 @@ const DASHBOARD_PRESETS = {
 };
 
 // Binds each preset key to its signal and its stored-customization getter.
+/** @type {{ key: keyof DashboardPreset, signal: import('@preact/signals').Signal<unknown>, get: () => unknown }[]} */
 const DASHBOARD_SETTING_BINDINGS = [
   { key: 'layout', signal: dashboardLayoutSignal, get: getDashboardLayout },
   { key: 'cardMode', signal: dashboardCardModeSignal, get: getDashboardCardMode },
@@ -537,6 +577,7 @@ export const dashboardModeSignal = signal(getDashboardMode());
 // Points the setting signals at the preset values (Simple/Advanced) or back at
 // the stored customization (Customize). Stored per-setting keys are never
 // overwritten, so switching to a preset and back restores the customization.
+/** @param {string} mode */
 const applyDashboardSettings = mode => {
   const preset = DASHBOARD_PRESETS[mode];
   for (const binding of DASHBOARD_SETTING_BINDINGS) {
@@ -546,6 +587,7 @@ const applyDashboardSettings = mode => {
   }
 };
 
+/** @param {string} mode */
 export const setDashboardMode = mode => {
   if (!Object.values(DASHBOARD_MODES).includes(mode)) return false;
   try {

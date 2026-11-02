@@ -47,6 +47,7 @@ const DashboardSettings = lazy(() =>
 );
 
 // Created in boot() so the app knows which machine to connect to first.
+/** @type {ApiService} */
 let apiService;
 const DESKTOP_NAV_COLLAPSED_STORAGE_KEY = 'gaggimate.desktopNavCollapsed';
 
@@ -63,7 +64,9 @@ function readInitialDesktopNavCollapsed() {
   }
 }
 
+/** @param {string} to */
 const RedirectTo = to =>
+  /** @returns {null} */
   function Redirect() {
     const loc = useLocation();
     useEffect(() => {

@@ -178,6 +178,7 @@ export default class ApiService {
     const rid = uuidv4();
     const message = { ...data, rid };
     return new Promise((resolve, reject) => {
+      /** @type {ReturnType<typeof setTimeout> | undefined} */
       let timeoutId;
 
       // Create a listener for the response with matching rid
@@ -399,9 +400,14 @@ export const updateScaleState = patch => {
   machine.value = { ...machine.value, scale: { ...machine.value.scale, ...patch } };
 };
 
+/** @typedef {import('../types').Settings} Settings */
+
+/** @type {Promise<Settings> | null} */
 let settingsCache = null;
+/** @type {Settings | null} */
 let settingsData = null;
 
+/** @returns {Promise<Settings>} */
 export const prefetchSettings = () => {
   if (!settingsCache) {
     settingsCache = fetch('/api/settings')
@@ -411,7 +417,7 @@ export const prefetchSettings = () => {
         }
         return res.json();
       })
-      .then(data => {
+      .then((/** @type {Settings} */ data) => {
         settingsData = data;
         return data;
       })
@@ -425,6 +431,7 @@ export const prefetchSettings = () => {
 
 export const getCachedSettings = () => settingsData;
 
+/** @param {Settings} data */
 export const updateSettingsCache = data => {
   settingsData = data;
   settingsCache = Promise.resolve(data);

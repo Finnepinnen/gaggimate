@@ -6,6 +6,10 @@ import { parseBinaryShot } from '../../pages/ShotHistory/parseBinaryShot.js';
 import { SLOG_FETCH_DELAY_MS, SLOG_FETCH_RETRIES } from './constants.js';
 import { t } from '@lingui/core/macro';
 
+/** @typedef {import('../../types').ShotIndexEntry} ShotIndexEntry */
+/** @typedef {import('../../types').ShotLog} ShotLog */
+/** @typedef {(message: string) => void} WaitCallback */
+
 const SHOT_FLAG_DELETED = 0x02;
 const SLOG_HEADER_V4 = 128;
 const SLOG_HEADER_V5 = 512;
@@ -14,6 +18,7 @@ const SLOG_HEADER_V5 = 512;
 // least one sample byte past it. The header size depends on the version byte
 // (offset 4): v≤4 = 128 B, v≥5 = 512 B. The previous fixed 128 B check would
 // have accepted an empty (header-only) v5 file and parsed it as 0 samples.
+/** @param {ArrayBuffer} buf */
 function isSlogReady(buf) {
   if (buf.byteLength < 16) return false;
   const version = new DataView(buf).getUint8(4);
@@ -21,17 +26,25 @@ function isSlogReady(buf) {
   return buf.byteLength > headerSize;
 }
 
+/** @returns {Promise<ShotIndexEntry[]>} Non-deleted index entries. */
 export async function fetchShotIndex() {
   const r = await fetch('/api/history/index.bin', { cache: 'no-store' });
   if (r.status === 404) return [];
   if (!r.ok) throw new Error(`GET index.bin ${r.status}`);
   const buf = await r.arrayBuffer();
-  return parseBinaryIndex(buf).entries.filter(e => !(e.flags & SHOT_FLAG_DELETED));
+  // parseBinaryIndex is only documented as returning Object.
+  const index = /** @type {{ entries: ShotIndexEntry[] }} */ (parseBinaryIndex(buf));
+  return index.entries.filter(e => !(e.flags & SHOT_FLAG_DELETED));
 }
 
 // Retries until the firmware has flushed the .slog header to flash. The
 // firmware can return 404 while the file is still being created — treat that
 // (and a too-short response body) as "not ready yet" and keep polling.
+/**
+ * @param {number} id
+ * @param {WaitCallback} [onWait]
+ * @returns {Promise<ArrayBuffer>}
+ */
 async function fetchShotReady(id, onWait) {
   const padded = String(id).padStart(6, '0');
   for (let attempt = 1; attempt <= SLOG_FETCH_RETRIES; attempt++) {
@@ -52,12 +65,22 @@ async function fetchShotReady(id, onWait) {
   throw new Error(t`Shot file remained empty after ${seconds}s`);
 }
 
+/**
+ * @param {number} id
+ * @param {WaitCallback} [onWait]
+ * @returns {Promise<ShotLog>}
+ */
 export async function fetchAndParseShot(id, onWait) {
   const buf = await fetchShotReady(id, onWait);
-  return parseBinaryShot(buf, String(id));
+  // parseBinaryShot builds samples dynamically, so its inferred sample type is `{}`.
+  return /** @type {ShotLog} */ (parseBinaryShot(buf, String(id)));
 }
 
 // Partial POST: the firmware only changes the fields a request carries (GM-214).
+/**
+ * @param {string} coeffs New `pumpModelCoeffs`, "X,Y".
+ * @returns {Promise<import('../../types').Settings>} The updated settings.
+ */
 export async function postCoefficients(coeffs) {
   const body = new URLSearchParams({ pumpModelCoeffs: coeffs }).toString();
   const r = await fetch('/api/settings', {

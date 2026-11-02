@@ -3,9 +3,23 @@ import ApiService, { createMachineState } from '../services/ApiService.js';
 import { activeMachineId } from './machines.js';
 
 // One shared, ref-counted live connection per non-active machine (notifications + setup screen).
+/** @typedef {import('./machines.js').SavedMachine} SavedMachine */
+/** @typedef {import('@preact/signals').Signal<import('../types').MachineState>} MachineStateSignal */
+
+/**
+ * @typedef {object} MachineConnection
+ * @property {ApiService} api
+ * @property {() => void} release Drops this reference; the socket closes with the last one.
+ */
+
+/** @type {Map<string, { api: ApiService, refs: number }>} */
 const connections = new Map();
 let suspended = false;
 
+/**
+ * @param {Pick<SavedMachine, 'host'>} machine
+ * @returns {MachineConnection}
+ */
 export function acquireConnection(machine) {
   let entry = connections.get(machine.host);
   if (!entry) {
@@ -42,8 +56,13 @@ export function resumeConnections() {
 }
 
 // Live state signals of the non-active saved machines, by id, held only while enabled.
+/**
+ * @param {SavedMachine[]} saved
+ * @param {boolean} [enabled]
+ * @returns {Record<string, MachineStateSignal>} Keyed by machine id.
+ */
 export function useMachinePeeks(saved, enabled = true) {
-  const [states, setStates] = useState({});
+  const [states, setStates] = useState(/** @type {Record<string, MachineStateSignal>} */ ({}));
   const key = enabled ? saved.map(m => `${m.id}@${m.host}`).join(',') : '';
 
   useEffect(() => {

@@ -19,6 +19,7 @@ export function getStoredTheme() {
   }
 }
 
+/** @param {string} theme */
 export function setStoredTheme(theme) {
   try {
     if (AVAILABLE_THEMES.includes(theme)) {
@@ -33,6 +34,7 @@ export function setStoredTheme(theme) {
   }
 }
 
+/** @param {string} theme */
 export function applyTheme(theme) {
   if (!AVAILABLE_THEMES.includes(theme)) {
     return;
@@ -42,6 +44,7 @@ export function applyTheme(theme) {
 }
 
 export function getAvailableThemes() {
+  /** @type {Record<string, string>} */
   const labels = {
     system: t({ message: 'System', context: 'theme' }),
     light: t({ message: 'Light', context: 'theme' }),
@@ -68,7 +71,8 @@ export function initializeTheme() {
 }
 
 // Simple function to handle theme change from select element
+/** @param {Event} event Change event of a theme <select>. */
 export function handleThemeChange(event) {
-  const theme = event.target.value;
+  const theme = /** @type {HTMLSelectElement} */ (event.target).value;
   setStoredTheme(theme);
 }

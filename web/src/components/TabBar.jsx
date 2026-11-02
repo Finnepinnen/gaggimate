@@ -48,12 +48,17 @@ export default function TabBar({ tabs, activeTab, onTabChange, basePath, classNa
     active?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }, [activeTab]);
 
+  /** @param {number} direction -1 for left, 1 for right */
   const scrollByPage = direction => {
     const el = scrollRef.current;
     if (!el) return;
     el.scrollBy({ left: direction * el.clientWidth * 0.7, behavior: 'smooth' });
   };
 
+  /**
+   * @param {string} tabId
+   * @param {MouseEvent} event
+   */
   const handleTabClick = (tabId, event) => {
     if (basePath) {
       event.preventDefault();

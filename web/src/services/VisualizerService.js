@@ -7,6 +7,38 @@
 
 import { t } from '@lingui/core/macro';
 
+/** @typedef {import('../types').Profile} Profile */
+/** @typedef {import('../types').ShotNotes} ShotNotes */
+
+/**
+ * The parts of a history shot the upload reads.
+ * @typedef {Partial<Pick<import('../types').Shot, 'samples' | 'timestamp' | 'profile' | 'notes'>>} VisualizerShotInput
+ */
+
+/**
+ * Sample as sent to visualizer.coffee; missing fields are sent as 0.
+ * @typedef {Required<Pick<import('../types').ShotSample, 't' | 'cp' | 'fl' | 'tp' | 'tf' | 'tt' | 'ct' | 'v' | 'ev' | 'vf' | 'pf'>>} VisualizerSample
+ */
+
+/**
+ * Gaggimate-style shot file accepted by the visualizer.coffee upload API.
+ * @typedef {object} VisualizerShotFile
+ * @property {number} timestamp Unix epoch seconds.
+ * @property {{ label: string } & Partial<Pick<Profile, 'id' | 'type' | 'description' | 'temperature' | 'phases'>>} profile
+ * @property {VisualizerSample[]} samples
+ * @property {string} [bean_weight]
+ * @property {string} [drink_weight]
+ * @property {string} [grinder_model]
+ * @property {string} [grinder_setting]
+ * @property {number} [espresso_enjoyment] 0..100
+ * @property {string} [espresso_notes]
+ * @property {string} [bean_brand]
+ * @property {string} [bean_type]
+ * @property {string} [barista]
+ * @property {string} [roast_level]
+ * @property {string} [roast_date]
+ */
+
 export class VisualizerService {
   constructor() {
     this.baseUrl = 'https://visualizer.coffee/api/shots/upload';
@@ -14,9 +46,9 @@ export class VisualizerService {
 
   /**
    * Convert shot data from gaggimate format to visualizer.coffee format
-   * @param {Object} shotData - Shot data from gaggimate
-   * @param {Object} profileData - Optional full profile data from ProfileManager
-   * @returns {Object} - Formatted data for visualizer.coffee
+   * @param {VisualizerShotInput} shotData - Shot data from gaggimate
+   * @param {Profile | null} [profileData] - Optional full profile data from ProfileManager
+   * @returns {VisualizerShotFile} - Formatted data for visualizer.coffee
    */
   // Format shot data as a Gaggimate-style shot file for visualizer.coffee API
   formatShotData(shotData, profileData = null) {
@@ -48,7 +80,7 @@ export class VisualizerService {
     }));
 
     // Extract shot notes data for enhanced metadata
-    const notes = shotData.notes || {};
+    const notes = /** @type {ShotNotes} */ (shotData.notes || {});
 
     // Convert 0-5 rating to 0-100 enjoyment scale
     // Default to 75 (3.75 stars) if no rating provided
@@ -60,6 +92,7 @@ export class VisualizerService {
     }
 
     // Parse numeric values safely
+    /** @param {string | undefined} value */
     const parseNumeric = value => {
       if (!value || value === '') return '';
       const parsed = parseFloat(value);
@@ -67,6 +100,7 @@ export class VisualizerService {
     };
 
     // Create Gaggimate-style shot file with enhanced metadata from shot notes
+    /** @type {VisualizerShotFile} */
     const shotFile = {
       timestamp,
       profile: profileData
@@ -103,11 +137,11 @@ export class VisualizerService {
 
   /**
    * Upload shot to visualizer.coffee
-   * @param {Object} shot - Shot data from gaggimate
+   * @param {VisualizerShotInput} shot - Shot data from gaggimate
    * @param {string} username - Visualizer.coffee username
    * @param {string} password - Visualizer.coffee password
-   * @param {Object} profileData - Optional full profile data from ProfileManager
-   * @returns {Promise<Object>} - Upload response
+   * @param {Profile | null} [profileData] - Optional full profile data from ProfileManager
+   * @returns {Promise<unknown>} - Upload response JSON
    */
   async uploadShot(shot, username, password, profileData = null) {
     if (!username || !password) {
@@ -166,7 +200,7 @@ export class VisualizerService {
 
   /**
    * Validate shot data before upload
-   * @param {Object} shot - Shot data to validate
+   * @param {VisualizerShotInput | null | undefined} shot - Shot data to validate
    * @returns {boolean} - True if valid
    */
   validateShot(shot) {

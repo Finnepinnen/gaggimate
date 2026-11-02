@@ -2,6 +2,7 @@ import { signal } from '@preact/signals';
 import { appSettings } from './appSettings.js';
 
 // Web bundles are published next to the firmware: stable on the latest release, nightly on the nightly pre-release.
+/** @type {Record<import('./appSettings.js').UpdateChannel, string>} */
 const MANIFEST_URLS = {
   stable: 'https://github.com/jniebuhr/gaggimate/releases/latest/download/app-web.json',
   nightly: 'https://github.com/jniebuhr/gaggimate/releases/download/nightly/app-web.json',
@@ -11,7 +12,7 @@ const FAILED_KEY = 'gaggimate.failedBundle';
 // Version of the web bundle that is running right now (stamped at build time).
 export const bundleVersion = import.meta.env.BUNDLE_VERSION;
 // Version downloaded and waiting to be applied on the next background, if any.
-export const pendingUpdate = /* @__PURE__ */ signal(null);
+export const pendingUpdate = /* @__PURE__ */ signal(/** @type {string | null} */ (null));
 
 let checking = false;
 
@@ -64,6 +65,10 @@ export async function checkForUpdate() {
 }
 
 // A bundle may rely on native code added in a later store release.
+/**
+ * @param {string | undefined} minAppVersion
+ * @returns {Promise<boolean>}
+ */
 async function nativeSupports(minAppVersion) {
   if (!minAppVersion) return true;
   const { App } = await import('@capacitor/app');
@@ -71,6 +76,11 @@ async function nativeSupports(minAppVersion) {
   return compareVersions(version, minAppVersion) >= 0;
 }
 
+/**
+ * @param {string} a
+ * @param {string} b
+ * @returns {number}
+ */
 function compareVersions(a, b) {
   const pa = String(a).split('.').map(Number);
   const pb = String(b).split('.').map(Number);

@@ -9,6 +9,10 @@ import { t } from '@lingui/core/macro';
 // real flow (delta volume / delta time) vs. estimated flow (integral of
 // reported pump flow). Caller multiplies the existing coefficient for that
 // pressure point by this factor to get the new coefficient.
+/**
+ * @param {Partial<import('../types').ShotSample>[]} samples Partial until parseBinaryShot is typed.
+ * @param {number} targetPressure bar
+ */
 export function analyze(samples, targetPressure) {
   const measure = samples.filter(s => s.tt === 25 && s.tp === targetPressure);
   if (measure.length < 2) {
@@ -54,6 +58,10 @@ export function analyze(samples, targetPressure) {
   return { volume, time, actualFlow, estimatedFlow, factor };
 }
 
+/**
+ * @param {string | null | undefined} raw "c1,c9"
+ * @returns {[number, number]}
+ */
 export function parseCoeffs(raw) {
   const [c1, c9] = (raw || '').split(',').map(Number.parseFloat);
   if (!Number.isFinite(c1) || !Number.isFinite(c9)) {

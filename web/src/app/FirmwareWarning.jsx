@@ -4,6 +4,7 @@ import { useLingui } from '@lingui/react/macro';
 import { isFirmwareSupported } from './firmwareVersion.js';
 
 // Small inline note for machines whose firmware predates what the app expects; renders nothing otherwise.
+/** @param {{ version: string | null | undefined, compact?: boolean, className?: string }} props */
 export function FirmwareWarning({ version, compact = false, className = '' }) {
   const { t } = useLingui();
   if (isFirmwareSupported(version) !== false) return null;

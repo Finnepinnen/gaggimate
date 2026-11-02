@@ -15,14 +15,51 @@ const STEAM_LEFT_ON_MS = 5 * 60 * 1000;
 const HEATING_BAND = 3;
 const READY_BAND = 1;
 
+/** @typedef {import('../services/ApiService.js').default} ApiService */
+/** @typedef {import('../types').MachineStatus} MachineStatus */
+/** @typedef {import('../types').ProcessProgress} ProcessProgress */
+/** @typedef {import('./machines.js').SavedMachine} SavedMachine */
+/** @typedef {import('./appSettings.js').NotificationEventKey} NotificationEventKey */
+
+/**
+ * @typedef {object} MachineEvent
+ * @property {NotificationEventKey} event
+ * @property {string} title
+ * @property {string} body
+ * @property {SavedMachine} machine
+ */
+
+/**
+ * What MachineMonitor compares between two status frames.
+ * @typedef {object} MonitorSnapshot
+ * @property {boolean} brewMode
+ * @property {boolean} steamMode
+ * @property {number} temperature
+ * @property {number} target
+ * @property {boolean} shotActive
+ * @property {ProcessProgress | null} process
+ * @property {number | undefined} weight
+ * @property {boolean} systemError
+ * @property {string | undefined} systemMessage
+ * @property {Set<string>} warnings Keys of active, non-ignored warnings.
+ * @property {Record<string, number>} warningLevels
+ */
+
 // Watches one machine's ApiService and reports state transitions as notification events.
 export class MachineMonitor {
+  /**
+   * @param {SavedMachine} machineInfo
+   * @param {ApiService} api
+   * @param {(event: MachineEvent) => void} onEvent
+   */
   constructor(machineInfo, api, onEvent) {
     this.machineInfo = machineInfo;
     this.api = api;
     this.onEvent = onEvent;
+    /** @type {MonitorSnapshot | null} */
     this.previous = null;
     this.heating = false;
+    /** @type {number | null} */
     this.steamSince = null;
     this.steamNotified = false;
     this.listenerId = api.on('evt:status', () => this.check(api.state.value.status));
@@ -32,7 +69,9 @@ export class MachineMonitor {
     this.api.off('evt:status', this.listenerId);
   }
 
+  /** @param {MachineStatus} status */
   check(status) {
+    /** @type {MonitorSnapshot} */
     const current = {
       brewMode: status.mode === MODE_BREW,
       steamMode: status.mode === MODE_STEAM,
@@ -82,6 +121,10 @@ export class MachineMonitor {
   }
 
   // Preheated fires once the boiler climbs from clearly cold to target while in brew mode.
+  /**
+   * @param {MonitorSnapshot} current
+   * @param {boolean} notify False on the first frame.
+   */
   trackPreheat(current, notify) {
     if (!current.brewMode || current.target <= 0) {
       this.heating = false;
@@ -99,6 +142,7 @@ export class MachineMonitor {
   }
 
   // Fires once per steam session; a session already running on connect counts from then.
+  /** @param {MonitorSnapshot} current */
   trackSteam(current) {
     if (!current.steamMode) {
       this.steamSince = null;
@@ -112,20 +156,29 @@ export class MachineMonitor {
     }
   }
 
+  /**
+   * @param {NotificationEventKey} event
+   * @param {string} title
+   * @param {string} body
+   */
   emit(event, title, body) {
     this.onEvent({ event, title, body, machine: this.machineInfo });
   }
 }
 
 // Brews only: flushes, backflushes and descaling run as utility brews, grinding isn't a shot.
+/** @param {ProcessProgress | null | undefined} process */
 const isShot = process =>
   !!process && (process.s === 'brew' || process.s === 'infusion') && !process.u;
 
 // Owns one monitor per saved machine; non-active machines use the shared background connections.
 export class NotificationService {
+  /** @param {ApiService} mainApi */
   constructor(mainApi) {
     this.mainApi = mainApi;
+    /** @type {MachineMonitor[]} */
     this.monitors = [];
+    /** @type {import('./machineConnections.js').MachineConnection[]} */
     this.connections = [];
     this.suspended = false;
     this.nextId = Date.now() % 1_000_000;
@@ -138,6 +191,11 @@ export class NotificationService {
     });
   }
 
+  /**
+   * @param {boolean} enabled
+   * @param {SavedMachine[]} saved
+   * @param {SavedMachine | null} active
+   */
   restart(enabled, saved, active) {
     this.stop();
     this.current = { enabled, saved, active };
@@ -170,6 +228,7 @@ export class NotificationService {
     this.connections = [];
   }
 
+  /** @param {MachineEvent} event */
   async notify({ event, title, body, machine }) {
     const settings = appSettings.value.notifications;
     if (!settings.enabled || !settings[event]) return;
