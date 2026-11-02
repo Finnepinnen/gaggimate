@@ -111,7 +111,7 @@ export const formatTimestamp = timestamp => {
  */
 export const formatDuration = samples => {
   if (!samples || samples.length === 0) return '0s';
-  const duration = (samples.at(-1).t - samples[0].t) / 1000;
+  const duration = (samples[samples.length - 1].t - samples[0].t) / 1000;
   return `${duration.toFixed(1)}s`;
 };
 

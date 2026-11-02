@@ -439,7 +439,7 @@ function CompareCompactStopGrid({ stopSummaries }) {
  * @returns {{ unit: string, value: string }}
  */
 function splitCompareMetricValue(row) {
-  const unit = UNIT_BY_LABEL[row?.label] || '';
+  const unit = (row ? UNIT_BY_LABEL[row.label] : undefined) || '';
   const valueText = row?.valueText || '-';
 
   if (!unit || valueText === '-') {
@@ -758,7 +758,9 @@ export function StaticCompactTooltipContent({ metricContext = null, state, varia
       <div className='shot-chart-tooltip__compact-heading'>
         {timeLabel ? <span className='shot-chart-tooltip__compact-time'>{timeLabel}</span> : null}
         {shouldShowPhaseLabel ? (
-          <span className='shot-chart-tooltip__compact-phase'>{phaseSummary.phaseLabel}</span>
+          <span className='shot-chart-tooltip__compact-phase'>
+            {/** @type {TooltipPhaseSummary} */ (phaseSummary).phaseLabel}
+          </span>
         ) : null}
       </div>
       {isSingleLineVariant ? metricContent : stopContent}

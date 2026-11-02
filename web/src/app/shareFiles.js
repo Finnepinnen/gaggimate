@@ -44,7 +44,7 @@ export async function shareFiles(files) {
     });
   } catch (err) {
     // Closing the share sheet rejects; that's not an error for the user.
-    if (!/cancel/i.test(err?.message ?? '')) throw err;
+    if (!/cancel/i.test(/** @type {Error | null | undefined} */ (err)?.message ?? '')) throw err;
   }
   return true;
 }

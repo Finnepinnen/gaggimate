@@ -56,7 +56,7 @@ export function MachineStep({ onSaved, onDirty, onConfigure }) {
         }
       } catch (err) {
         if (cancelled) return;
-        setLoadError(err.message);
+        setLoadError(/** @type {Error} */ (err).message);
       }
       timer = setTimeout(refresh, 1000);
     };
@@ -124,7 +124,7 @@ export function MachineStep({ onSaved, onDirty, onConfigure }) {
       setApplied(true);
       onSaved?.(profile);
     } catch (err) {
-      setError(err.message);
+      setError(/** @type {Error} */ (err).message);
     } finally {
       setSaving(false);
     }

@@ -63,13 +63,17 @@ export function computeExternalTooltipPosition({
   boundsTop,
   boundsBottom,
 }) {
-  const resolvedBoundsLeft = Number.isFinite(boundsLeft) ? boundsLeft : boundsPadding;
+  const resolvedBoundsLeft = Number.isFinite(boundsLeft)
+    ? /** @type {number} */ (boundsLeft)
+    : boundsPadding;
   const resolvedBoundsRight = Number.isFinite(boundsRight)
-    ? boundsRight
+    ? /** @type {number} */ (boundsRight)
     : chartWidth - boundsPadding;
-  const resolvedBoundsTop = Number.isFinite(boundsTop) ? boundsTop : boundsPadding;
+  const resolvedBoundsTop = Number.isFinite(boundsTop)
+    ? /** @type {number} */ (boundsTop)
+    : boundsPadding;
   const resolvedBoundsBottom = Number.isFinite(boundsBottom)
-    ? boundsBottom
+    ? /** @type {number} */ (boundsBottom)
     : chartHeight - boundsPadding;
   const chartMidX = resolvedBoundsLeft + (resolvedBoundsRight - resolvedBoundsLeft) / 2;
   const showRightOfPointer = anchorX <= chartMidX;

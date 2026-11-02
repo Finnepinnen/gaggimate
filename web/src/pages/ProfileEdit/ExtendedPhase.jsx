@@ -39,20 +39,23 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
     const newPhase = {
       ...phase,
     };
-    newPhase.targets[index] = value;
+    // Only called from the rendered target list, so targets exist.
+    /** @type {PhaseTarget[]} */ (newPhase.targets)[index] = value;
     onChange(newPhase);
   };
 
   /** @param {number} index */
   const onTargetRemove = index => {
-    /** @type {EditorPhase} */
+    // Only called from the rendered target list, so targets exist.
+    const targets = /** @type {PhaseTarget[]} */ (phase.targets);
+    /** @type {EditorPhase & { targets: PhaseTarget[] }} */
     const newPhase = {
       ...phase,
       targets: [],
     };
-    for (let i = 0; i < phase.targets.length; i++) {
+    for (let i = 0; i < targets.length; i++) {
       if (i !== index) {
-        newPhase.targets.push(phase.targets[i]);
+        newPhase.targets.push(targets[i]);
       }
     }
     onChange(newPhase);

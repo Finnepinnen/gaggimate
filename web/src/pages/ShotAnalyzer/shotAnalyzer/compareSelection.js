@@ -15,6 +15,7 @@ import {
 /** @typedef {import('../types').LibrarySource} LibrarySource */
 /** @typedef {import('../types').PendingShotSelection} PendingShotSelection */
 /** @typedef {import('../types').ShotSelectionRequest} ShotSelectionRequest */
+/** @typedef {ShotSelectionRequest & { loadId: number }} CompareSelectionRequest */
 /** @typedef {import('./shotSelection').MatchedProfile} MatchedProfile */
 /**
  * @template T
@@ -25,13 +26,13 @@ import {
  * @typedef {{ current: T }} Ref
  */
 /**
- * @typedef {{ status: 'loaded' } | { status: 'aborted' } | { status: 'retry', nextRequest: ShotSelectionRequest | null }} CompareLoadResult
+ * @typedef {{ status: 'loaded' } | { status: 'aborted' } | { status: 'retry', nextRequest: CompareSelectionRequest | null }} CompareLoadResult
  */
 
 /**
  * Every named option the compare helpers below take; each picks the fields it uses.
  * @typedef {object} CompareSelectionOptions
- * @property {ShotSelectionRequest} activeRequest
+ * @property {CompareSelectionRequest} activeRequest
  * @property {() => void} clearPendingState
  * @property {Ref<number>} compareLoadIdRef
  * @property {Ref<number>} compareSelectionRequestIdRef
@@ -42,7 +43,7 @@ import {
  * @property {string | number} loadKey
  * @property {Ref<PendingShotSelection | null>} pendingPrimarySelectionRef
  * @property {number} requestId
- * @property {ShotSelectionRequest} selectionRequest
+ * @property {CompareSelectionRequest} selectionRequest
  * @property {SetState<boolean>} setCompareIsSearchingProfile
  * @property {SetState<string[]>} setComparePendingKeys
  * @property {SetState<CompareResultEntry[]>} setCompareResults
@@ -152,7 +153,7 @@ function applyPendingCompareSelectionState(
 /**
  * @param {ShotSelectionRequest} selectionRequest
  * @param {number} loadId
- * @returns {ShotSelectionRequest | null}
+ * @returns {CompareSelectionRequest | null}
  */
 function getDirectionalCompareSelectionRequest(selectionRequest, loadId) {
   const nextSelection = getNextDirectionalSelection(selectionRequest);
@@ -191,7 +192,7 @@ function shouldAbortCompareLoad({
 
 /**
  * @param {Pick<CompareSelectionOptions, 'selectionRequest' | 'loadId' | 'setPendingCompareSelection' | 'setComparePendingKeys' | 'clearPendingState'>} options
- * @returns {ShotSelectionRequest | null}
+ * @returns {CompareSelectionRequest | null}
  */
 function advanceCompareSelectionAfterFailure({
   selectionRequest,
@@ -285,7 +286,7 @@ function getSkippableCompareSelection({
 
 /**
  * @param {Pick<CompareSelectionOptions, 'activeRequest' | 'loadId' | 'setPendingCompareSelection' | 'setComparePendingKeys' | 'clearPendingState'>} options
- * @returns {ShotSelectionRequest | null}
+ * @returns {CompareSelectionRequest | null}
  */
 function getNextCompareSelection({
   activeRequest,
@@ -413,6 +414,7 @@ export async function executeCompareSelectionLoad({
     setCompareIsSearchingProfile,
   });
 
+  /** @type {CompareSelectionRequest | null} */
   let activeRequest = selectionRequest;
 
   while (activeRequest) {

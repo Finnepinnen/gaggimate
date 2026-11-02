@@ -18,6 +18,7 @@ import {
 
 /**
  * @typedef {import('../../types').DateBasisMode} DateBasisMode
+ * @typedef {import('../../../ShotAnalyzer/types').LibrarySource} LibrarySource
  * @typedef {import('../../types').StatisticsShotMeta} StatisticsShotMeta
  * @typedef {import('../../types').StatisticsProfileMeta} StatisticsProfileMeta
  * @typedef {import('../../../ShotAnalyzer/types').AnalyzerProfile} AnalyzerProfile
@@ -36,6 +37,9 @@ import {
  *   profileMap: ProfileLookupMap,
  * }} ProfileLookupContext
  */
+
+/** @param {StatisticsCompareEntry | null} entry @returns {entry is StatisticsCompareEntry} */
+const isCompareEntry = entry => Boolean(entry);
 
 /**
  * @param {StatisticsProfileMeta[]} profileList
@@ -58,8 +62,9 @@ export function buildProfileLookupMap(profileList, existingMap = null) {
  * @returns {string | number}
  */
 export function getStatisticsShotId(shot) {
-  if (shot.source === 'gaggimate') return shot.id;
-  return shot.storageKey || shot.name || shot.id;
+  // Listed shots always carry an id (browser shots also a storageKey / name).
+  if (shot.source === 'gaggimate') return /** @type {string} */ (shot.id);
+  return /** @type {string} */ (shot.storageKey || shot.name || shot.id);
 }
 
 /**
@@ -120,11 +125,12 @@ export async function loadStatisticsMatchedProfile({ loadedProfileCache, matched
     loadedProfileCache.set(
       cacheKey,
       libraryService
-        .loadProfile(profileId, matchedProfileEntry.source)
+        // Listed profiles always carry their library source.
+        .loadProfile(profileId, /** @type {LibrarySource} */ (matchedProfileEntry.source))
         .catch(/** @returns {null} */ () => null),
     );
   }
-  return loadedProfileCache.get(cacheKey);
+  return /** @type {Promise<AnalyzerProfile | null>} */ (loadedProfileCache.get(cacheKey));
 }
 
 /**
@@ -166,7 +172,9 @@ export async function analyzeStatisticsShot({
 }) {
   try {
     const shotId = getStatisticsShotId(shot);
-    const loadedShot = await libraryService.loadShot(shotId, shot.source);
+    // Listed shots always carry their library source.
+    const shotSource = /** @type {LibrarySource} */ (shot.source);
+    const loadedShot = await libraryService.loadShot(shotId, shotSource);
     const fullShot = buildFullStatisticsShot({ loadedShot, shot, shotId });
     if (!fullShot?.samples || fullShot.samples.length === 0) return null;
 
@@ -193,7 +201,7 @@ export async function analyzeStatisticsShot({
         displayName: getShotDisplayName(fullShot),
         timestamp: shot.timestamp || shot.shotDate || shot.uploadedAt || 0,
         profileName: cleanName(profileField) || '(Unknown)',
-        source: shot.source,
+        source: shotSource,
       },
     };
   } catch {
@@ -310,7 +318,7 @@ export function buildStatisticsCompareEntries(result, runRequest, entriesRef) {
         isReference: index === 0,
       }),
     )
-    .filter(Boolean);
+    .filter(isCompareEntry);
 
   const matchedCompareKeys = new Set(orderedCompareEntries.map(entry => entry.key));
   const unmatchedCompareEntries = cachedEntries
@@ -323,7 +331,7 @@ export function buildStatisticsCompareEntries(result, runRequest, entriesRef) {
         isReference: orderedCompareEntries.length === 0 && index === 0,
       });
     })
-    .filter(Boolean);
+    .filter(isCompareEntry);
 
   if (preferredShotOrder.length > 0) {
     if (orderedCompareEntries.length === cachedEntries.length) {
@@ -341,7 +349,7 @@ export function buildStatisticsCompareEntries(result, runRequest, entriesRef) {
         isReference: index === 0,
       }),
     )
-    .filter(Boolean);
+    .filter(isCompareEntry);
 }
 
 /** @param {EntriesRef} entriesRef */
@@ -370,7 +378,10 @@ export function getBuiltDateRange(entriesRef, dateBasisMode) {
   const cachedEntries = Array.isArray(entriesRef.current) ? entriesRef.current : [];
   const timestamps = cachedEntries
     .map(entry => resolveShotEffectiveTimestampMs(entry?.shotData || entry?.meta, dateBasisMode))
-    .filter(value => Number.isFinite(value) && value > 0)
+    .filter(
+      /** @returns {value is number} */
+      value => value !== null && Number.isFinite(value) && value > 0,
+    )
     .sort((a, b) => a - b);
 
   if (timestamps.length === 0) {

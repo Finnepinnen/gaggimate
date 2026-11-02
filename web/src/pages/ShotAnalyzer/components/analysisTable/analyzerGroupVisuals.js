@@ -43,7 +43,7 @@ export function getAnalyzerGroupVisual(groupKey) {
   const colors =
     groupColors[/** @type {keyof typeof groupColors} */ (groupKey)] || groupColors.basics;
   return {
-    icon: GROUP_ICON_BY_KEY[groupKey] || faClock,
+    icon: (groupKey !== undefined && GROUP_ICON_BY_KEY[groupKey]) || faClock,
     color: colors.anchor,
   };
 }

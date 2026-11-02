@@ -218,7 +218,8 @@
 
 /**
  * A chart history point: a status snapshot without process and warnings.
- * @typedef {Omit<MachineStatus, 'process' | 'warnings'>} HistoryEntry
+ * ApiService stamps `timestamp` on every status before copying it into the history.
+ * @typedef {Omit<MachineStatus, 'process' | 'warnings' | 'timestamp'> & { timestamp: Date }} HistoryEntry
  */
 
 /**

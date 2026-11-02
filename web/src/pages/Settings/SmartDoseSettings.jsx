@@ -28,7 +28,10 @@ function initialExpansion() {
  * @param {boolean} [props.disabled]
  */
 export default function SmartDoseSettings({ formData, onSaved, onSaving, disabled = false }) {
-  const api = useContext(ApiServiceContext);
+  // Provided at the app root, so never null here.
+  const api = /** @type {import('../../services/ApiService.js').default} */ (
+    useContext(ApiServiceContext)
+  );
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [calibrating, setCalibrating] = useState(/** @type {string | null} */ (null));
@@ -110,7 +113,9 @@ export default function SmartDoseSettings({ formData, onSaved, onSaving, disable
         ...previous,
         [accessory]: {
           ok: false,
-          text: error.message || 'Could not save weight. Check the connection and try again.',
+          text:
+            /** @type {Error} */ (error).message ||
+            'Could not save weight. Check the connection and try again.',
         },
       }));
     } finally {

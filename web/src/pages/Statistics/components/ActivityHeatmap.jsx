@@ -81,7 +81,8 @@ function buildHeatmapData(trends) {
 
   if (dayMap.size === 0) return null;
 
-  const todayMs = getDayStartLocalMs(Date.now());
+  // Date.now() is always a finite timestamp, so the day/week starts below are never null.
+  const todayMs = /** @type {number} */ (getDayStartLocalMs(Date.now()));
 
   const endDate = new Date(todayMs);
   const endDow = (endDate.getDay() + 6) % 7;
@@ -91,7 +92,7 @@ function buildHeatmapData(trends) {
   // GitHub-style rolling window: one year back, Monday-aligned via shared utility.
   const startDate = new Date(todayMs);
   startDate.setFullYear(startDate.getFullYear() - 1);
-  const startMs = getIsoWeekStartLocalMs(startDate.getTime());
+  const startMs = /** @type {number} */ (getIsoWeekStartLocalMs(startDate.getTime()));
 
   const totalDays = Math.round((endMs - startMs) / MS_PER_DAY) + 1;
   const weeks = Math.ceil(totalDays / 7);

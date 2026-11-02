@@ -56,10 +56,11 @@ export function ProfileImageUpload({ profileId }) {
       setBusy(true);
       try {
         const canvas = await drawToCanvas(file);
-        await uploadProfileImage(profileId, canvasToDeviceImage(canvas));
+        // The upload controls only render once there is a profileId.
+        await uploadProfileImage(/** @type {string} */ (profileId), canvasToDeviceImage(canvas));
         setPreview(canvas.toDataURL());
       } catch (err) {
-        setError(err.message || t`Could not read this image.`);
+        setError(/** @type {Error} */ (err).message || t`Could not read this image.`);
       } finally {
         setBusy(false);
       }
@@ -71,10 +72,10 @@ export function ProfileImageUpload({ profileId }) {
     setBusy(true);
     setError('');
     try {
-      await deleteProfileImage(profileId);
+      await deleteProfileImage(/** @type {string} */ (profileId)); // see onFile
       setPreview(null);
     } catch (err) {
-      setError(err.message);
+      setError(/** @type {Error} */ (err).message);
     } finally {
       setBusy(false);
     }

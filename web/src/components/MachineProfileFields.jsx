@@ -36,7 +36,7 @@ const RESISTANCE_FIELDS = [
  */
 function ResistanceControl({ value, field, presets, disabled, onChange }) {
   const [custom, setCustom] = useState(false);
-  const showCustom = custom || !presets.includes(value);
+  const showCustom = custom || !presets.includes(/** @type {number} */ (value));
   return (
     <div className='form-control'>
       <label>
@@ -70,8 +70,8 @@ function ResistanceControl({ value, field, presets, disabled, onChange }) {
             type='number'
             className='input input-bordered w-full'
             value={value === undefined ? '' : value / 1000}
-            min={String(field.min / 1000)}
-            max={String(field.max / 1000)}
+            min={String(/** @type {number} */ (field.min) / 1000)}
+            max={String(/** @type {number} */ (field.max) / 1000)}
             step='any'
             disabled={disabled}
             onChange={event =>
@@ -161,8 +161,11 @@ export function MachineProfileFields({ formData, setFields, hardwareOnly = false
             onChange={event => setFields({ [key]: Number(event.currentTarget.value) })}
           >
             {(field.values
-              ? field.values.map(value => [value, field.options[value]])
-              : Object.entries(field.options)
+              ? field.values.map(value => [
+                  value,
+                  /** @type {Record<string, string>} */ (field.options)[value],
+                ])
+              : Object.entries(/** @type {Record<string, string>} */ (field.options))
             ).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}

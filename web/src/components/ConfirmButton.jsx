@@ -7,8 +7,8 @@ import { Tooltip } from './Tooltip.jsx';
  * @param {object} props
  * @param {() => void} props.onAction
  * @param {import('@fortawesome/fontawesome-svg-core').IconProp} props.icon
- * @param {string} [props.tooltip]
- * @param {string} [props.confirmTooltip]
+ * @param {string} props.tooltip
+ * @param {string} props.confirmTooltip
  * @param {string} [props.btnSize] daisyUI button size suffix (xs, sm, md, lg).
  */
 export function ConfirmButton({ onAction, icon, tooltip, confirmTooltip, btnSize = 'sm' }) {

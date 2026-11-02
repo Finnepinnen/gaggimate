@@ -102,8 +102,9 @@ async function probeHttp(host) {
     }
     return settings;
   } catch (err) {
+    const e = /** @type {Error | null | undefined} */ (err);
     throw new Error(
-      err?.name === 'AbortError' ? t`no answer (timed out)` : err?.message || String(err),
+      e?.name === 'AbortError' ? t`no answer (timed out)` : e?.message || String(err),
     );
   } finally {
     clearTimeout(timeout);
@@ -201,7 +202,7 @@ export async function renameMachine(id, name) {
 
 // Remembers a machine's firmware version so the selector can warn about outdated machines.
 /**
- * @param {string} id
+ * @param {string | null} id
  * @param {string | null | undefined} version
  */
 export async function updateMachineVersion(id, version) {

@@ -94,28 +94,34 @@ export function SingleShotChart({ shotData, profileData, results, desktopCardHei
   const { t } = useLingui();
   // These refs point to the mounted DOM and Chart.js instances. They stay local
   // to the component because only the top-level orchestrator owns mounting and teardown.
-  const hoverAreaRef = useRef(null);
-  const chartShellRef = useRef(null);
-  const mobileScrubberRef = useRef(null);
-  const mobileActionsRef = useRef(null);
+  const hoverAreaRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const chartShellRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const mobileScrubberRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const mobileActionsRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const ignoreScrubInputUntilRef = useRef(0);
   const lastPointerScrubAtRef = useRef(0);
-  const mobileLegendRef = useRef(null);
-  const desktopLegendRef = useRef(null);
-  const mainChartContainerRef = useRef(null);
-  const tempChartContainerRef = useRef(null);
-  const mainChartRef = useRef(null);
-  const tempChartRef = useRef(null);
-  const exportMenuRef = useRef(null);
-  const externalTooltipRef = useRef(null);
+  const mobileLegendRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const desktopLegendRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const mainChartContainerRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const tempChartContainerRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const mainChartRef = useRef(/** @type {HTMLCanvasElement | null} */ (null));
+  const tempChartRef = useRef(/** @type {HTMLCanvasElement | null} */ (null));
+  const exportMenuRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const externalTooltipRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const [viewportResizeNonce, setViewportResizeNonce] = useState(0);
   const [standardChartSize, setStandardChartSize] = useState({
     width: 0,
     availableCombinedHeight: 0,
   });
-  const mainChartInstance = useRef(null);
-  const tempChartInstance = useRef(null);
-  const chartColorsRef = useRef(null);
+  const mainChartInstance = useRef(
+    /** @type {import('../tooltip/tooltipTypes').ShotChartInstance | null} */ (null),
+  );
+  const tempChartInstance = useRef(
+    /** @type {import('../tooltip/tooltipTypes').ShotChartInstance | null} */ (null),
+  );
+  const chartColorsRef = useRef(
+    /** @type {import('../model/types').ShotChartColors | null} */ (null),
+  );
 
   const [visibility, setVisibility] = useState(() =>
     normalizeSingleChartVisibility(loadFromStorage(ANALYZER_DB_KEYS.SINGLE_CHART_VISIBILITY)),
@@ -128,7 +134,7 @@ export function SingleShotChart({ shotData, profileData, results, desktopCardHei
   );
   const [isMobileSeriesLegendExpanded, setIsMobileSeriesLegendExpanded] = useState(false);
   const [useStaticTooltip, setUseStaticTooltip] = useState(isStaticMobileTooltipViewport);
-  const [scrubXValue, setScrubXValue] = useState(null);
+  const [scrubXValue, setScrubXValue] = useState(/** @type {number | null} */ (null));
   const [singleMetricPageKey, setSingleMetricPageKey] = useState(SINGLE_METRIC_PAGE_KEYS.BASICS);
   const [chartMaxTime, setChartMaxTime] = useState(0);
   const [scrubberInsets, setScrubberInsets] = useState({ left: 0, right: 0 });

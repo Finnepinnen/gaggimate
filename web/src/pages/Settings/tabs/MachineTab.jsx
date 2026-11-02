@@ -121,7 +121,10 @@ function TankDistanceField({ id, label, value, error, onChange, onUseCurrent }) 
  */
 export function MachineTab({ formData, onChange, setField, profiles = [] }) {
   const { t } = useLingui();
-  const apiService = useContext(ApiServiceContext);
+  // Provided at the app root, so never null here.
+  const apiService = /** @type {import('../../../services/ApiService.js').default} */ (
+    useContext(ApiServiceContext)
+  );
   const [steamPumpDraft, setSteamPumpDraft] = useState(/** @type {string | null} */ (null));
   const [calibrationWeight, setCalibrationWeight] = useState('');
 
@@ -155,6 +158,7 @@ export function MachineTab({ formData, onChange, setField, profiles = [] }) {
       const actualWeight = Number.parseFloat(calibrationWeight);
       if (
         !measurementValid ||
+        measuredWeight === undefined ||
         !Number.isFinite(measuredWeight) ||
         Math.abs(measuredWeight) < 0.01 ||
         !Number.isFinite(actualWeight) ||
@@ -663,7 +667,7 @@ export function MachineTab({ formData, onChange, setField, profiles = [] }) {
                 <p className='text-base-content/60 mb-1 text-xs'>
                   {t`Current:`}{' '}
                   {status.value?.hardwareScaleCell1Valid
-                    ? `${status.value.hardwareScaleCell1Weight.toFixed(1)} g`
+                    ? `${/** @type {number} */ (status.value.hardwareScaleCell1Weight).toFixed(1)} g`
                     : t`Unavailable / uncalibrated`}
                 </p>
                 <SettingsFormField
@@ -688,7 +692,7 @@ export function MachineTab({ formData, onChange, setField, profiles = [] }) {
                 <p className='text-base-content/60 mb-1 text-xs'>
                   {t`Current:`}{' '}
                   {status.value?.hardwareScaleCell2Valid
-                    ? `${status.value.hardwareScaleCell2Weight.toFixed(1)} g`
+                    ? `${/** @type {number} */ (status.value.hardwareScaleCell2Weight).toFixed(1)} g`
                     : t`Unavailable / uncalibrated`}
                 </p>
                 <SettingsFormField
@@ -753,7 +757,7 @@ export function MachineTab({ formData, onChange, setField, profiles = [] }) {
               id='emptyTankDistance'
               label={t`Distance from sensor to bottom of the tank`}
               value={formData.emptyTankDistance}
-              error={tankErrorMessages[tankErrors.empty]}
+              error={tankErrorMessages[/** @type {string} */ (tankErrors.empty)]}
               onChange={onChange('emptyTankDistance')}
               onUseCurrent={() => setField('emptyTankDistance', tofDistance.value)}
             />
@@ -761,7 +765,7 @@ export function MachineTab({ formData, onChange, setField, profiles = [] }) {
               id='fullTankDistance'
               label={t`Distance from sensor to the fill line`}
               value={formData.fullTankDistance}
-              error={tankErrorMessages[tankErrors.full]}
+              error={tankErrorMessages[/** @type {string} */ (tankErrors.full)]}
               onChange={onChange('fullTankDistance')}
               onUseCurrent={() => setField('fullTankDistance', tofDistance.value)}
             />

@@ -170,7 +170,7 @@ export function SetupWizard() {
   const [wifi, setWifi] = useState(
     /** @type {WifiChoice} */ ({ selected: null, ssid: '', secure: false, password: '' }),
   );
-  const [joining, setJoining] = useState(null);
+  const [joining, setJoining] = useState(/** @type {string | null} */ (null));
 
   // Plugins switched on by the last applied preset; another preset (or a custom machine) resets them first
   const [presetPlugins, setPresetPlugins] = useState(/** @type {string[]} */ ([]));

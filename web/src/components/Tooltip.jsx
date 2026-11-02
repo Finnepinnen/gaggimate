@@ -31,6 +31,7 @@ export function Tooltip({ content, children, placement = 'top', disabled = false
     if (!isVisible || !triggerRef.current || !tooltipRef.current || disabled) return;
 
     const cleanup = autoUpdate(triggerRef.current, tooltipRef.current, () => {
+      // @ts-expect-error the trigger can unmount while autoUpdate is still running, leaving the ref null
       computePosition(triggerRef.current, tooltipRef.current, {
         placement,
         strategy: 'fixed',

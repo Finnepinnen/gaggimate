@@ -82,8 +82,8 @@ import { useCallback, useContext, useEffect, useRef, useState } from 'preact/hoo
  * @property {import('../types').PendingShotSelection | null} [pendingCompareSelection]
  * @property {import('../types').OnShotSelect} [onShotSelect]
  * @property {import('../types').OnProfileLoad} onProfileLoad
- * @property {() => void} [onShotUnload]
- * @property {() => void} [onProfileUnload]
+ * @property {() => void} onShotUnload
+ * @property {() => void} onProfileUnload
  * @property {import('../types').OnShowStats} [onShowStats]
  * @property {string} [statsHref]
  * @property {string} [secondaryStatsHref]
@@ -98,7 +98,7 @@ import { useCallback, useContext, useEffect, useRef, useState } from 'preact/hoo
  * @property {() => void} [onCompareModeToggle]
  * @property {import('../types').OnCompareShotToggle} [onCompareShotToggle]
  * @property {import('../types').OnProfileLoad} [onCompareProfileLoad]
- * @property {() => void} [onCompareProfileUnload]
+ * @property {() => void} onCompareProfileUnload
  * @property {() => void} [onCompareSwap]
  * @property {() => void} [onRetryProfileSearch]
  * @property {() => void} [onRetryCompareProfileSearch]
@@ -384,7 +384,8 @@ export function LibraryPanel({
 
   /** @param {LibraryItem} item */
   const handleDelete = async item => {
-    const itemName = item.name || item.id;
+    // Library rows always have a name or an id.
+    const itemName = /** @type {string} */ (item.name || item.id);
     if (!confirm(t`Are you sure you want to delete "${itemName}"?`)) return;
     try {
       await deleteLibraryItem(item);

@@ -225,7 +225,7 @@ function isClientYInChartHoverRange(clientY, mainRect, tempRect, isTouch) {
  * @param {Scale} mainXScale
  * @param {ClientRectLike} mainRect
  * @param {number} clientX
- * @returns {number}
+ * @returns {number | undefined}
  */
 function getHoverXValueForClientX(mainChart, mainXScale, mainRect, clientX) {
   const minClientX = mainRect.left + (mainChart.chartArea?.left || 0);
@@ -344,7 +344,7 @@ export function attachTempChartLayoutSync({ mainChart, tempChart }) {
  * @param {ShotChartInstance | null | undefined} options.mainChart
  * @param {ShotChartInstance | null | undefined} options.tempChart
  * @param {() => void} options.hideExternalTooltip
- * @param {{ current: () => void }} options.clearAllHoverRef
+ * @param {{ current: (() => void) | null }} options.clearAllHoverRef
  * @param {{ current: boolean }} options.isReplayingRef
  * @param {{ current: boolean }} options.isExportingRef
  * @param {(xValue: number | null) => void} [options.onHoverXChange]
@@ -400,7 +400,7 @@ export function attachShotChartHoverSync({
     }
 
     const xValue = getHoverXValueForClientX(mainChart, mainXScale, mainRect, clientX);
-    if (!Number.isFinite(xValue)) {
+    if (xValue === undefined || !Number.isFinite(xValue)) {
       clearAllHover();
       return;
     }

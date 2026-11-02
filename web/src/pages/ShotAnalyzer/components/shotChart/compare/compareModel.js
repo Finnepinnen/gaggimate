@@ -225,7 +225,11 @@ export function getResolvedCompareStyle(shotStylePreset) {
  * @param {F} [fallback]
  * @returns {T | F}
  */
-export function getAnalyzerCompareValue(shotStylePreset, value, fallback = null) {
+export function getAnalyzerCompareValue(
+  shotStylePreset,
+  value,
+  fallback = /** @type {F} */ (null),
+) {
   if (shotStylePreset === 'analyzer') return value;
   return fallback;
 }
@@ -510,7 +514,9 @@ function getModelMinTime(model) {
     Array.isArray(points) ? points : [],
   );
   const firstPoint = seriesPoints.find(point => Number.isFinite(Number(point?.x)));
-  return Number.isFinite(Number(firstPoint?.x)) ? Number(firstPoint.x) : 0;
+  return Number.isFinite(Number(firstPoint?.x))
+    ? Number(/** @type {NonNullable<typeof firstPoint>} */ (firstPoint).x)
+    : 0;
 }
 
 /**
@@ -563,7 +569,7 @@ export function getCompareXRange(compareModels) {
 
 /**
  * @param {{ entry: CompareEntry, targetDisplayMode: string }} params
- * @returns {boolean}
+ * @returns {boolean | undefined} undefined when the entry has no isReference flag
  */
 export function shouldShowTargetsForEntry({ entry, targetDisplayMode }) {
   if (targetDisplayMode === COMPARE_TARGET_DISPLAY_MODES.NONE) {

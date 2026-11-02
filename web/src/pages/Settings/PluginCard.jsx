@@ -19,7 +19,10 @@ const MAHLKONIG_MIN_RECIPES = 4;
  */
 function MahlkonigRecipeProfiles({ formData, onChange }) {
   const { t } = useLingui();
-  const apiService = useContext(ApiServiceContext);
+  // Provided at the app root, so never null here.
+  const apiService = /** @type {import('../../services/ApiService.js').default} */ (
+    useContext(ApiServiceContext)
+  );
   const [lastRecipe, setLastRecipe] = useState(/** @type {number | null} */ (null));
   const { profiles: allProfiles } = useProfileList();
   const profiles = allProfiles.filter(p => !p.utility);
@@ -138,8 +141,10 @@ export function PluginCard({
     <div className='space-y-4'>
       <SmartDoseSettings
         formData={formData}
-        onSaved={onSmartDoseSaved || onSettingSaved}
-        onSaving={onSmartDoseSaving || onSaving}
+        onSaved={
+          /** @type {import('./types').SettingSavedHandler} */ (onSmartDoseSaved || onSettingSaved)
+        }
+        onSaving={/** @type {(saving: boolean) => void} */ (onSmartDoseSaving || onSaving)}
         disabled={settingsDisabled}
       />
       <div className='bg-base-200 rounded-lg p-4'>

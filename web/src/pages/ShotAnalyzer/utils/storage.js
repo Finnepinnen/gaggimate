@@ -34,7 +34,11 @@ export const saveToStorage = (key, value, storage = localStorage) => {
  * @param {Storage} [storage]
  * @returns {T}
  */
-export const loadFromStorage = (key, defaultValue = null, storage = localStorage) => {
+export const loadFromStorage = (
+  key,
+  defaultValue = /** @type {T} */ (null),
+  storage = localStorage,
+) => {
   try {
     const item = storage.getItem(key);
     return item ? JSON.parse(item) : defaultValue;

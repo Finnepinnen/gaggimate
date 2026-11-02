@@ -183,7 +183,7 @@ export function getCandidateSummary({ metadataLoading, candidateCount }) {
     };
   }
 
-  if (Number.isFinite(candidateCount)) {
+  if (candidateCount !== null && Number.isFinite(candidateCount)) {
     return {
       candidateLabel: String(candidateCount),
       resetAriaCount: plural(candidateCount, { one: '# candidate', other: '# candidates' }),

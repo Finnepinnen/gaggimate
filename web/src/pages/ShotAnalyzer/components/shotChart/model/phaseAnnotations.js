@@ -52,7 +52,8 @@ function getStopActualValue(phase, exitType) {
     const altType = ['volumetric', 'weight', 'ratio'].find(
       type => type !== exitType && phase.targetCalcValues?.[type],
     );
-    calcValue = altType ? phase.targetCalcValues[altType].value : undefined;
+    // altType was found because phase.targetCalcValues[altType] is set.
+    calcValue = altType ? phase.targetCalcValues?.[altType]?.value : undefined;
   }
   if (Number.isFinite(Number(calcValue))) return Number(calcValue);
 
@@ -180,13 +181,13 @@ function buildPhaseNumberResolver(results) {
     if (count > 1) rawToProfileIndex.delete(rawNumber);
   });
 
-  return (rawPhaseNumber, fallbackIndex = 0, phaseName = null) => {
+  return (rawPhaseNumber, fallbackIndex = 0, phaseName = /** @type {string | null} */ (null)) => {
     const nameKey = normalizePhaseNameKey(phaseName);
-    if (nameKey && byName.has(nameKey)) return byName.get(nameKey);
+    if (nameKey && byName.has(nameKey)) return /** @type {number} */ (byName.get(nameKey));
 
     const numericPhaseNumber = Number(rawPhaseNumber);
     if (Number.isFinite(numericPhaseNumber) && rawToProfileIndex.has(numericPhaseNumber)) {
-      return rawToProfileIndex.get(numericPhaseNumber);
+      return /** @type {number} */ (rawToProfileIndex.get(numericPhaseNumber));
     }
 
     return getZeroBasedPhaseNumber(rawPhaseNumber, fallbackIndex);
@@ -567,7 +568,8 @@ function addPhaseSeparatorAndStops({
     const timeInSeconds = getTransitionTimeInSeconds({
       transition,
       samples,
-      sampleInterval: shotData.sampleInterval,
+      // Non-empty transitions came from shotData, so it is set.
+      sampleInterval: /** @type {ChartShotData} */ (shotData).sampleInterval,
     });
     if (timeInSeconds <= 0.1 && index === 0) continue;
 
@@ -635,7 +637,8 @@ function buildPhaseStarts({ shotData, samples, maxTime, resolvePhaseNumber }) {
     const timeInSeconds = getTransitionTimeInSeconds({
       transition,
       samples,
-      sampleInterval: shotData.sampleInterval,
+      // Non-empty transitions came from shotData, so it is set.
+      sampleInterval: /** @type {ChartShotData} */ (shotData).sampleInterval,
     });
     if (timeInSeconds <= 0.1 && index === 0) continue;
 
@@ -702,6 +705,7 @@ function addPhaseBackgroundRanges({
     const nextTime = allStarts[index + 1]?.time ?? maxTime;
     const boundaries = [phaseStart.time];
     if (
+      extendedStartX !== null &&
       Number.isFinite(extendedStartX) &&
       extendedStartX - phaseStart.time > 0.05 &&
       nextTime - extendedStartX > 0.05
@@ -910,7 +914,10 @@ export function buildPhaseOverviewRows({ shotData, results }) {
       return {
         phaseNumber: zeroBasedPhaseNumber + 1,
         phaseName:
-          phase?.displayName || phase?.name || getPhaseName(shotData, zeroBasedPhaseNumber),
+          phase?.displayName ||
+          phase?.name ||
+          // Analyzer results are computed from shotData, so it is set here.
+          getPhaseName(/** @type {ChartShotData} */ (shotData), zeroBasedPhaseNumber),
         skipNotice,
         stopReason: stopReason || '-',
         stopValue: getPhaseStopValue(phase),
@@ -933,7 +940,8 @@ export function buildPhaseOverviewRows({ shotData, results }) {
       if (phaseNameByNumber.has(zeroBasedPhaseNumber)) return;
       phaseNameByNumber.set(
         zeroBasedPhaseNumber,
-        transition?.phaseName || getPhaseName(shotData, zeroBasedPhaseNumber),
+        transition?.phaseName ||
+          getPhaseName(/** @type {ChartShotData} */ (shotData), zeroBasedPhaseNumber),
       );
     });
 
@@ -958,7 +966,10 @@ export function buildPhaseOverviewRows({ shotData, results }) {
   return profilePhases.map(
     /** @returns {PhaseOverviewRow} */ (phase, index) => ({
       phaseNumber: index + 1,
-      phaseName: phase?.displayName || phase?.name || getPhaseName(shotData, index),
+      phaseName:
+        phase?.displayName ||
+        phase?.name ||
+        getPhaseName(/** @type {ChartShotData} */ (shotData), index),
       stopReason: '-',
       stopValue: '-',
       stopTargetValue: null,

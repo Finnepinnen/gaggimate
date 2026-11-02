@@ -2,10 +2,10 @@ import PropTypes from 'prop-types';
 
 /**
  * @param {object} props
- * @param {string} props.mode Selected mode: cup, automatic or portafilter.
+ * @param {string} [props.mode] Selected mode: cup, automatic or portafilter.
  * @param {boolean} props.cupConfigured
  * @param {boolean} props.portafilterConfigured
- * @param {boolean} props.automaticAvailable
+ * @param {boolean} [props.automaticAvailable]
  * @param {(mode: string) => void} props.onChange
  * @param {boolean} [props.disabled]
  */
@@ -17,7 +17,7 @@ export default function SmartDoseModeSelector({
   onChange,
   disabled = false,
 }) {
-  /** @type {[string, string, boolean][]} */
+  /** @type {[string, string, boolean | undefined][]} */
   const choices = [
     ['cup', 'Dosing Cup', cupConfigured],
     ['automatic', 'Auto', automaticAvailable],

@@ -183,7 +183,7 @@ export function normalizeProfile(input) {
     } else if (field.type === 'csv') {
       const parts = typeof value === 'string' ? value.split(',') : [];
       if (
-        !field.lengths.includes(parts.length) ||
+        !(/** @type {number[]} */ (field.lengths).includes(parts.length)) ||
         parts.some(
           p =>
             !p.trim() ||
@@ -197,8 +197,8 @@ export function normalizeProfile(input) {
       typeof value !== 'number' ||
       !Number.isFinite(value) ||
       (field.type === 'integer' && !Number.isInteger(value)) ||
-      ('min' in field && value < field.min) ||
-      ('max' in field && value > field.max) ||
+      ('min' in field && value < /** @type {number} */ (field.min)) ||
+      ('max' in field && value > /** @type {number} */ (field.max)) ||
       (field.values && !field.values.includes(value))
     )
       throw new Error(`Invalid value: ${key}`);
@@ -335,15 +335,17 @@ export function currentProfileValues(settings, capabilities, hardware) {
  * @returns {ProfileChange[]}
  */
 export function changedProfileValues(profile, current) {
-  return Object.entries(profile.settings).filter(([key, value]) => {
-    if (current[key] === undefined) return true;
-    if (fields[key].type === 'csv')
-      return (
-        value.split(',').map(Number).join(',') !==
-        String(current[key]).split(',').map(Number).join(',')
-      );
-    return value !== current[key];
-  });
+  return Object.entries(/** @type {Record<string, any>} */ (profile.settings)).filter(
+    ([key, value]) => {
+      if (current[key] === undefined) return true;
+      if (fields[key].type === 'csv')
+        return (
+          value.split(',').map(Number).join(',') !==
+          String(current[key]).split(',').map(Number).join(',')
+        );
+      return value !== current[key];
+    },
+  );
 }
 
 // Compare against saved device values, rather than unsaved form edits.

@@ -5,5 +5,5 @@
  * @param {number} [digits]
  */
 export function fmt(val, digits = 1) {
-  return Number.isFinite(val) ? val.toFixed(digits) : '-';
+  return Number.isFinite(val) ? /** @type {number} */ (val).toFixed(digits) : '-';
 }

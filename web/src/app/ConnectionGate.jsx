@@ -7,7 +7,8 @@ const SLOW_CONNECT_MS = 8000;
 
 // Shown instead of the dashboard until the active machine's live connection has opened once.
 export function ConnectionGate() {
-  const current = activeMachine.value;
+  // index.jsx only renders the gate while a machine is active.
+  const current = /** @type {import('./machines.js').SavedMachine} */ (activeMachine.value);
   const name = current.name;
   const host = current.host;
   const [slow, setSlow] = useState(false);

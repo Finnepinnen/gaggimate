@@ -16,7 +16,7 @@ import { faChevronRight } from '@fortawesome/free-solid-svg-icons/faChevronRight
 export default function TabBar({ tabs, activeTab, onTabChange, basePath, className = '' }) {
   const location = useLocation();
   const { t } = useLingui();
-  const scrollRef = useRef(null);
+  const scrollRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
@@ -35,7 +35,8 @@ export default function TabBar({ tabs, activeTab, onTabChange, basePath, classNa
     const observer =
       typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateOverflow) : null;
     observer?.observe(el);
-    observer?.observe(el.firstElementChild);
+    // The tablist div below is always rendered as the first child.
+    observer?.observe(/** @type {Element} */ (el.firstElementChild));
     return () => {
       el.removeEventListener('scroll', updateOverflow);
       observer?.disconnect();

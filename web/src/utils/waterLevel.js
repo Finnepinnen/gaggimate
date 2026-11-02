@@ -36,8 +36,9 @@ export function computeWaterLevel({ empty, full, distance }) {
   const errors = validateTankCalibration(empty, full);
   if (errors.empty || errors.full) return null;
   if (typeof distance !== 'number' || !Number.isFinite(distance)) return null;
-  const emptyMm = parseTankDistance(empty);
-  const fullMm = parseTankDistance(full);
+  // validateTankCalibration already rejected values that don't parse.
+  const emptyMm = /** @type {number} */ (parseTankDistance(empty));
+  const fullMm = /** @type {number} */ (parseTankDistance(full));
   const percent = ((emptyMm - distance) / (emptyMm - fullMm)) * 100;
   return Math.max(0, Math.min(100, percent));
 }

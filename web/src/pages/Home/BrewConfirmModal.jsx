@@ -33,7 +33,8 @@ export function BrewConfirmModal({ warnings, onBack, onIgnore }) {
           {warnings.map(w => (
             <li key={w.key} className='flex items-center gap-3'>
               <WarningIcon
-                icon={w.icon}
+                // activeWarnings drops entries without an icon.
+                icon={/** @type {string} */ (w.icon)}
                 className={`text-xl ${w.level === WARNING_LEVEL.ERROR ? 'text-error' : 'text-warning'}`}
               />
               <span className='flex-1 text-sm'>{w.label}</span>

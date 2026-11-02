@@ -17,7 +17,10 @@ import { ApiServiceContext, updateSettingsCache } from '../services/ApiService.j
  * @param {boolean} [props.inCard]
  */
 export default function SmartDoseControl({ dose, inCard = false }) {
-  const api = useContext(ApiServiceContext);
+  // Provided at the app root, so never null here.
+  const api = /** @type {import('../services/ApiService.js').default} */ (
+    useContext(ApiServiceContext)
+  );
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   if (!dose?.enabled) return null;
@@ -73,7 +76,9 @@ export default function SmartDoseControl({ dose, inCard = false }) {
       ['portafilter', portafilter],
     ];
   } else if (cup && portafilter) {
-    const accessory = active ? owner : dose.mode === 'automatic' ? 'shared' : dose.mode;
+    const accessory = /** @type {string} */ (
+      active ? owner : dose.mode === 'automatic' ? 'shared' : dose.mode
+    );
     measurements = [
       [
         accessory,
@@ -171,7 +176,11 @@ export default function SmartDoseControl({ dose, inCard = false }) {
               <FontAwesomeIcon icon={faMinus} className='h-2.5 w-2.5' />
             </button>
             <strong className='flex-1 text-center text-lg tabular-nums'>
-              {dose.doseIn > 0 ? `${dose.doseIn.toFixed(1)} g` : '—'}
+              {
+                /** @type {number} */ (dose.doseIn) > 0
+                  ? `${/** @type {number} */ (dose.doseIn).toFixed(1)} g`
+                  : '—'
+              }
             </strong>
             <button
               type='button'

@@ -515,7 +515,7 @@ export function buildCompareDetailCharts({
         xRange,
       }),
     };
-  }).filter(Boolean);
+  }).filter(detailChart => detailChart !== null);
 }
 
 /** @param {CompareDataset[]} datasets */
@@ -695,9 +695,9 @@ function getAxisScaleMax({
   maxStrategy = 'absolute',
   maxPercentile = 0.9,
 }) {
-  const datasetScaleMaxima = datasets
-    .map(getDatasetScaleMax)
-    .filter(value => Number.isFinite(value));
+  const datasetScaleMaxima = /** @type {number[]} */ (
+    datasets.map(getDatasetScaleMax).filter(value => Number.isFinite(value))
+  );
 
   if (datasetScaleMaxima.length === 0) {
     return fallbackMax;
@@ -708,7 +708,7 @@ function getAxisScaleMax({
       ? getPercentileValue(datasetScaleMaxima, maxPercentile)
       : Math.max(...datasetScaleMaxima);
 
-  return Number.isFinite(max) ? max : Math.max(...datasetScaleMaxima);
+  return Number.isFinite(max) ? /** @type {number} */ (max) : Math.max(...datasetScaleMaxima);
 }
 
 /**

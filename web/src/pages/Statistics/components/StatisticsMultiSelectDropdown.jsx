@@ -25,11 +25,13 @@ import { Trans, useLingui } from '@lingui/react/macro';
  *   active: boolean,
  *   timer: number | null,
  *   visitedIds: Set<string>,
- *   onMove: ((event: PointerEvent) => void) | null,
- *   onUp: ((event: PointerEvent) => void) | null,
- *   onCancel: ((event: PointerEvent) => void) | null,
+ *   onMove: PointerHandler | null,
+ *   onUp: PointerHandler | null,
+ *   onCancel: PointerHandler | null,
  * }} TouchPaintState
  */
+
+/** @typedef {(event: PointerEvent) => void} PointerHandler */
 
 const LONG_PRESS_MS = 220;
 const MOVE_CANCEL_PX = 10;
@@ -383,9 +385,16 @@ export function StatisticsMultiSelectDropdown({
 
     const browserWindow = getBrowserWindow();
     if (browserWindow) {
-      browserWindow.removeEventListener('pointermove', state.onMove);
-      browserWindow.removeEventListener('pointerup', state.onUp);
-      browserWindow.removeEventListener('pointercancel', state.onCancel);
+      // The handlers are assigned before the state is stored in touchStateRef.
+      browserWindow.removeEventListener(
+        'pointermove',
+        /** @type {PointerHandler} */ (state.onMove),
+      );
+      browserWindow.removeEventListener('pointerup', /** @type {PointerHandler} */ (state.onUp));
+      browserWindow.removeEventListener(
+        'pointercancel',
+        /** @type {PointerHandler} */ (state.onCancel),
+      );
     }
 
     touchStateRef.current = null;

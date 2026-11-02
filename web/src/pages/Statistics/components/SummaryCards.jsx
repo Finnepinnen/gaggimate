@@ -110,7 +110,7 @@ export function SummaryCards({ summary }) {
     <div className='space-y-2'>
       <div className='grid grid-cols-2 gap-3 md:grid-cols-4'>
         {totalCards.map(card => (
-          <SummaryStatCard key={card.key} {...card} />
+          <SummaryStatCard {...card} key={card.key} />
         ))}
       </div>
     </div>

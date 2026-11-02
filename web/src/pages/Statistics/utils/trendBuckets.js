@@ -30,7 +30,7 @@ function cloneAtLocalMidnight(ms) {
  */
 export function getDayStartLocalMs(timestamp) {
   const ms = normalizeTimestampMs(timestamp);
-  if (!Number.isFinite(ms)) return null;
+  if (ms === null) return null;
   const date = cloneAtLocalMidnight(ms);
   return date ? date.getTime() : null;
 }
@@ -41,7 +41,7 @@ export function getDayStartLocalMs(timestamp) {
  */
 export function getIsoWeekStartLocalMs(timestamp) {
   const ms = normalizeTimestampMs(timestamp);
-  if (!Number.isFinite(ms)) return null;
+  if (ms === null) return null;
   const date = cloneAtLocalMidnight(ms);
   if (!date) return null;
   const day = date.getDay() || 7; // ISO week: Monday=1 ... Sunday=7
@@ -55,7 +55,7 @@ export function getIsoWeekStartLocalMs(timestamp) {
  */
 export function getMonthStartLocalMs(timestamp) {
   const ms = normalizeTimestampMs(timestamp);
-  if (!Number.isFinite(ms)) return null;
+  if (ms === null) return null;
   const date = cloneAtLocalMidnight(ms);
   if (!date) return null;
   date.setDate(1);
@@ -68,7 +68,7 @@ export function getMonthStartLocalMs(timestamp) {
  */
 export function getYearStartLocalMs(timestamp) {
   const ms = normalizeTimestampMs(timestamp);
-  if (!Number.isFinite(ms)) return null;
+  if (ms === null) return null;
   const date = cloneAtLocalMidnight(ms);
   if (!date) return null;
   date.setMonth(0, 1);
@@ -131,7 +131,7 @@ function getNextBucketStartLocalMs(bucketStartMs, granularity) {
  */
 export function getBucketEndLocalMs(bucketStartMs, granularity) {
   const nextStart = getNextBucketStartLocalMs(bucketStartMs, granularity);
-  if (!Number.isFinite(nextStart)) return null;
+  if (nextStart === null || !Number.isFinite(nextStart)) return null;
   return nextStart - 1;
 }
 
@@ -156,7 +156,7 @@ export function aggregateTrendsByGranularity(trends, metricKey, granularity) {
   const buckets = new Map();
   for (const entry of trends) {
     const bucketStartMs = getBucketStartLocalMs(entry?.timestamp, granularity);
-    if (!Number.isFinite(bucketStartMs)) continue;
+    if (bucketStartMs === null || !Number.isFinite(bucketStartMs)) continue;
 
     let bucket = buckets.get(bucketStartMs);
     if (!bucket) {
@@ -199,7 +199,7 @@ export function aggregateTrendsByGranularity(trends, metricKey, granularity) {
     }
 
     const avg = averageOf(bucket.values);
-    if (!Number.isFinite(avg)) continue;
+    if (avg === null || !Number.isFinite(avg)) continue;
 
     points.push({
       x: bucketStartMs,
@@ -221,7 +221,7 @@ export function aggregateTrendsByGranularity(trends, metricKey, granularity) {
 export function formatDateLocal(ms, options) {
   if (!Number.isFinite(ms)) return '';
   try {
-    return new Date(ms).toLocaleDateString([], options);
+    return new Date(/** @type {number} */ (ms)).toLocaleDateString([], options);
   } catch {
     return '';
   }

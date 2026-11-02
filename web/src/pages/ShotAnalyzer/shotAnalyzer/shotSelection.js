@@ -22,7 +22,7 @@ const DEFAULT_ANALYSIS_DELAY_MS = 200;
  * @returns {boolean} True when `item` already carries its samples
  */
 export function hasLoadedShotPayload(item) {
-  return Boolean(item) && Array.isArray(item.samples);
+  return !!item && Array.isArray(item.samples);
 }
 
 /**
@@ -48,8 +48,7 @@ export function getShotSelectionProfileName(item) {
  * @returns {Partial<ShotSelectionRequest>}
  */
 function createSelectionBaseRequest(request) {
-  const isRequestObject = Boolean(request) && typeof request === 'object';
-  return isRequestObject && Object.hasOwn(request, 'item')
+  return !!request && typeof request === 'object' && Object.hasOwn(request, 'item')
     ? /** @type {Partial<ShotSelectionRequest>} */ (request)
     : { item: /** @type {AnalyzerShot} */ (request) };
 }
@@ -198,7 +197,8 @@ export async function loadPreferredAutoMatchedProfile(shotWithMetadata, allProfi
   if (!preferredMatch) return null;
 
   const profileName = getProfileDisplayLabel(preferredMatch, '');
-  const profileId = getProfileLookupId(preferredMatch);
+  // Listed profiles always carry an id (device) or a name (browser).
+  const profileId = /** @type {string} */ (getProfileLookupId(preferredMatch));
   const fullProfile = preferredMatch.data
     ? preferredMatch.data
     : await libraryService.loadProfile(profileId, preferredMatch.source);

@@ -60,16 +60,19 @@ function stdDevOf(values, mean) {
  * @returns {AggregatedStat}
  */
 function aggregateMetricStats(totals, key) {
+  /** @type {number[]} */
   const avgs = [];
+  /** @type {number[]} */
   const mins = [];
+  /** @type {number[]} */
   const maxs = [];
 
   for (const t of totals) {
     const stat = t[key];
     if (!stat) continue;
-    if (Number.isFinite(stat.avg)) avgs.push(stat.avg);
-    if (Number.isFinite(stat.min)) mins.push(stat.min);
-    if (Number.isFinite(stat.max)) maxs.push(stat.max);
+    if (Number.isFinite(stat.avg)) avgs.push(/** @type {number} */ (stat.avg));
+    if (Number.isFinite(stat.min)) mins.push(/** @type {number} */ (stat.min));
+    if (Number.isFinite(stat.max)) maxs.push(/** @type {number} */ (stat.max));
   }
 
   const avg = averageOf(avgs);
@@ -131,9 +134,11 @@ function addTotalSummaryValues(acc, total) {
   if (Number.isFinite(total.duration)) acc.totalDuration += total.duration;
   if (Number.isFinite(total.water)) acc.totalWater += total.water;
   if (Number.isFinite(total.weight)) acc.totalWeight += total.weight;
-  if (Number.isFinite(total.t?.avg)) acc.tempAvgs.push(total.t.avg);
+  if (Number.isFinite(total.t?.avg)) acc.tempAvgs.push(/** @type {number} */ (total.t.avg));
   const tempTargetDeviation = getTotalTempTargetDeviation(total);
-  if (Number.isFinite(tempTargetDeviation)) acc.tempTargetDeviations.push(tempTargetDeviation);
+  if (tempTargetDeviation !== null && Number.isFinite(tempTargetDeviation)) {
+    acc.tempTargetDeviations.push(tempTargetDeviation);
+  }
 }
 
 /**
@@ -188,7 +193,7 @@ function computeSummary(entries) {
  * @returns {StatisticsMetrics}
  */
 function computeMetricAverages(entries) {
-  const totals = entries.map(e => e.analysis.total).filter(Boolean);
+  const totals = /** @type {TotalStats[]} */ (entries.map(e => e.analysis.total).filter(Boolean));
   /** @type {AggregatedMetricKey[]} */
   const keys = ['p', 'f', 'pf', 'tt', 't', 'w', 'pr', 'lr'];
   /** @type {StatisticsMetrics} */
@@ -219,13 +224,15 @@ function computeProfileGroups(entries) {
     if (!groups.has(name)) {
       groups.set(name, []);
     }
-    groups.get(name).push(entry);
+    /** @type {StatisticsServiceEntry[]} */ (groups.get(name)).push(entry);
   }
 
   /** @type {ProfileGroupStats[]} */
   const result = [];
   for (const [profileName, groupEntries] of groups) {
-    const totals = groupEntries.map(e => e.analysis.total).filter(Boolean);
+    const totals = /** @type {TotalStats[]} */ (
+      groupEntries.map(e => e.analysis.total).filter(Boolean)
+    );
     const durations = totals.map(t => t.duration).filter(Number.isFinite);
     const weights = totals.map(t => t.weight).filter(Number.isFinite);
     const waters = totals.map(t => t.water).filter(Number.isFinite);
@@ -294,13 +301,13 @@ function computePhaseTargetDeltas(phases) {
  * @param {TargetDeltaValues} args.actuals
  * @param {TargetDeltaValues} args.targets
  * @param {TargetDeltaKey} args.key
- * @param {number | undefined} args.actual
- * @param {number | undefined} args.target
+ * @param {number | null | undefined} args.actual
+ * @param {number | null | undefined} args.target
  */
 function pushTargetDeltaValues({ actuals, targets, key, actual, target }) {
   if (!Number.isFinite(actual) || !Number.isFinite(target)) return;
-  actuals[key].push(actual);
-  targets[key].push(target);
+  actuals[key].push(/** @type {number} */ (actual));
+  targets[key].push(/** @type {number} */ (target));
 }
 
 /**
@@ -410,7 +417,7 @@ function buildPhaseMap(entries) {
       if (!phaseMap.has(name)) {
         phaseMap.set(name, []);
       }
-      phaseMap.get(name).push(phase);
+      /** @type {AnalyzedPhase[]} */ (phaseMap.get(name)).push(phase);
     }
   }
 

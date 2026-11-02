@@ -63,7 +63,7 @@ export const METRIC_DEFINITIONS = /** @type {MetricDefinition[]} */ ([
     required: false,
     available: () => true,
     getValue: ds => `${(ds.currentFlow ?? 0).toFixed(1)} ml/s`,
-    getTarget: ds => (ds.targetFlow > 0 ? (ds.targetFlow ?? 0).toFixed(1) : null),
+    getTarget: ds => ((ds.targetFlow ?? 0) > 0 ? (ds.targetFlow ?? 0).toFixed(1) : null),
     unit: ' ml/s',
     adjustable: () => false,
   },

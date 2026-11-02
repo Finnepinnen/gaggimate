@@ -147,7 +147,7 @@ export function CompareSelect({ onChange, options, title, value, widthClass }) {
 /**
  * @param {object} props
  * @param {string} [props.compareTargetDisplayMode]
- * @param {((mode: string) => void) | null} [props.onCompareTargetDisplayModeChange]
+ * @param {((mode: import('../../../utils/constants.js').CompareTargetDisplayMode) => void) | null} [props.onCompareTargetDisplayModeChange]
  */
 export function CompareTargetSelect({
   compareTargetDisplayMode,
@@ -156,7 +156,12 @@ export function CompareTargetSelect({
   const { t } = useLingui();
   return (
     <CompareSelect
-      onChange={onCompareTargetDisplayModeChange}
+      // Every option value below is a CompareTargetDisplayMode.
+      onChange={
+        /** @type {((value: string) => void) | null | undefined} */ (
+          onCompareTargetDisplayModeChange
+        )
+      }
       options={[
         { value: COMPARE_TARGET_DISPLAY_MODES.NONE, label: t`No Targets` },
         { value: COMPARE_TARGET_DISPLAY_MODES.PER_SHOT, label: t`Per Shot` },
@@ -179,7 +184,7 @@ export function CompareTargetSelect({
  * @param {((mode: string) => void) | null} [props.onCompareAlignmentModeChange]
  * @param {(() => void) | null} [props.onCompareAnnotationsToggle]
  * @param {(() => void) | null} [props.onCompareSwap]
- * @param {((mode: string) => void) | null} [props.onCompareTargetDisplayModeChange]
+ * @param {((mode: import('../../../utils/constants.js').CompareTargetDisplayMode) => void) | null} [props.onCompareTargetDisplayModeChange]
  * @param {unknown} [props.shouldShowCompareControls] Truthy to render.
  * @param {boolean} [props.showCompareAnnotationToggle]
  */

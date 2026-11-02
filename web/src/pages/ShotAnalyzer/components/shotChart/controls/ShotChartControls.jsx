@@ -75,7 +75,7 @@ function ReplayFocusHint({ isCompareMode, shouldShowReplayFocusHint }) {
  * @param {((mode: string) => void) | null} [props.onCompareAlignmentModeChange]
  * @param {(() => void) | null} [props.onCompareSwap]
  * @param {string} [props.compareTargetDisplayMode]
- * @param {((mode: string) => void) | null} [props.onCompareTargetDisplayModeChange]
+ * @param {((mode: import('../../../utils/constants.js').CompareTargetDisplayMode) => void) | null} [props.onCompareTargetDisplayModeChange]
  * @param {boolean} [props.showCompareAnnotationToggle]
  * @param {boolean} [props.compareAnnotationsEnabled]
  * @param {(() => void) | null} [props.onCompareAnnotationsToggle]

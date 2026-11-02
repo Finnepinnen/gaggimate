@@ -81,8 +81,9 @@ export function MachineSetup({ mandatory = false }) {
       const { settings, version } = await probeMachine(host);
       await addMachine({ host, name: preferredName || settings.mdnsName || host, version });
     } catch (err) {
-      console.error('Machine probe failed', host, err?.message);
-      const reason = err?.message || err;
+      const e = /** @type {Error | null | undefined} */ (err);
+      console.error('Machine probe failed', host, e?.message);
+      const reason = e?.message || err;
       setError(
         t`Couldn't connect to ${host}: ${reason}. Make sure the machine is on and your phone is on the same Wi-Fi network.`,
       );

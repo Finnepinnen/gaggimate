@@ -13,8 +13,7 @@ Chart.register(annotationPlugin);
  */
 export function ChartComponent({ data, className, chartClassName, style }) {
   const [chart, setChart] = useState(/** @type {Chart | null} */ (null));
-  /** @type {import('preact').RefObject<HTMLCanvasElement>} */
-  const ref = useRef();
+  const ref = useRef(/** @type {HTMLCanvasElement | null} */ (null));
 
   // Create chart on mount
   useEffect(() => {
@@ -72,7 +71,10 @@ export function ChartComponent({ data, className, chartClassName, style }) {
     // Guarantees a font object exists so we can safely assign size.
     /** @param {string[]} path */
     const ensureFont = path => {
-      const target = path.reduce((acc, key) => ensure(acc, key, {}), chart.options);
+      const target = path.reduce(
+        (acc, key) => ensure(acc, key, {}),
+        /** @type {Record<string, any>} */ (chart.options),
+      );
       if (!target.font) target.font = {}; // for scale tick objects that may embed font deeper
       return target;
     };

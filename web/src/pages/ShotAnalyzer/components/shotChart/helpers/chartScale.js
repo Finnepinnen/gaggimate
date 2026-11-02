@@ -85,7 +85,7 @@ function isTransientScaleSpikePoint({
   if (baselineValues.length === 0 || futureValues.length === 0) return false;
 
   const baseline = getMedianValue(baselineValues);
-  if (!Number.isFinite(baseline)) return false;
+  if (baseline === null || !Number.isFinite(baseline)) return false;
 
   const rise = point.y - baseline;
   if (rise < minTransientRise) return false;
@@ -172,7 +172,7 @@ function getSpikeResistantSeriesPeak(
     finitePoints.map(point => point.y),
     fallbackPercentile,
   );
-  if (!Number.isFinite(percentileMax)) return rawMaxPoint;
+  if (percentileMax === null || !Number.isFinite(percentileMax)) return rawMaxPoint;
 
   const percentilePeak = finitePoints.reduce((bestPoint, point) => {
     if (point.y > percentileMax) return bestPoint;
@@ -191,7 +191,10 @@ function getSpikeResistantSeriesPeak(
 export function getSpikeResistantSeriesMax(points, options = {}) {
   const { fallback = 1, ...peakOptions } = options;
   const peak = getSpikeResistantSeriesPeak(points, peakOptions);
-  return Math.max(fallback, Number.isFinite(peak?.y) ? peak.y : fallback);
+  return Math.max(
+    fallback,
+    Number.isFinite(peak?.y) ? /** @type {ChartPoint} */ (peak).y : fallback,
+  );
 }
 
 /**

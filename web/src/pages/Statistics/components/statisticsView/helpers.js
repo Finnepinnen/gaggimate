@@ -16,6 +16,13 @@ import { STATISTICS_SOURCE_FALLBACK } from '../../utils/statisticsRoute';
 import { t } from '@lingui/core/macro';
 
 /**
+ * Number.isFinite as a type guard.
+ * @param {unknown} value
+ * @returns {value is number}
+ */
+const isFiniteNumber = value => Number.isFinite(value);
+
+/**
  * @typedef {import('../../types').DateBasisMode} DateBasisMode
  * @typedef {import('../../types').StatisticsMode} StatisticsMode
  * @typedef {import('../../types').StatisticsSource} StatisticsSource
@@ -151,7 +158,7 @@ export function getSourceShortLabel(source) {
 
 /** @param {number | null} ms */
 export function formatShotDateTime(ms) {
-  if (!Number.isFinite(ms) || ms <= 0) return t`No date`;
+  if (ms === null || !Number.isFinite(ms) || ms <= 0) return t`No date`;
   try {
     return new Date(ms).toLocaleString(undefined, {
       year: '2-digit',
@@ -246,7 +253,8 @@ export function buildStatisticsCompareEntry(entry, { key, isReference = false } 
   if (!entry?.shotData || !entry?.analysis) return null;
 
   return {
-    key,
+    // Every caller passes a key.
+    key: /** @type {string} */ (key),
     shot: entry.shotData,
     shotName: entry.shotData.name || entry.meta?.id,
     label: entry.meta?.displayName || getShotDisplayName(entry.shotData),
@@ -472,11 +480,9 @@ export function buildBaseFilterState({
     });
   }
 
-  if (
-    Number.isFinite(visualDateFrom.valueMs) &&
-    Number.isFinite(visualDateTo.valueMs) &&
-    visualDateFrom.valueMs > visualDateTo.valueMs
-  ) {
+  const fromMs = visualDateFrom.valueMs;
+  const toMs = visualDateTo.valueMs;
+  if (isFiniteNumber(fromMs) && isFiniteNumber(toMs) && fromMs > toMs) {
     parseErrors.push({
       code: 'visual_date_range_invalid',
       message: t`Date range invalid: From is after To.`,
@@ -488,11 +494,11 @@ export function buildBaseFilterState({
   }
 
   const filteredShots = (rawShotCandidates || []).filter(shot => {
-    if (Number.isFinite(visualDateFrom.valueMs) || Number.isFinite(visualDateTo.valueMs)) {
+    if (isFiniteNumber(fromMs) || isFiniteNumber(toMs)) {
       const ts = resolveShotEffectiveTimestampMs(shot, dateBasisMode);
-      if (!Number.isFinite(ts)) return false;
-      if (Number.isFinite(visualDateFrom.valueMs) && ts < visualDateFrom.valueMs) return false;
-      if (Number.isFinite(visualDateTo.valueMs) && ts > visualDateTo.valueMs) return false;
+      if (!isFiniteNumber(ts)) return false;
+      if (isFiniteNumber(fromMs) && ts < fromMs) return false;
+      if (isFiniteNumber(toMs) && ts > toMs) return false;
     }
 
     return compiledDslFilter.predicate(shot);

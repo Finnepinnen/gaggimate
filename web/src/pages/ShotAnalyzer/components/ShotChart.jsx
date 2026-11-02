@@ -16,7 +16,7 @@ import './ShotChart.css';
  * @param {boolean} [props.isCompareActive]
  * @param {number} [props.desktopCardHeight]
  * @param {CompareShotChartsProps['onCompareSwap']} [props.onCompareSwap]
- * @param {CompareShotChartsProps['compareTargetDisplayMode']} [props.compareTargetDisplayMode]
+ * @param {CompareShotChartsProps['compareTargetDisplayMode']} props.compareTargetDisplayMode
  * @param {CompareShotChartsProps['onCompareTargetDisplayModeChange']} [props.onCompareTargetDisplayModeChange]
  */
 export function ShotChart({

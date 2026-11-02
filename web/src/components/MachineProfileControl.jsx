@@ -42,7 +42,7 @@ export function MachineProfileControl({
 }) {
   const { t } = useLingui();
   const fileInput = useRef(/** @type {HTMLInputElement | null} */ (null));
-  const [activeId, setActiveId] = useState(null);
+  const [activeId, setActiveId] = useState(/** @type {string | null} */ (null));
   const refreshActive = () =>
     requestSettings()
       .then(saved => {
@@ -59,7 +59,11 @@ export function MachineProfileControl({
   );
   const updateCatalog = useCallback((/** @type {MachineProfile[]} */ profiles) => {
     if (!Array.isArray(profiles)) throw new Error('Invalid machine profile library response.');
-    setDefinitionHashes(Object.fromEntries(profiles.map(profile => [profile.id, profile.hash])));
+    setDefinitionHashes(
+      Object.fromEntries(
+        profiles.map(profile => [profile.id, /** @type {string} */ (profile.hash)]),
+      ),
+    );
     setImported(
       profiles.filter(profile => !MACHINE_PROFILES.some(builtin => builtin.id === profile.id)),
     );
@@ -90,7 +94,7 @@ export function MachineProfileControl({
     () => parseProfileSelection(formData.machineProfileSelection),
     [formData.machineProfileSelection],
   );
-  const [resolvedImport, setResolvedImport] = useState(null);
+  const [resolvedImport, setResolvedImport] = useState(/** @type {MachineProfile | null} */ (null));
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [profileMissing, setProfileMissing] = useState(false);
   useEffect(() => {
@@ -193,7 +197,7 @@ export function MachineProfileControl({
         ...(profile ? profileToForm(profile) : { machineProfileSelection: '' }),
       });
     } catch (err) {
-      setError(err.message);
+      setError(/** @type {Error} */ (err).message);
     } finally {
       setBusy(false);
     }
@@ -224,7 +228,7 @@ export function MachineProfileControl({
       if (selection?.id !== profile.id) setFields(profileToForm(profile));
       setError('');
     } catch (err) {
-      setError(err.message);
+      setError(/** @type {Error} */ (err).message);
     } finally {
       setBusy(false);
     }
@@ -262,7 +266,7 @@ export function MachineProfileControl({
       downloadJson(profile, `${id}.json`);
       setError('');
     } catch (err) {
-      setError(err.message);
+      setError(/** @type {Error} */ (err).message);
     }
   };
   const canDelete =
@@ -282,7 +286,7 @@ export function MachineProfileControl({
       setFields({ machineProfileSelection: '' });
       setError('');
     } catch (err) {
-      setError(err.message);
+      setError(/** @type {Error} */ (err).message);
     } finally {
       setBusy(false);
     }
@@ -371,7 +375,7 @@ export function MachineProfileControl({
             aria-label={t`Reload updated profile`}
             title={t`Reload updated profile`}
             disabled={disabled || busy || loadingProfile}
-            onClick={() => selectProfile(selection.id)}
+            onClick={() => selectProfile(/** @type {MachineProfile} */ (selection).id)}
           >
             <FontAwesomeIcon icon={faRotateRight} />
           </button>
@@ -407,7 +411,7 @@ export function MachineProfileControl({
                 aria-label={t`Restore profile defaults`}
                 title={t`Restore profile defaults`}
                 disabled={disabled || busy || loadingProfile}
-                onClick={() => selectProfile(selection.id)}
+                onClick={() => selectProfile(/** @type {MachineProfile} */ (selection).id)}
               >
                 <FontAwesomeIcon icon={faRotateRight} />
               </button>
@@ -418,18 +422,20 @@ export function MachineProfileControl({
               <Trans>Profile values</Trans>
             </summary>
             <dl className='grid grid-cols-[max-content_minmax(0,1fr)] gap-x-4 gap-y-1 pt-2'>
-              {Object.entries(selected.settings).map(([key, value]) => {
-                const changed = changedKeys.has(key) && currentValues[key] !== undefined;
-                return (
-                  <Fragment key={key}>
-                    <dt>{(PROFILE_FIELDS[key]?.label || key).replace('(Ω)', '(kΩ)')}</dt>
-                    <dd className={changed ? 'machine-profile-difference font-medium' : ''}>
-                      {formatValue(key, value)}
-                      {changed && <> → {formatValue(key, currentValues[key])}</>}
-                    </dd>
-                  </Fragment>
-                );
-              })}
+              {Object.entries(/** @type {Record<string, unknown>} */ (selected.settings)).map(
+                ([key, value]) => {
+                  const changed = changedKeys.has(key) && currentValues[key] !== undefined;
+                  return (
+                    <Fragment key={key}>
+                      <dt>{(PROFILE_FIELDS[key]?.label || key).replace('(Ω)', '(kΩ)')}</dt>
+                      <dd className={changed ? 'machine-profile-difference font-medium' : ''}>
+                        {formatValue(key, value)}
+                        {changed && <> → {formatValue(key, currentValues[key])}</>}
+                      </dd>
+                    </Fragment>
+                  );
+                },
+              )}
             </dl>
           </details>
         </div>

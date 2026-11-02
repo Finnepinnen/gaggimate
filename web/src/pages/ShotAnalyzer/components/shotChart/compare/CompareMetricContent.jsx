@@ -281,7 +281,7 @@ function CompareMobileShotSwitcherItem({ item }) {
  *   compareAlignmentOptions: import('./types').CompareAlignmentOption[],
  *   compareTargetDisplayMode: string,
  *   onCompareAlignmentModeChange: ((mode: string) => void) | null,
- *   onCompareTargetDisplayModeChange: ((mode: import('../../../utils/constants.js').CompareTargetDisplayMode) => void) | null,
+ *   onCompareTargetDisplayModeChange?: ((mode: import('../../../utils/constants.js').CompareTargetDisplayMode) => void) | null,
  * }} props
  */
 export function CompareMobileChartControls({
@@ -747,7 +747,7 @@ function getCompareMobileDetailMetricDefinitions(labelKey, pageKey = null) {
 function getCompareMobileDetailMetricRows(entry, labelKey, pageKey = null) {
   return getCompareMobileDetailMetricDefinitions(labelKey, pageKey)
     .map(row => resolveCompareMobileMetricRow(entry, row))
-    .filter(Boolean);
+    .filter(row => row !== null);
 }
 
 /**

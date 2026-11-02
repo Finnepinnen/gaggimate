@@ -40,12 +40,12 @@ export const getProfileDisplayLabel = (profile, fallback = t`Unknown`) => {
 
 /** @param {string | undefined} char */
 function isDigitChar(char) {
-  return char >= '0' && char <= '9';
+  return char !== undefined && char >= '0' && char <= '9';
 }
 
 /** @param {string | undefined} char */
 function isAsciiLetterChar(char) {
-  return char >= 'a' && char <= 'z';
+  return char !== undefined && char >= 'a' && char <= 'z';
 }
 
 /** @param {string | undefined} char */

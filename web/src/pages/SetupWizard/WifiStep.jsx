@@ -46,10 +46,13 @@ export function isWifiChoiceValid(wifi) {
  */
 export function WifiStep({ wifi, onChange }) {
   const { t, i18n } = useLingui();
-  const apiService = useContext(ApiServiceContext);
+  // Provided at the app root, so never null here.
+  const apiService = /** @type {import('../../services/ApiService.js').default} */ (
+    useContext(ApiServiceContext)
+  );
   const [networks, setNetworks] = useState(/** @type {WifiNetwork[] | null} */ (null));
   const [scanning, setScanning] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState(/** @type {string | null} */ (null));
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {

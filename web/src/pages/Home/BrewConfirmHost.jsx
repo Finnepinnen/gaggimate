@@ -6,8 +6,13 @@ import { BrewConfirmModal } from './BrewConfirmModal.jsx';
 // Shows the brew confirmation whenever the controller asks for it, whichever UI or button started the brew.
 // It closes when any UI answers: a cancel event, or the brew actually starting.
 export function BrewConfirmHost() {
-  const apiService = useContext(ApiServiceContext);
-  const [warnings, setWarnings] = useState(null);
+  // Provided at the app root, so never null here.
+  const apiService = /** @type {import('../../services/ApiService.js').default} */ (
+    useContext(ApiServiceContext)
+  );
+  const [warnings, setWarnings] = useState(
+    /** @type {import('./BrewConfirmModal.jsx').ActiveWarning[] | null} */ (null),
+  );
   const processActive = !!machine.value.status.process?.a;
 
   useEffect(() => {

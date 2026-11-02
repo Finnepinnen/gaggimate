@@ -29,7 +29,10 @@ const REQUEST_ERRORS = {
 
 /** @param {'heater' | 'pressure'} name */
 function useSetupTest(name) {
-  const apiService = useContext(ApiServiceContext);
+  // Provided at the app root, so never null here.
+  const apiService = /** @type {import('../../services/ApiService.js').default} */ (
+    useContext(ApiServiceContext)
+  );
   const [status, setStatus] = useState(/** @type {SetupTestStatus | null} */ (null));
   const [error, setError] = useState(/** @type {string | null} */ (null));
 
@@ -207,9 +210,11 @@ function PressureTest() {
           ) : (
             <Trans>Building pressure…</Trans>
           )}
-          {status.maxPressure > 0 && (
-            <span className='ml-auto'>{t`Peak: ${Number(status.maxPressure).toFixed(1)} bar`}</span>
-          )}
+          {
+            /** @type {number} */ (status.maxPressure) > 0 && (
+              <span className='ml-auto'>{t`Peak: ${Number(status.maxPressure).toFixed(1)} bar`}</span>
+            )
+          }
         </div>
       )}
       {status && !running && status.maxPressure !== undefined && status.state !== 'aborted' && (

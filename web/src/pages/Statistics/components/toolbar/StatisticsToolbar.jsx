@@ -173,9 +173,9 @@ export function StatisticsToolbar({
   const currentModeOption = MODE_OPTIONS.find(opt => opt.value === mode) || MODE_OPTIONS[0];
   const hasDslQuery = !!String(query || '').trim();
   const shotSelectionItemMap = new Map((shotSelectionItems || []).map(item => [item.id, item]));
-  const selectedShotPreviewItems = (selectedShotKeys || [])
-    .map(id => shotSelectionItemMap.get(id))
-    .filter(Boolean);
+  const selectedShotPreviewItems = /** @type {ShotSelectionItem[]} */ (
+    (selectedShotKeys || []).map(id => shotSelectionItemMap.get(id)).filter(Boolean)
+  );
   const selectedProfilePreviewItems = (selectedProfileNames || [])
     .filter(Boolean)
     .map(name => ({ id: name, primary: name }));

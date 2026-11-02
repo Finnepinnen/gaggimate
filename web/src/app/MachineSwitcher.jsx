@@ -30,7 +30,7 @@ export function MachineSwitcher({ collapsed = false }) {
   /** @type {import('preact').RefObject<HTMLDivElement>} */
   const root = useRef(null);
   /** @type {import('preact').RefObject<HTMLButtonElement>} */
-  const trigger = useRef(null);
+  const trigger = useRef(/** @type {HTMLButtonElement | null} */ (null));
   const current = activeMachine.value;
   const peekStates = useMachinePeeks(machines.value, open);
 
@@ -88,9 +88,9 @@ export function MachineSwitcher({ collapsed = false }) {
         aria-expanded={open}
         onClick={() => {
           if (!open && collapsed) {
-            const rect = trigger.current.getBoundingClientRect();
-            const edge =
-              trigger.current.closest('.sidebar')?.getBoundingClientRect().right ?? rect.right;
+            const button = /** @type {HTMLButtonElement} */ (trigger.current);
+            const rect = button.getBoundingClientRect();
+            const edge = button.closest('.sidebar')?.getBoundingClientRect().right ?? rect.right;
             setMenuPosition({ left: edge + 8, bottom: window.innerHeight - rect.bottom });
           }
           setOpen(!open);

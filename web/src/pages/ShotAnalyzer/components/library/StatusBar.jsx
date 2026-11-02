@@ -26,8 +26,8 @@ import { getLoadedNameLabel } from './libraryDisplay';
  * @property {string} currentProfileName
  * @property {boolean} [isShotPending]
  * @property {boolean} [canRetryProfileSearch]
- * @property {() => void} [onUnloadShot]
- * @property {() => void} [onUnloadProfile]
+ * @property {() => void} onUnloadShot
+ * @property {() => void} onUnloadProfile
  * @property {(() => unknown) | null} [onExportShot]
  * @property {(() => unknown) | null} [onExportProfile]
  * @property {() => void} [onRetryProfileSearch]
@@ -214,7 +214,7 @@ function getStatusBarViewModel({
  * @param {boolean} props.isSearchingProfile
  * @param {boolean} props.canRetryProfileSearch
  * @param {(() => void) | undefined} props.onRetryProfileSearch
- * @param {(() => void) | undefined} props.onUnloadProfile
+ * @param {() => void} props.onUnloadProfile
  * @param {string} props.activeBadgeIconButtonClasses
  */
 function ProfileTrailingControl({
@@ -330,7 +330,7 @@ function BadgeExportControl({ available, activeBadgeIconButtonClasses, onExport,
  * @param {object} props
  * @param {LibraryItem | null | undefined} props.currentShot
  * @param {string} props.activeBadgeIconButtonClasses
- * @param {(() => void) | undefined} props.onUnloadShot
+ * @param {() => void} props.onUnloadShot
  */
 function ShotTrailingControl({ currentShot, activeBadgeIconButtonClasses, onUnloadShot }) {
   return (
@@ -361,7 +361,7 @@ function ShotTrailingControl({ currentShot, activeBadgeIconButtonClasses, onUnlo
  * @param {boolean} props.showShotChevron
  * @param {(() => void) | undefined} props.handleShotPanelToggle
  * @param {string} props.activeBadgeIconButtonClasses
- * @param {(() => void) | undefined} props.onUnloadShot
+ * @param {() => void} props.onUnloadShot
  * @param {(() => unknown) | null | undefined} props.onExportShot
  */
 function ShotBadge({
@@ -429,7 +429,7 @@ function ShotBadge({
  * @param {boolean} props.isSearchingProfile
  * @param {boolean} props.canRetryProfileSearch
  * @param {(() => void) | undefined} props.onRetryProfileSearch
- * @param {(() => void) | undefined} props.onUnloadProfile
+ * @param {() => void} props.onUnloadProfile
  * @param {(() => unknown) | null | undefined} props.onExportProfile
  */
 function ProfileBadge({

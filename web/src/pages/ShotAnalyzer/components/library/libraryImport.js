@@ -71,12 +71,13 @@ async function buildImportedShot({ data, file, importMode }) {
   if (source === 'browser') await indexedDBService.saveShot(shot);
 
   if (importedNotes && typeof importedNotes === 'object') {
-    notesWithId = {
+    const notes = {
       ...notesService.getDefaults(storageKey),
       ...importedNotes,
       id: storageKey,
     };
-    await notesService.saveNotes(storageKey, source, notesWithId);
+    notesWithId = notes;
+    await notesService.saveNotes(storageKey, source, notes);
   }
 
   return notesWithId ? { ...shot, notes: notesWithId } : shot;

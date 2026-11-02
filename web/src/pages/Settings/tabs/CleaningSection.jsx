@@ -120,7 +120,10 @@ CleaningTask.propTypes = {
  * }} props
  */
 export function CleaningSection({ formData, onChange, setField }) {
-  const apiService = useContext(ApiServiceContext);
+  // Provided at the app root, so never null here.
+  const apiService = /** @type {import('../../../services/ApiService.js').default} */ (
+    useContext(ApiServiceContext)
+  );
   const { route } = useLocation();
   const { t } = useLingui();
 

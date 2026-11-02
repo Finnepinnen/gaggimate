@@ -298,7 +298,7 @@ export function Settings() {
   }, [fetchedSettings]);
 
   const formRef = useRef(/** @type {HTMLFormElement | null} */ (null));
-  const dropdownRef = useRef(null);
+  const dropdownRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   useEffect(() => {
@@ -475,7 +475,7 @@ export function Settings() {
         setImportNotice(null);
       } catch (error) {
         console.error('Failed to save settings:', error);
-        window.alert(error.message);
+        window.alert(/** @type {Error} */ (error).message);
       } finally {
         setSubmitting(false);
       }
@@ -515,7 +515,11 @@ export function Settings() {
       if (fields.dashboardLayout !== undefined) setDashboardLayout(fields.dashboardLayout);
       setImportNotice({ error: false, name: file.name, count, ignored });
     } catch (error) {
-      setImportNotice({ error: true, name: file.name, message: error.message });
+      setImportNotice({
+        error: true,
+        name: file.name,
+        message: /** @type {Error} */ (error).message,
+      });
     } finally {
       // Lets the same file be picked again.
       input.value = '';

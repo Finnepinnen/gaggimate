@@ -7,7 +7,8 @@ import { faWeightScale } from '@fortawesome/free-solid-svg-icons/faWeightScale';
 /** @typedef {import('../services/machineTypes.js').SmartDoseMeasurement} SmartDoseMeasurementData */
 
 /** @param {number | null | undefined} value */
-const formatWeight = value => (Number.isFinite(value) ? `${value.toFixed(1)} g` : '—');
+const formatWeight = value =>
+  Number.isFinite(value) ? `${/** @type {number} */ (value).toFixed(1)} g` : '—';
 
 /**
  * @param {object} props
@@ -25,17 +26,20 @@ export default function SmartDoseMeasurement({ accessory, measurement, active, p
   const pfCalibration = portafilter
     ? measurement?.calibration
     : measurement?.portafilterCalibration;
-  const calculatedWeight = measurement?.gross - pfCalibration;
+  // A missing reading or calibration gives NaN, which fails the range check below.
+  const calculatedWeight =
+    /** @type {number} */ (measurement?.gross) - /** @type {number} */ (pfCalibration);
   const calculated =
     (portafilter || shared) &&
     ((active && portafilter) || (calculatedWeight >= 5 && calculatedWeight <= 40));
+  /** @type {number | null | undefined} */
   let weight = calculated
     ? calculatedWeight
     : active && !portafilter && !shared
       ? measurement?.weight
       : measurement?.raw;
   const detectingCup = active && !portafilter && !shared && phase === 'taring';
-  if (!connected || weight < 0 || detectingCup) weight = null;
+  if (!connected || /** @type {number} */ (weight) < 0 || detectingCup) weight = null;
   return (
     <section
       aria-label={

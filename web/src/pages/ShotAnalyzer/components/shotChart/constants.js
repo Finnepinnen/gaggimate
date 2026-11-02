@@ -35,8 +35,8 @@ export const REPLAY_FRAME_INTERVAL_MS = 1000 / REPLAY_TARGET_FPS;
 
 /**
  * @typedef {object} ReplayExportConfig
- * @property {string} exportType 'video' | 'image' | 'json'
- * @property {string} exportFormat 'mp4' | 'webm' | 'png'
+ * @property {string | null} exportType 'video' | 'image' | 'json'
+ * @property {string | null} exportFormat 'mp4' | 'webm' | 'png' (null when no video format is available)
  * @property {boolean} includeLegend
  * @property {string} layoutPreset
  * @property {HTMLVideoElement | HTMLCanvasElement | HTMLImageElement | null} videoSource

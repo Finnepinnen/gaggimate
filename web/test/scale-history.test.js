@@ -65,7 +65,8 @@ for (const [
     assert.equal(samples[0].fl, 2.45);
     assert.equal(samples[0].v, 12);
     assert.equal(shot.volume, 12.3); // preserve extended-recording final weight
-    assert.equal(samples[0].systemInfo.activeScaleConnected, connected);
+    const systemInfo = /** @type {import('../src/types').ShotSystemInfo} */ (samples[0].systemInfo);
+    assert.equal(systemInfo.activeScaleConnected, connected);
     assert.equal(samples[0].wp, size === 30 ? 45.6 : undefined);
     assert.equal(shot.incomplete, false);
   });

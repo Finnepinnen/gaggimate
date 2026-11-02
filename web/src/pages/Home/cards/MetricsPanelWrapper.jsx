@@ -19,7 +19,7 @@ export function MetricsPanelWrapper({ ds, inCard = false, compact = false }) {
 
   const visibleMetrics = orderedIds
     .map(id => METRIC_DEFINITIONS.find(m => m.id === id))
-    .filter(Boolean)
+    .filter(m => m !== undefined)
     .filter(m => m.available(ds))
     .map(m => ({
       id: m.id,

@@ -600,7 +600,8 @@ function ProfileCard({
                     ) && (
                       <span className='text-base-content/60 badge badge-xs md:badge-sm badge-outline'>
                         <FontAwesomeIcon icon={faScaleBalanced} />
-                        {`${phases[phases.length - 1].targets.find((/** @type {PhaseTarget} */ tg) => tg.type === 'volumetric').value}g`}
+                        {/* Guarded by the .some() above. */}
+                        {`${/** @type {PhaseTarget} */ (/** @type {PhaseTarget[]} */ (phases[phases.length - 1].targets).find((/** @type {PhaseTarget} */ tg) => tg.type === 'volumetric')).value}g`}
                       </span>
                     )}
                   {phases.length > 0 && (
@@ -755,7 +756,10 @@ async function withExportedImage(profile) {
 
 export function ProfileList() {
   const { t } = useLingui();
-  const apiService = useContext(ApiServiceContext);
+  // Provided at the app root, so never null here.
+  const apiService = /** @type {import('../../services/ApiService.js').default} */ (
+    useContext(ApiServiceContext)
+  );
   const {
     profiles,
     loading,
@@ -766,9 +770,10 @@ export function ProfileList() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('extraction');
   const [isDragging, setIsDragging] = useState(false);
-  /** @type {import('preact').RefObject<HTMLDivElement>} */
-  const containerRef = useRef(null);
-  const favoriteCount = profiles.map(p => (p.favorite ? 1 : 0)).reduce((a, b) => a + b, 0);
+  const containerRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const favoriteCount = profiles
+    .map(p => (p.favorite ? 1 : 0))
+    .reduce((a, b) => a + b, /** @type {number} */ (0));
   const unfavoriteDisabled = favoriteCount <= 1;
   const favoriteDisabled = favoriteCount >= 10;
   const hasUtilityProfiles = useMemo(() => profiles.some(p => p.utility), [profiles]);
@@ -925,7 +930,9 @@ export function ProfileList() {
       // Clear any drop highlights
       clearDropHighlights();
 
-      const { oldIndex, newIndex, oldIndicies } = evt;
+      // Sortable always sets both indices on onEnd.
+      const { oldIndex, newIndex, oldIndicies } =
+        /** @type {SortableEvent & { oldIndex: number, newIndex: number }} */ (evt);
       if (oldIndex === newIndex) return;
 
       setProfiles(prev => {
@@ -1026,7 +1033,7 @@ export function ProfileList() {
 
   // onSelect will exit early if the requested id is the same as the pending id
   // or if there is no pending selection and the requested id is already selected
-  const pendingSelectionRef = useRef(null);
+  const pendingSelectionRef = useRef(/** @type {string | null} */ (null));
   const onSelect = useCallback(
     /**
      * @param {string} id
@@ -1088,6 +1095,7 @@ export function ProfileList() {
       withPending(id, 'duplicate', async () => {
         const original = profiles.find(p => p.id === id);
         if (original) {
+          /** @type {Partial<typeof original>} */
           const copy = { ...original };
           delete copy.id;
           delete copy.selected;
@@ -1119,11 +1127,13 @@ export function ProfileList() {
 
   /** @param {import('preact').JSX.TargetedEvent<HTMLInputElement, Event>} evt */
   const onUpload = function (evt) {
-    if (/** @type {HTMLInputElement} */ (evt.target).files.length) {
-      const file = /** @type {HTMLInputElement} */ (evt.target).files[0];
+    // A file input always has a FileList.
+    const files = /** @type {FileList} */ (/** @type {HTMLInputElement} */ (evt.target).files);
+    if (files.length) {
+      const file = files[0];
       const reader = new FileReader();
       reader.onload = async e => {
-        const result = e.target.result;
+        const result = /** @type {FileReader} */ (e.target).result;
         if (typeof result === 'string') {
           setLoading(true);
           try {

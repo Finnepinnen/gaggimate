@@ -52,7 +52,10 @@ import { StatisticsDetailSectionPanel } from './StatisticsDetailSection';
 /** @param {{ initialContext: StatisticsInitialContext | null }} props */
 export function StatisticsView({ initialContext }) {
   const { t } = useLingui();
-  const apiService = useContext(ApiServiceContext);
+  // Provided at the app root, so never null here.
+  const apiService = /** @type {import('../../../../services/ApiService.js').default} */ (
+    useContext(ApiServiceContext)
+  );
   const initialProfileName = getInitialProfileName(initialContext);
 
   const [shotSource, setShotSource] = useState(() =>

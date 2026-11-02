@@ -49,8 +49,10 @@ export const fmtElapsed = (ms = 0) => {
  * @param {boolean} grind
  */
 export const fmtPhaseTarget = (p, grind) => {
-  if (p?.tt === 'time') return `${(p.pt / 1000).toFixed(0)}s`;
-  if (p?.tt === 'volumetric') return `${p.pt.toFixed(grind ? 1 : 0)}g`;
+  // The firmware always sends `pt` alongside `tt`.
+  const pt = /** @type {number} */ (p?.pt);
+  if (p?.tt === 'time') return `${(pt / 1000).toFixed(0)}s`;
+  if (p?.tt === 'volumetric') return `${pt.toFixed(grind ? 1 : 0)}g`;
   return '';
 };
 
