@@ -3,14 +3,10 @@ import { faCircleQuestion } from '@fortawesome/free-solid-svg-icons/faCircleQues
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { createPortal } from 'preact/compat';
 import { getAnalyzerIconButtonClasses } from '../../ShotAnalyzer/components/analyzerControlStyles';
-import {
-  STATISTICS_DROPDOWN_PANEL_SURFACE_CLASS,
-  STATISTICS_DROPDOWN_PANEL_SURFACE_STYLE,
-} from './statisticsDropdownSurface';
+import { DropdownPanel } from './statisticsSurfaces.jsx';
 import './StatisticsSearchHelp.css';
 import { Trans, useLingui } from '@lingui/react/macro';
 
-const STATISTICS_SEARCH_HELP_PANEL_CLASS = `dropdown-content mt-2 w-[min(92vw,34rem)] p-3 ${STATISTICS_DROPDOWN_PANEL_SURFACE_CLASS}`;
 const STATISTICS_SEARCH_HELP_FLOATING_ATTR = 'data-statistics-toolbar-floating-panel';
 
 function StatisticsSearchHelpContent() {
@@ -130,13 +126,11 @@ export function StatisticsSearchHelp() {
   }, []);
 
   const panelStyle = {
-    ...STATISTICS_DROPDOWN_PANEL_SURFACE_STYLE,
     maxHeight: 'min(80vh, 32rem)',
     overflowY: 'auto',
     overscrollBehavior: 'contain',
   };
   const mobilePanelStyle = {
-    ...STATISTICS_DROPDOWN_PANEL_SURFACE_STYLE,
     maxHeight: 'min(70vh, 28rem)',
     overflowY: 'auto',
     overscrollBehavior: 'contain',
@@ -155,18 +149,18 @@ export function StatisticsSearchHelp() {
       >
         <FontAwesomeIcon icon={faCircleQuestion} className='text-sm' />
       </summary>
-      <div className={STATISTICS_SEARCH_HELP_PANEL_CLASS} style={panelStyle}>
+      <DropdownPanel className='dropdown-content mt-2 w-[min(92vw,34rem)] p-3' style={panelStyle}>
         <StatisticsSearchHelpContent />
-      </div>
+      </DropdownPanel>
       {isOpen && isMobileViewport && mobilePortalTarget
         ? createPortal(
-            <div
+            <DropdownPanel
               {...{ [STATISTICS_SEARCH_HELP_FLOATING_ATTR]: true }}
-              className={`statistics-search-help-mobile-panel mx-1.5 mt-1 p-3 sm:mx-2 ${STATISTICS_DROPDOWN_PANEL_SURFACE_CLASS}`}
+              className='statistics-search-help-mobile-panel mx-1.5 mt-1 p-3 sm:mx-2'
               style={mobilePanelStyle}
             >
               <StatisticsSearchHelpContent />
-            </div>,
+            </DropdownPanel>,
             mobilePortalTarget,
           )
         : null}

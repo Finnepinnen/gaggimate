@@ -1,8 +1,7 @@
 import { Trans } from '@lingui/react/macro';
 import { CompareShotCharts } from '../../ShotAnalyzer/components/shotChart/CompareShotCharts';
 import { SectionTitle } from './statisticsUi.jsx';
-
-const STATISTICS_COMPARE_PANEL_CLASS = 'app-card-surface rounded-xl';
+import { StatisticsPanel } from './statisticsSurfaces.jsx';
 
 export function StatisticsShotCompareSection({
   compareEntries,
@@ -56,7 +55,7 @@ export function StatisticsShotCompareSection({
         </SectionTitle>
       )}
 
-      <div className={`${STATISTICS_COMPARE_PANEL_CLASS} px-1.5 py-2 sm:px-2`}>{content}</div>
+      <StatisticsPanel className='px-1.5 py-2 sm:px-2'>{content}</StatisticsPanel>
     </div>
   );
 }

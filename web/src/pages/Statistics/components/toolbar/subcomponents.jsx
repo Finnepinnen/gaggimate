@@ -9,10 +9,7 @@ import { faUndo } from '@fortawesome/free-solid-svg-icons/faUndo';
 import { SourceMarker } from '../../../ShotAnalyzer/components/SourceMarker';
 import { StatisticsSearchHelp } from '../StatisticsSearchHelp';
 import { StatisticsMultiSelectDropdown } from '../StatisticsMultiSelectDropdown';
-import {
-  STATISTICS_DROPDOWN_PANEL_SURFACE_CLASS,
-  STATISTICS_DROPDOWN_PANEL_SURFACE_STYLE,
-} from '../statisticsDropdownSurface';
+import { DropdownPanel } from '../statisticsSurfaces.jsx';
 import {
   SOURCE_OPTIONS,
   MODE_OPTIONS,
@@ -25,8 +22,6 @@ import {
 import { getMenuItemClasses, getSegmentButtonClasses, getDateBasisOptionTitle } from './helpers';
 import { Trans, useLingui } from '@lingui/react/macro';
 import { i18n } from '../../../../i18n.js';
-
-const STATISTICS_DROPDOWN_PANEL_CLASSES = `dropdown-content mt-2 ${STATISTICS_DROPDOWN_PANEL_SURFACE_CLASS}`;
 
 function renderCompactSourceSummary(option) {
   if (!option) return null;
@@ -145,10 +140,7 @@ export function ModeSelectionDropdown({
         <FontAwesomeIcon icon={faChevronDown} className='-ml-0.5 text-[10px] opacity-70' />
       </summary>
 
-      <div
-        className={`${STATISTICS_DROPDOWN_PANEL_CLASSES} w-40 p-1.5`}
-        style={STATISTICS_DROPDOWN_PANEL_SURFACE_STYLE}
-      >
+      <DropdownPanel className='dropdown-content mt-2 w-40 p-1.5'>
         <div className='grid gap-1'>
           {MODE_OPTIONS.map(opt => (
             <button
@@ -170,7 +162,7 @@ export function ModeSelectionDropdown({
             </button>
           ))}
         </div>
-      </div>
+      </DropdownPanel>
     </details>
   );
 }
@@ -293,10 +285,7 @@ export function SourceSelectionDropdown({
         <FontAwesomeIcon icon={faChevronDown} className='-ml-0.5 text-[10px] opacity-70' />
       </summary>
 
-      <div
-        className={`${STATISTICS_DROPDOWN_PANEL_CLASSES} w-[min(92vw,18rem)] p-2`}
-        style={STATISTICS_DROPDOWN_PANEL_SURFACE_STYLE}
-      >
+      <DropdownPanel className='dropdown-content mt-2 w-[min(92vw,18rem)] p-2'>
         <div className='grid gap-2'>
           {sourceGroups.map(group => (
             <div key={group.key} className='grid gap-1.5'>
@@ -319,7 +308,7 @@ export function SourceSelectionDropdown({
             </div>
           ))}
         </div>
-      </div>
+      </DropdownPanel>
     </details>
   );
 }
@@ -377,10 +366,7 @@ export function DateRangeDropdown({
         <FontAwesomeIcon icon={faChevronDown} className='-ml-0.5 shrink-0 text-[9px] opacity-50' />
       </summary>
 
-      <div
-        className={`${STATISTICS_DROPDOWN_PANEL_CLASSES} w-[min(92vw,26rem)] p-3`}
-        style={STATISTICS_DROPDOWN_PANEL_SURFACE_STYLE}
-      >
+      <DropdownPanel className='dropdown-content mt-2 w-[min(92vw,26rem)] p-3'>
         <div className='grid gap-2'>
           <label className='text-base-content/75 flex items-center gap-2 text-[11px] font-semibold'>
             <span className='w-10 shrink-0'>
@@ -428,7 +414,7 @@ export function DateRangeDropdown({
             <Trans>Clear Date Filter</Trans>
           </button>
         </div>
-      </div>
+      </DropdownPanel>
     </details>
   );
 }

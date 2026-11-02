@@ -1,6 +1,6 @@
 // Sub-components for the Statistics view detail section: header bar and panel body with metrics, profile groups, phase stats, trend chart, and compare
 import { useLingui } from '@lingui/react/macro';
-import { STATISTICS_PANEL_CLASS } from './constants';
+import { StatisticsPanel } from '../statisticsSurfaces.jsx';
 import { StatisticsShotCompareSection } from '../StatisticsShotCompareSection';
 import { MetricsTable } from '../MetricsTable';
 import { ProfileGroupTable } from '../ProfileGroupTable';
@@ -131,13 +131,9 @@ export function StatisticsDetailSectionPanel({
         setStatisticsDetailSection={setStatisticsDetailSection}
       />
       {shouldUsePanelSurface ? (
-        <div
-          className={`${STATISTICS_PANEL_CLASS} ${
-            shouldUseCompactChartPadding ? 'px-1.5 py-2 sm:px-2' : 'p-4'
-          }`}
-        >
+        <StatisticsPanel className={shouldUseCompactChartPadding ? 'px-1.5 py-2 sm:px-2' : 'p-4'}>
           {sectionContent}
-        </div>
+        </StatisticsPanel>
       ) : (
         sectionContent
       )}

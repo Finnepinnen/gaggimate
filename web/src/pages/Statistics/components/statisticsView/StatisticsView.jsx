@@ -18,7 +18,7 @@ import {
 import { StatisticsToolbar, STATISTICS_RUN_BUTTON_TONE_CLASS } from '../StatisticsToolbar';
 import { SummaryCards } from '../SummaryCards';
 import { normalizeStatisticsSourceSelection } from '../../utils/statisticsRoute';
-import { STATISTICS_PANEL_CLASS } from './constants';
+import { StatisticsPanel } from '../statisticsSurfaces.jsx';
 import {
   getInitialProfileName,
   getStatisticsSelectionHint,
@@ -391,7 +391,7 @@ export function StatisticsView({ initialContext }) {
       </div>
 
       {loading && (
-        <div className={`${STATISTICS_PANEL_CLASS} p-6 text-center`}>
+        <StatisticsPanel className='p-6 text-center'>
           <div className='mb-2 text-sm font-semibold opacity-70'>
             {progress.total > 0
               ? t`Analyzing shot ${progressCurrent} of ${progressTotal}...`
@@ -406,7 +406,7 @@ export function StatisticsView({ initialContext }) {
           ) : (
             <progress className='progress progress-primary w-full max-w-xs' />
           )}
-        </div>
+        </StatisticsPanel>
       )}
 
       {error && (
@@ -428,11 +428,11 @@ export function StatisticsView({ initialContext }) {
           {statisticsDetailSectionPanel}
 
           {result.summary.totalShots === 0 && (
-            <div className={`${STATISTICS_PANEL_CLASS} p-8 text-center`}>
+            <StatisticsPanel className='p-8 text-center'>
               <p className='text-sm opacity-50'>
                 <Trans>No shots found for the selected filters.</Trans>
               </p>
-            </div>
+            </StatisticsPanel>
           )}
         </div>
       )}
