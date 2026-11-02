@@ -18,6 +18,7 @@ export function WarningIcon({ icon, title, className = '' }) {
       role={title ? 'img' : undefined}
       aria-label={title}
       aria-hidden={title ? undefined : true}
+      // eslint-disable-next-line react/no-danger -- bundled SVG asset, not user input
       dangerouslySetInnerHTML={{ __html: svg }}
     />
   );

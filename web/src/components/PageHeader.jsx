@@ -1,6 +1,3 @@
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBars } from '@fortawesome/free-solid-svg-icons/faBars';
-
 /**
  * @param {object} props
  * @param {import('preact').ComponentChildren} props.title
