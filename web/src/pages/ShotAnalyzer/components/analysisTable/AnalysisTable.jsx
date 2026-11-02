@@ -1,4 +1,3 @@
-// @ts-check
 /** Orchestrates the single- and compare-shot analysis table layouts. */
 
 import { Fragment } from 'preact';
