@@ -1,3 +1,4 @@
+// @ts-check
 /* global globalThis */
 
 import { t } from '@lingui/core/macro';

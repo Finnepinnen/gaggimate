@@ -1,3 +1,4 @@
+// @ts-check
 /* global globalThis */
 
 function clampScrubberValue(value, min, max) {

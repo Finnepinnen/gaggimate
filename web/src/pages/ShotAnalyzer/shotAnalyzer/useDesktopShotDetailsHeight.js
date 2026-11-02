@@ -1,3 +1,4 @@
+// @ts-check
 /* global globalThis */
 
 import { useLayoutEffect, useState } from 'preact/hooks';

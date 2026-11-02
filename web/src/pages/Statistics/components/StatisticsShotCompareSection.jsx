@@ -1,3 +1,4 @@
+// @ts-check
 import { Trans } from '@lingui/react/macro';
 import { CompareShotCharts } from '../../ShotAnalyzer/components/shotChart/CompareShotCharts';
 import { STATISTICS_SECTION_TITLE_CLASS } from './statisticsUi';
@@ -21,6 +22,7 @@ export function StatisticsShotCompareSection({
       showPhaseAnnotations={false}
       showStopAnnotations={false}
       showBrewModeAnnotation={false}
+      // @ts-expect-error CompareShotCharts has no showCompareAnnotationToggle prop; it is ignored
       showCompareAnnotationToggle={false}
       enableDualMainChartAnnotations={false}
       showMainChartTitle={false}

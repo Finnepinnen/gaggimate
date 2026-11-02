@@ -1,3 +1,4 @@
+// @ts-check
 /* global globalThis */
 
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
@@ -226,7 +227,9 @@ export function CompareChartCanvas({
 
     const chart = new Chart(canvasRef.current, nextConfig);
     chartRef.current = chart;
-    chart.$compareTooltipShowDifference = Boolean(config.compareTooltipShowDifference);
+    /** @type {any} */ (chart).$compareTooltipShowDifference = Boolean(
+      config.compareTooltipShowDifference,
+    );
     if (chartInstanceRef) {
       chartInstanceRef.current = chart;
     }

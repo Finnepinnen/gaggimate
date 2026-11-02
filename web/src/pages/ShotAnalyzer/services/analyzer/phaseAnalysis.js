@@ -1,3 +1,4 @@
+// @ts-check
 /** Analyzes executed phases, including target exits, delay inference, and final-phase fallbacks. */
 
 import { t } from '@lingui/core/macro';

@@ -1,3 +1,4 @@
+// @ts-check
 /* global globalThis */
 
 /** Coordinates the single-chart lifecycle, responsive layout, hover, replay, and export. */

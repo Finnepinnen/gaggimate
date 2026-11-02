@@ -1,3 +1,4 @@
+// @ts-check
 // Shot analysis engine: metrics computation, compare entry building, profile/date-range extraction
 import {
   cleanName,

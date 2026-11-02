@@ -1,3 +1,4 @@
+// @ts-check
 import { t } from '@lingui/core/macro';
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { notesService } from '../services/NotesService';
@@ -75,6 +76,11 @@ function updateNotesValue(notes, field, value) {
   return updated;
 }
 
+/**
+ * @param {object} [options]
+ * @param {any} [options.currentShot]
+ * @param {boolean} [options.isSelectionPending]
+ */
 export function useShotNotesState({ currentShot, isSelectionPending = false } = {}) {
   const [notes, setNotes] = useState(notesService.getDefaults(null));
   const [saving, setSaving] = useState(false);

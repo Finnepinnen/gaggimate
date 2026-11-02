@@ -1,3 +1,4 @@
+// @ts-check
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { Chart } from 'chart.js';
 import { ChartComponent } from './Chart';
@@ -363,6 +364,15 @@ function getPhaseIndexForX(phaseRanges, xValue) {
   return -1;
 }
 
+/**
+ * @param {object} props
+ * @param {any} props.data - Profile (with `phases`)
+ * @param {string} [props.className]
+ * @param {number | null} [props.selectedPhase]
+ * @param {((index: number) => void) | null} [props.onPhaseClick]
+ * @param {boolean} [props.showPhaseLabels]
+ * @param {import('preact').JSX.CSSProperties} [props.style]
+ */
 export function ExtendedProfileChart({
   data,
   className = 'max-h-36 w-full',

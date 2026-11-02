@@ -1,3 +1,4 @@
+// @ts-check
 /* global globalThis */
 /**
  * useShotChartReplayExport.js
@@ -156,7 +157,12 @@ export function useShotChartReplayExport({
     showFormatInfo: false,
   });
   const [isReplayExporting, setIsReplayExporting] = useState(false);
-  const [replayExportStatus, setReplayExportStatus] = useState({ status: 'idle', error: null });
+  const [replayExportStatus, setReplayExportStatus] = useState(
+    /** @type {{ status: string, error: string | null, isCancelled?: boolean }} */ ({
+      status: 'idle',
+      error: null,
+    }),
+  );
 
   // Capability detection lives here so the UI and export handlers resolve the same
   // effective format instead of duplicating browser-specific decisions in multiple places.
@@ -180,6 +186,7 @@ export function useShotChartReplayExport({
   const replayExportStatusLabel = replayExportStatus.error
     ? replayExportStatus.error
     : getReplayExportStatusLabel(replayExportStatus.status, effectiveVideoExportFormat || 'mp4');
+  // @ts-expect-error getReplayExportStatusHint takes no arguments (it is a stub that always returns '')
   const replayExportStatusHint = getReplayExportStatusHint(replayExportStatus.status);
 
   const setReplayExportStatusSafely = nextStatus => {

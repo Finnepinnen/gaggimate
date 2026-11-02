@@ -1,3 +1,4 @@
+// @ts-check
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { t } from '@lingui/core/macro';
 import { Trans } from '@lingui/react/macro';
@@ -5,6 +6,12 @@ import { faExclamationTriangle, faCheck, faTimes } from '@fortawesome/free-solid
 import { getDisplayStopReasonParts, utilityColors } from '../../utils/analyzerUtils';
 import { isSafetyExitReason, isWeightType } from '../../services/analyzer/exitReasons.js';
 
+/**
+ * @param {object} props
+ * @param {any} props.phase
+ * @param {number} [props.phaseIndex]
+ * @param {any} props.results
+ */
 export function ComparePhaseLabel({ phase, results }) {
   if (!phase) {
     return <div className='text-base-content/45 leading-tight font-medium'>-</div>;
@@ -364,6 +371,7 @@ function renderMetricCellValue({
   warning = false,
 }) {
   const isStopValue = mainValueIsCalculated ? calcIsStopReason : isHit && !calcIsStopReason;
+  /** @type {import('preact').JSX.CSSProperties} */
   let style = {};
   if (warning) {
     style = { color: utilityColors.warningOrange };

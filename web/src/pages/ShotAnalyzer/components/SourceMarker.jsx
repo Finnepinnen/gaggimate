@@ -1,3 +1,4 @@
+// @ts-check
 import { useId } from 'preact/hooks';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLaptopFile } from '@fortawesome/free-solid-svg-icons/faLaptopFile';

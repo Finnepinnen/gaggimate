@@ -1,3 +1,4 @@
+// @ts-check
 import { faFileExport } from '@fortawesome/free-solid-svg-icons/faFileExport';
 import { faFileImport } from '@fortawesome/free-solid-svg-icons/faFileImport';
 import { faEllipsisVertical } from '@fortawesome/free-solid-svg-icons/faEllipsisVertical';
@@ -261,7 +262,7 @@ export function Settings() {
 
   const { profiles } = useProfileList();
   const [submitting, setSubmitting] = useState(false);
-  const [formData, setFormData] = useState({});
+  const [formData, setFormData] = useState(/** @type {Record<string, any>} */ ({}));
   const [currentTheme, setCurrentTheme] = useState('light');
   const [showWifiPassword, setShowWifiPassword] = useState(false);
   const [showApPassword, setShowApPassword] = useState(false);
@@ -333,10 +334,10 @@ export function Settings() {
       }
       if (key === 'standbyDisplayEnabled') {
         value = !formData.standbyDisplayEnabled;
-        const newFormData = {
+        const newFormData = /** @type {Record<string, any>} */ ({
           ...formData,
           [key]: value,
-        };
+        });
         if (!value) {
           newFormData.standbyBrightness = 0;
         }
@@ -390,7 +391,7 @@ export function Settings() {
     async (e, restart = false) => {
       if (e) e.preventDefault();
       setSubmitting(true);
-      const form = formRef.current;
+      const form = /** @type {HTMLFormElement} */ (formRef.current);
       const formDataToSubmit = buildSubmitFormData(formData, autowakeupSchedules, restart);
 
       try {
