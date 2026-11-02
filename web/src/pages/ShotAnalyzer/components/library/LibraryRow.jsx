@@ -17,17 +17,32 @@ import { AnalyzerControl } from '../AnalyzerControl.jsx';
 import { cx } from '../../../../utils/cx.js';
 import { LibraryActionsMenu } from './LibraryActionsMenu';
 
+/** @typedef {import('../types').LibraryItem} LibraryItem */
+
 const ACTIVE_ROW_CLASSES = 'bg-primary/18';
 const COMPARE_PENDING_ROW_CLASSES = 'bg-primary/10 opacity-75';
 const COMPARE_ROW_CLASSES = 'bg-primary/14';
 const MATCH_ROW_CLASSES = 'bg-primary/7';
 
+/**
+ * @param {LibraryItem} item
+ * @param {string} itemName
+ * @param {boolean} isShot
+ * @returns {string}
+ */
 function getLibraryDisplayName(item, itemName, isShot) {
   if (!isShot) return itemName.replace(/\.json$/i, '');
   if (item.source === 'gaggimate') return `#${item.id || itemName}`;
   return cleanName(item.name || item.storageKey || item.id || itemName);
 }
 
+/**
+ * @param {object} state
+ * @param {unknown} state.isActive
+ * @param {boolean} state.isComparePending
+ * @param {boolean} state.isCompareHighlight
+ * @param {unknown} state.isMatch
+ */
 function getLibraryRowClasses({ isActive, isComparePending, isCompareHighlight, isMatch }) {
   if (isActive) return ACTIVE_ROW_CLASSES;
   if (isComparePending) return COMPARE_PENDING_ROW_CLASSES;
@@ -36,6 +51,12 @@ function getLibraryRowClasses({ isActive, isComparePending, isCompareHighlight, 
   return 'hover:bg-base-content/5';
 }
 
+/**
+ * @param {object} state
+ * @param {unknown} state.isActive
+ * @param {boolean} state.isCompareHighlight
+ * @param {unknown} state.isMatch
+ */
 function getLibraryNameClasses({ isActive, isCompareHighlight, isMatch }) {
   if (isActive) return 'text-primary font-medium';
   if (isCompareHighlight) return 'text-primary font-medium opacity-95';
@@ -43,20 +64,31 @@ function getLibraryNameClasses({ isActive, isCompareHighlight, isMatch }) {
   return 'font-normal';
 }
 
+/** @param {number} compareBadgeNumber */
 function getCompareBadgeClasses(compareBadgeNumber) {
   return compareBadgeNumber === 1
     ? 'bg-primary text-primary-content'
     : 'bg-primary/70 text-primary-content';
 }
 
+/** @param {Event} event */
 function stopRowClick(event) {
   event.stopPropagation();
 }
 
+/** @param {string} value */
 function splitLibraryDateTime(value) {
   return value.includes(', ') ? value.split(', ') : [value, ''];
 }
 
+/**
+ * @param {object} props
+ * @param {boolean} props.isComparePending
+ * @param {boolean} props.isCompareSelected
+ * @param {boolean} props.isCompareSelectionDisabled
+ * @param {boolean} props.isCompareReference
+ * @param {((checked: boolean) => void) | undefined} props.onCompareToggle
+ */
 function CompareSelectionControl({
   isComparePending,
   isCompareSelected,
@@ -86,6 +118,7 @@ function CompareSelectionControl({
   );
 }
 
+/** @param {{ compareBadgeNumber: number | null }} props */
 function LibraryCompareBadge({ compareBadgeNumber }) {
   if (!compareBadgeNumber) return null;
 
@@ -98,6 +131,15 @@ function LibraryCompareBadge({ compareBadgeNumber }) {
   );
 }
 
+/**
+ * @param {object} props
+ * @param {LibraryItem} props.item
+ * @param {boolean} props.isPinned
+ * @param {string} props.pinDisabledReason
+ * @param {((item: LibraryItem) => void) | undefined} props.onPinToggle
+ * @param {string} props.displayName
+ * @param {boolean} props.isShot
+ */
 function LibraryPinButton({ item, isPinned, pinDisabledReason, onPinToggle, displayName, isShot }) {
   const { t } = useLingui();
   if (!onPinToggle) return null;
@@ -119,17 +161,29 @@ function LibraryPinButton({ item, isPinned, pinDisabledReason, onPinToggle, disp
       aria-label={pinAriaLabel}
       aria-disabled={!isPinned && !!pinDisabledReason}
       title={pinDisabledReason || pinTitle}
-      onClick={event => {
-        stopRowClick(event);
-        if (!isPinned && pinDisabledReason) return;
-        onPinToggle(item);
-      }}
+      onClick={
+        /** @param {Event} event */ event => {
+          stopRowClick(event);
+          if (!isPinned && pinDisabledReason) return;
+          onPinToggle(item);
+        }
+      }
     >
       <FontAwesomeIcon icon={faThumbtack} />
     </AnalyzerControl>
   );
 }
 
+/**
+ * @param {object} props
+ * @param {boolean} props.isShot
+ * @param {LibraryItem} props.item
+ * @param {string | null} props.profileStatsHref
+ * @param {((item: LibraryItem) => void) | undefined} props.onShowStats
+ * @param {(item: LibraryItem) => void} props.onExport
+ * @param {(item: LibraryItem) => void} props.onDelete
+ * @param {import('@fortawesome/fontawesome-svg-core').IconDefinition} props.statisticsIcon
+ */
 function LibraryActionsCell({
   isShot,
   item,
@@ -140,13 +194,14 @@ function LibraryActionsCell({
   statisticsIcon,
 }) {
   const { t } = useLingui();
+  /** @type {import('./LibraryActionsMenu').LibraryAction[]} */
   const actions = [
     ...(!isShot
       ? [
           {
             label: t`Profile Statistics`,
             icon: statisticsIcon,
-            tone: 'success',
+            tone: /** @type {const} */ ('success'),
             href: profileStatsHref || '/statistics',
             onSelect: () => onShowStats?.(item),
           },
@@ -175,6 +230,30 @@ function LibraryActionsCell({
   );
 }
 
+/**
+ * @param {object} props
+ * @param {LibraryItem} props.item
+ * @param {number | null} [props.compareBadgeNumber]
+ * @param {unknown} props.isMatch
+ * @param {boolean} [props.isCompareRelated]
+ * @param {unknown} props.isActive
+ * @param {boolean} props.isShot
+ * @param {boolean} [props.showCompareSelection]
+ * @param {boolean} [props.isCompareSelected]
+ * @param {boolean} [props.isComparePending]
+ * @param {boolean} [props.isCompareReference]
+ * @param {boolean} [props.isCompareSelectionDisabled]
+ * @param {boolean} [props.compareMode]
+ * @param {(checked: boolean) => void} [props.onCompareToggle]
+ * @param {(item: LibraryItem) => void} [props.onShowStats]
+ * @param {() => void} props.onLoad
+ * @param {(item: LibraryItem) => void} props.onExport
+ * @param {(item: LibraryItem) => void} props.onDelete
+ * @param {boolean} [props.isPinned]
+ * @param {string} [props.pinDisabledReason]
+ * @param {(item: LibraryItem) => void} [props.onPinToggle]
+ * @param {number} [props.columnCount]
+ */
 export function LibraryRow({
   item,
   compareBadgeNumber = null,

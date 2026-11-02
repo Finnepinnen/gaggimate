@@ -3,6 +3,18 @@ import { isSystemProfile } from '../../utils/systemProfiles.js';
 import { ProfileImageUpload } from './ProfileImageUpload.jsx';
 import { Trans, useLingui } from '@lingui/react/macro';
 
+/** @typedef {import('./types').FieldEvent} FieldEvent */
+
+/**
+ * @param {{
+ *   data: import('./types').EditorProfile,
+ *   onChangeLabel: (e: FieldEvent) => void,
+ *   onChangeDescription: (e: import('./types').FieldEvent<HTMLTextAreaElement>) => void,
+ *   onChangeTemperature: (e: FieldEvent) => void,
+ *   onChangeDose?: (e: FieldEvent) => void,
+ *   onChangeUtility: (e: FieldEvent) => void,
+ * }} props
+ */
 export function ProfileMainInformation(props) {
   const { t } = useLingui();
   console.log(props.data);

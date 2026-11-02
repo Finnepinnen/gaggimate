@@ -12,10 +12,18 @@ import { getShotChartDisplayLabel, getShotChartLabelIcon } from '../labelVisuals
 import { getTooltipRowTextKey } from './tooltipState';
 import { TooltipShotBadge } from './TooltipPrimitives';
 
+/** @typedef {import('./tooltipTypes').ExternalTooltipState} ExternalTooltipState */
+/** @typedef {import('./tooltipTypes').TooltipPhaseSummary} TooltipPhaseSummary */
+/** @typedef {import('./tooltipTypes').TooltipRow} TooltipRow */
+/** @typedef {import('./tooltipTypes').TooltipMetricContext} TooltipMetricContext */
+/** @typedef {import('./tooltipTypes').CompactTooltipVariant} CompactTooltipVariant */
+
+/** @param {TooltipPhaseSummary | null | undefined} summary */
 function getStopReasonClassName(summary) {
   return `shot-chart-tooltip__phase-reason${summary?.stopType === 'safety' ? ' shot-chart-tooltip__phase-reason--warning' : ''}`;
 }
 
+/** @param {{ phaseSummary: TooltipPhaseSummary, index: number }} props */
 function StaticTooltipPhaseSummary({ phaseSummary, index }) {
   return (
     <div
@@ -40,6 +48,7 @@ function StaticTooltipPhaseSummary({ phaseSummary, index }) {
   );
 }
 
+/** @param {{ phaseSummary: TooltipPhaseSummary, index: number }} props */
 function StaticTooltipStopSummary({ phaseSummary, index }) {
   return (
     <div
@@ -68,6 +77,7 @@ function StaticTooltipStopSummary({ phaseSummary, index }) {
   );
 }
 
+/** @param {{ row: TooltipRow, index: number }} props */
 function StaticTooltipMetricRow({ row, index }) {
   const rowIcon = getShotChartLabelIcon(row.label);
   const displayLabel = row.displayLabel || getShotChartDisplayLabel(row.label);
@@ -99,6 +109,7 @@ function StaticTooltipMetricRow({ row, index }) {
   );
 }
 
+/** @param {{ hideShotLabel?: boolean, row: TooltipRow, index: number }} props */
 function StaticCompactMetricRow({ hideShotLabel = false, row, index }) {
   if (row.isPlaceholder) {
     return (
@@ -147,11 +158,19 @@ function StaticCompactMetricRow({ hideShotLabel = false, row, index }) {
   );
 }
 
+/**
+ * @param {{ isSingleLineVariant: boolean, rows: TooltipRow[] }} options
+ * @returns {TooltipRow[]}
+ */
 function getCompactMetricRows({ isSingleLineVariant, rows }) {
   if (!isSingleLineVariant) return rows;
   return rows.filter(row => !row.isDifference && !TOOLTIP_WATER_LABELS.has(row.label)).slice(0, 2);
 }
 
+/**
+ * @param {{ metricContext?: TooltipMetricContext | null, rows?: TooltipRow[], variant: CompactTooltipVariant }} options
+ * @returns {TooltipRow[]}
+ */
 function getCompareLargeMetricRows({ metricContext = null, rows = [], variant }) {
   if (variant === 'comparePreview') {
     return rows.filter(row => !TOOLTIP_WATER_LABELS.has(row?.label));
@@ -172,8 +191,13 @@ function getCompareLargeMetricRows({ metricContext = null, rows = [], variant })
   return getCompactMetricRows({ isSingleLineVariant: true, rows });
 }
 
+/**
+ * @param {{ metricContext?: TooltipMetricContext | null, rows?: TooltipRow[] }} options
+ * @returns {TooltipRow[]}
+ */
 function getSinglePagedMetricRows({ metricContext = null, rows = [] }) {
   const pageKey = metricContext?.page || SINGLE_METRIC_PAGE_KEYS.BASICS;
+  /** @type {Record<string, string[]>} */
   const labelsByPage = {
     [SINGLE_METRIC_PAGE_KEYS.BASICS]: ['Pressure', 'Pump Flow', 'Weight', 'Temp'],
     [SINGLE_METRIC_PAGE_KEYS.PRESSURE_FLOW]: ['Pressure', 'Target P', 'Pump Flow', 'Target F'],
@@ -191,10 +215,19 @@ function getSinglePagedMetricRows({ metricContext = null, rows = [] }) {
 
   return rows
     .filter(row => orderIndexByLabel.has(row?.label) && row?.label !== WATER_DRAWN_TOTAL_LABEL)
-    .sort((a, b) => orderIndexByLabel.get(a.label) - orderIndexByLabel.get(b.label));
+    .sort(
+      (a, b) =>
+        /** @type {number} */ (orderIndexByLabel.get(a.label)) -
+        /** @type {number} */ (orderIndexByLabel.get(b.label)),
+    );
 }
 
+/**
+ * @param {TooltipRow[]} rows
+ * @returns {TooltipRow[]}
+ */
 function getMobileCompactMetricRows(rows) {
+  /** @type {TooltipRow[]} */
   const compactRows = [];
   const spacerAfterLabels = new Set([
     'Pump Flow',
@@ -219,6 +252,12 @@ function getMobileCompactMetricRows(rows) {
   return compactRows;
 }
 
+/**
+ * @param {object} options
+ * @param {TooltipRow | null | undefined} options.differenceRow
+ * @param {boolean} options.isSingleLineVariant
+ * @param {TooltipPhaseSummary | null} options.stopSummary
+ */
 function getCompactStopClassName({ differenceRow, isSingleLineVariant, stopSummary }) {
   const hasContent = isSingleLineVariant ? Boolean(differenceRow) : Boolean(stopSummary);
   return [
@@ -230,6 +269,7 @@ function getCompactStopClassName({ differenceRow, isSingleLineVariant, stopSumma
     .join(' ');
 }
 
+/** @param {{ differenceRow: TooltipRow | null | undefined }} props */
 function CompactDifferenceContent({ differenceRow }) {
   if (differenceRow) {
     return (
@@ -250,6 +290,7 @@ function CompactDifferenceContent({ differenceRow }) {
   );
 }
 
+/** @param {TooltipPhaseSummary} summary */
 function buildStopLineText(summary) {
   const reason = summary.stopReason || '';
   const value = summary.stopValue || '';
@@ -257,6 +298,7 @@ function buildStopLineText(summary) {
   return `${reason}${separator}${value}`;
 }
 
+/** @param {{ summary: TooltipPhaseSummary, index: number }} props */
 function CompactStopLine({ summary, index }) {
   const stopText = buildStopLineText(summary);
   const targetValue = summary.stopTargetValue;
@@ -287,6 +329,13 @@ function CompactStopLine({ summary, index }) {
   );
 }
 
+/**
+ * @param {object} props
+ * @param {TooltipRow | null | undefined} props.differenceRow
+ * @param {boolean} props.isSingleLineVariant
+ * @param {TooltipPhaseSummary | null} props.stopSummary
+ * @param {TooltipPhaseSummary[]} props.stopSummaries
+ */
 function CompactStopContent({ differenceRow, isSingleLineVariant, stopSummary, stopSummaries }) {
   if (isSingleLineVariant) {
     return <CompactDifferenceContent differenceRow={differenceRow} />;
@@ -313,6 +362,11 @@ function CompactStopContent({ differenceRow, isSingleLineVariant, stopSummary, s
   );
 }
 
+/**
+ * @template {{ shotNumber?: number | null }} T
+ * @param {T[]} [items]
+ * @returns {(T | null)[]}
+ */
 function getCompareShotSlots(items = []) {
   const byShotNumber = new Map(
     items
@@ -323,6 +377,7 @@ function getCompareShotSlots(items = []) {
   return [1, 2].map(shotNumber => byShotNumber.get(shotNumber) || null);
 }
 
+/** @param {{ phaseSummaries: TooltipPhaseSummary[] }} props */
 function CompareCompactPhaseGrid({ phaseSummaries }) {
   const phaseSlots = getCompareShotSlots(phaseSummaries);
 
@@ -340,6 +395,7 @@ function CompareCompactPhaseGrid({ phaseSummaries }) {
   );
 }
 
+/** @param {{ summary: TooltipPhaseSummary | null }} props */
 function CompareCompactStopColumn({ summary }) {
   const stopText = summary ? buildStopLineText(summary) : '';
   const targetText = summary?.stopTargetValue || '';
@@ -359,6 +415,7 @@ function CompareCompactStopColumn({ summary }) {
   );
 }
 
+/** @param {{ stopSummaries: TooltipPhaseSummary[] }} props */
 function CompareCompactStopGrid({ stopSummaries }) {
   const stopSlots = getCompareShotSlots(stopSummaries);
   const hasStopContent = stopSlots.some(
@@ -377,6 +434,10 @@ function CompareCompactStopGrid({ stopSummaries }) {
   );
 }
 
+/**
+ * @param {TooltipRow | null | undefined} row
+ * @returns {{ unit: string, value: string }}
+ */
 function splitCompareMetricValue(row) {
   const unit = UNIT_BY_LABEL[row?.label] || '';
   const valueText = row?.valueText || '-';
@@ -396,17 +457,22 @@ function splitCompareMetricValue(row) {
   return { unit, value: valueText };
 }
 
+/**
+ * @param {{ metricContext?: TooltipMetricContext | null, rows?: TooltipRow[], variant: CompactTooltipVariant }} options
+ * @returns {{ key: string, rows: TooltipRow[] }[]}
+ */
 function getCompareLargeMetricSlots({ metricContext = null, rows = [], variant }) {
   const metricRows = getCompareLargeMetricRows({ metricContext, rows, variant }).filter(
     row => row && !row.isPlaceholder && !row.isDifference,
   );
+  /** @type {Map<number, TooltipRow[]>} */
   const rowsByShotOrder = new Map();
 
   metricRows.forEach(row => {
     const shotOrder = Number.isFinite(Number(row.shotOrder)) ? Number(row.shotOrder) : null;
     if (shotOrder === null || shotOrder < 0 || shotOrder > 1) return;
     if (!rowsByShotOrder.has(shotOrder)) rowsByShotOrder.set(shotOrder, []);
-    rowsByShotOrder.get(shotOrder).push(row);
+    /** @type {TooltipRow[]} */ (rowsByShotOrder.get(shotOrder)).push(row);
   });
 
   return [0, 1].map(shotOrder => ({
@@ -415,6 +481,7 @@ function getCompareLargeMetricSlots({ metricContext = null, rows = [], variant }
   }));
 }
 
+/** @param {{ row: TooltipRow, showIcon?: boolean }} props */
 function CompareLargeMetricValue({ row, showIcon = true }) {
   const { unit, value } = splitCompareMetricValue(row);
   const displayLabel = row.displayLabel || getShotChartDisplayLabel(row.label);
@@ -453,6 +520,7 @@ function CompareLargeMetricValue({ row, showIcon = true }) {
   );
 }
 
+/** @param {{ state: ExternalTooltipState }} props */
 function SinglePagedContext({ state }) {
   const phaseSummary = (state.phaseSummaries || []).find(
     summary => summary.phaseLabel || summary.skipNotice || summary.stopReason || summary.stopValue,
@@ -482,6 +550,7 @@ function SinglePagedContext({ state }) {
   );
 }
 
+/** @param {{ metricContext?: TooltipMetricContext | null, rows: TooltipRow[] }} props */
 function SinglePagedMetricList({ metricContext = null, rows }) {
   if (metricContext?.page === SINGLE_METRIC_PAGE_KEYS.ALL) {
     return (
@@ -521,6 +590,7 @@ function SinglePagedMetricList({ metricContext = null, rows }) {
   );
 }
 
+/** @param {{ metricContext?: TooltipMetricContext | null, state: ExternalTooltipState }} props */
 function StaticSinglePagedTooltipContent({ metricContext = null, state }) {
   return (
     <div className='shot-chart-tooltip__compact-content shot-chart-tooltip__compact-content--single-paged-active'>
@@ -530,6 +600,7 @@ function StaticSinglePagedTooltipContent({ metricContext = null, state }) {
   );
 }
 
+/** @param {{ state: ExternalTooltipState }} props */
 function StaticStatisticsCompactTooltipContent({ state }) {
   const timeLabel = state.titleLines?.[0] || '';
 
@@ -542,6 +613,9 @@ function StaticStatisticsCompactTooltipContent({ state }) {
   );
 }
 
+/**
+ * @param {{ metricContext?: TooltipMetricContext | null, rows: TooltipRow[], variant: CompactTooltipVariant }} props
+ */
 function CompareCompactMetricList({ metricContext = null, rows, variant }) {
   const metricSlots = getCompareLargeMetricSlots({ metricContext, rows, variant });
   const hasMetrics = metricSlots.some(slot => slot.rows.length > 0);
@@ -572,6 +646,9 @@ function CompareCompactMetricList({ metricContext = null, rows, variant }) {
   );
 }
 
+/**
+ * @param {{ metricContext?: TooltipMetricContext | null, state: ExternalTooltipState, variant: CompactTooltipVariant }} props
+ */
 function StaticCompareCompactTooltipContent({ metricContext = null, state, variant }) {
   const phaseSummaries = (state.phaseSummaries || []).filter(summary => summary.phaseLabel);
   const stopSummaries = (state.phaseSummaries || []).filter(
@@ -603,6 +680,12 @@ function StaticCompareCompactTooltipContent({ metricContext = null, state, varia
   );
 }
 
+/**
+ * @param {object} props
+ * @param {TooltipMetricContext | null} [props.metricContext]
+ * @param {ExternalTooltipState} props.state
+ * @param {CompactTooltipVariant} [props.variant]
+ */
 export function StaticCompactTooltipContent({ metricContext = null, state, variant = 'default' }) {
   if (variant === 'singlePaged') {
     return <StaticSinglePagedTooltipContent metricContext={metricContext} state={state} />;
@@ -684,6 +767,7 @@ export function StaticCompactTooltipContent({ metricContext = null, state, varia
   );
 }
 
+/** @param {{ state: ExternalTooltipState }} props */
 export function StaticTooltipContent({ state }) {
   const phaseSummaries = (state.phaseSummaries || []).filter(
     summary => summary.phaseLabel || summary.shotLabel,

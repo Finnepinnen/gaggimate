@@ -1,17 +1,32 @@
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 
+/**
+ * @param {object} state
+ * @param {boolean} state.isSelectionPending
+ * @param {boolean} state.isProfilePending
+ */
 function getLoadIndicatorTargetProgress({ isSelectionPending, isProfilePending }) {
   if (isSelectionPending) return 0.36;
   if (isProfilePending) return 0.78;
   return 1;
 }
 
+/**
+ * @param {boolean} loadIndicatorVisible
+ * @param {number} loadIndicatorProgress 0..1
+ */
 function getLoadIndicatorWidth(loadIndicatorVisible, loadIndicatorProgress) {
   if (!loadIndicatorVisible) return '0%';
   return `${Math.min(100, Math.max(loadIndicatorProgress * 100, 8))}%`;
 }
 
+/**
+ * @param {object} state
+ * @param {boolean} state.isSelectionPending
+ * @param {boolean} state.isProfilePending
+ */
 export function useAnalyzerActionBarLoadIndicator({ isSelectionPending, isProfilePending }) {
+  /** @type {import('preact/hooks').MutableRef<ReturnType<typeof setTimeout> | null>} */
   const loadIndicatorHideTimerRef = useRef(null);
   const [loadIndicatorVisible, setLoadIndicatorVisible] = useState(false);
   const [loadIndicatorProgress, setLoadIndicatorProgress] = useState(0);

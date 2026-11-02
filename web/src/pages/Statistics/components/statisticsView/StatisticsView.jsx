@@ -35,6 +35,21 @@ import {
 } from './hooks';
 import { StatisticsDetailSectionPanel } from './StatisticsDetailSection';
 
+/**
+ * @typedef {import('../../types').DateBasisMode} DateBasisMode
+ * @typedef {import('../../types').StatisticsMode} StatisticsMode
+ * @typedef {import('../../types').StatisticsDetailSection} StatisticsDetailSection
+ * @typedef {import('../../types').StatisticsInitialContext} StatisticsInitialContext
+ * @typedef {import('../../types').StatisticsEntry} StatisticsEntry
+ * @typedef {import('../../types').StatisticsResult} StatisticsResult
+ * @typedef {import('../../types').StatisticsRunRequest} StatisticsRunRequest
+ * @typedef {import('../../types').StatisticsProfileMeta} StatisticsProfileMeta
+ * @typedef {import('../../types').StatisticsProgress} StatisticsProgress
+ * @typedef {import('../../types').ProfileSelectionItem} ProfileSelectionItem
+ * @typedef {import('../../types').ShotSelectionItem} ShotSelectionItem
+ */
+
+/** @param {{ initialContext: StatisticsInitialContext | null }} props */
 export function StatisticsView({ initialContext }) {
   const { t } = useLingui();
   const apiService = useContext(ApiServiceContext);
@@ -53,25 +68,30 @@ export function StatisticsView({ initialContext }) {
     ),
   );
 
-  const [mode, setMode] = useState(() => (initialProfileName ? 'profile' : 'all'));
+  const [mode, setMode] = useState(
+    /** @returns {StatisticsMode} */ () => (initialProfileName ? 'profile' : 'all'),
+  );
 
   const [selectedProfileNames, setSelectedProfileNames] = useState(() =>
     initialProfileName ? [initialProfileName] : [],
   );
-  const [selectedShotKeys, setSelectedShotKeys] = useState([]);
+  const [selectedShotKeys, setSelectedShotKeys] = useState(/** @type {string[]} */ ([]));
   const [query, setQuery] = useState('');
   const [dateFromLocal, setDateFromLocal] = useState('');
   const [dateToLocal, setDateToLocal] = useState('');
-  const [dateBasisMode, setDateBasisMode] = useState('auto');
+  const [dateBasisMode, setDateBasisMode] = useState(/** @type {DateBasisMode} */ ('auto'));
 
   const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState({ current: 0, total: 0 });
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState(null);
-  const [runRequest, setRunRequest] = useState(null);
+  const [progress, setProgress] = useState(
+    /** @type {StatisticsProgress} */ ({ current: 0, total: 0 }),
+  );
+  const [result, setResult] = useState(/** @type {StatisticsResult | null} */ (null));
+  const [error, setError] = useState(/** @type {string | null} */ (null));
+  const [runRequest, setRunRequest] = useState(/** @type {StatisticsRunRequest | null} */ (null));
   const [preparingRun, setPreparingRun] = useState(false);
   const [statisticsDetailSection, setStatisticsDetailSection] = useState(
-    () => normalizeStatisticsDetailSection(initialContext?.preferredDetailSection) || 'metrics',
+    /** @returns {StatisticsDetailSection} */ () =>
+      normalizeStatisticsDetailSection(initialContext?.preferredDetailSection) || 'metrics',
   );
   const [compareTargetDisplayMode, setCompareTargetDisplayMode] = useState(() =>
     normalizeCompareTargetDisplayMode(
@@ -83,8 +103,8 @@ export function StatisticsView({ initialContext }) {
 
   const analyzeLoadIdRef = useRef(0);
   const prepareRunIdRef = useRef(0);
-  const entriesRef = useRef(null);
-  const initializedDetailSectionRunIdRef = useRef(null);
+  const entriesRef = useRef(/** @type {StatisticsEntry[] | null} */ (null));
+  const initializedDetailSectionRunIdRef = useRef(/** @type {string | null} */ (null));
 
   useEffect(() => {
     saveToStorage(
@@ -111,12 +131,15 @@ export function StatisticsView({ initialContext }) {
     setSelectedShotKeys,
   });
 
+  /** @param {ProfileSelectionItem} item */
   const handleProfilePinToggle = item => {
-    const result = toggleProfilePin(item?.id || item?.primary || item);
+    // Selection items always carry a non-empty `id`, so the object fallback is never reached.
+    const result = toggleProfilePin(/** @type {string} */ (item?.id || item?.primary || item));
     if (!result.changed) return;
     setPinnedProfiles(result.pinnedProfiles);
   };
 
+  /** @param {ShotSelectionItem} item */
   const handleShotPinToggle = item => {
     const result = toggleShotPin(item?.id || item?.shotMeta, item?.pinBucketKey || '');
     if (!result.changed) return;
@@ -198,6 +221,7 @@ export function StatisticsView({ initialContext }) {
     !isSelectionMissing;
 
   const handleGo = useCallback(
+    /** @param {{ preferredDetailSection?: StatisticsDetailSection | null }} [options] */
     ({ preferredDetailSection = null } = {}) => {
       if (!canRunStatistics) {
         return;
@@ -213,6 +237,7 @@ export function StatisticsView({ initialContext }) {
 
       async function prepareRunRequest() {
         try {
+          /** @type {StatisticsProfileMeta[]} */
           let fallbackProfiles = [];
           if (fallbackSource) {
             try {
@@ -256,6 +281,7 @@ export function StatisticsView({ initialContext }) {
   );
 
   useEffect(() => {
+    /** @param {KeyboardEvent} event */
     const handleKeyDown = event => {
       if (event.defaultPrevented || event.repeat) return;
       if (event.metaKey || event.ctrlKey || event.altKey) return;

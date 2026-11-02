@@ -9,6 +9,53 @@ import {
   loadPreferredAutoMatchedProfile,
 } from './shotSelection';
 
+/** @typedef {import('../types').AnalyzerShot} AnalyzerShot */
+/** @typedef {import('../types').CompareResultEntry} CompareResultEntry */
+/** @typedef {import('../types').CompareShotEntry} CompareShotEntry */
+/** @typedef {import('../types').LibrarySource} LibrarySource */
+/** @typedef {import('../types').PendingShotSelection} PendingShotSelection */
+/** @typedef {import('../types').ShotSelectionRequest} ShotSelectionRequest */
+/** @typedef {import('./shotSelection').MatchedProfile} MatchedProfile */
+/**
+ * @template T
+ * @typedef {import('preact/hooks').Dispatch<import('preact/hooks').StateUpdater<T>>} SetState
+ */
+/**
+ * @template T
+ * @typedef {{ current: T }} Ref
+ */
+/**
+ * @typedef {{ status: 'loaded' } | { status: 'aborted' } | { status: 'retry', nextRequest: ShotSelectionRequest | null }} CompareLoadResult
+ */
+
+/**
+ * Every named option the compare helpers below take; each picks the fields it uses.
+ * @typedef {object} CompareSelectionOptions
+ * @property {ShotSelectionRequest} activeRequest
+ * @property {() => void} clearPendingState
+ * @property {Ref<number>} compareLoadIdRef
+ * @property {Ref<number>} compareSelectionRequestIdRef
+ * @property {Ref<AnalyzerShot | null>} currentShotRef
+ * @property {LibrarySource} importMode
+ * @property {AnalyzerShot} item
+ * @property {number} loadId
+ * @property {string | number} loadKey
+ * @property {Ref<PendingShotSelection | null>} pendingPrimarySelectionRef
+ * @property {number} requestId
+ * @property {ShotSelectionRequest} selectionRequest
+ * @property {SetState<boolean>} setCompareIsSearchingProfile
+ * @property {SetState<string[]>} setComparePendingKeys
+ * @property {SetState<CompareResultEntry[]>} setCompareResults
+ * @property {SetState<CompareShotEntry[]>} setCompareShots
+ * @property {SetState<PendingShotSelection | null>} setPendingCompareSelection
+ * @property {string} shotKey
+ * @property {AnalyzerShot} shotWithMetadata
+ * @property {string} targetShotKey
+ */
+
+/**
+ * @param {Pick<CompareSelectionOptions, 'compareLoadIdRef' | 'setCompareShots' | 'setComparePendingKeys' | 'setCompareResults' | 'setCompareIsSearchingProfile'>} options
+ */
 export function clearCompareSelectionState({
   compareLoadIdRef,
   setCompareShots,
@@ -23,6 +70,10 @@ export function clearCompareSelectionState({
   setCompareIsSearchingProfile(false);
 }
 
+/**
+ * @param {Pick<CompareSelectionOptions, 'shotKey' | 'shotWithMetadata' | 'item' | 'loadKey'>} options
+ * @returns {CompareShotEntry}
+ */
 function createCompareShotEntry({ shotKey, shotWithMetadata, item, loadKey }) {
   const matchedProfileName = shotWithMetadata.profile
     ? cleanName(shotWithMetadata.profile)
@@ -38,6 +89,11 @@ function createCompareShotEntry({ shotKey, shotWithMetadata, item, loadKey }) {
   };
 }
 
+/**
+ * @param {SetState<CompareShotEntry[]>} setCompareShots
+ * @param {string} shotKey
+ * @param {MatchedProfile} matchedProfile
+ */
 function applyMatchedCompareProfile(setCompareShots, shotKey, matchedProfile) {
   setCompareShots(currentEntries =>
     currentEntries.map(entry =>
@@ -53,10 +109,18 @@ function applyMatchedCompareProfile(setCompareShots, shotKey, matchedProfile) {
   );
 }
 
+/**
+ * @param {number} loadId
+ * @param {Ref<number>} compareLoadIdRef
+ * @returns {boolean}
+ */
 function isCurrentCompareLoad(loadId, compareLoadIdRef) {
   return loadId === compareLoadIdRef.current;
 }
 
+/**
+ * @param {Pick<CompareSelectionOptions, 'setPendingCompareSelection' | 'setComparePendingKeys' | 'setCompareIsSearchingProfile'>} options
+ */
 function clearComparePendingSelectionState({
   setPendingCompareSelection,
   setComparePendingKeys,
@@ -67,6 +131,11 @@ function clearComparePendingSelectionState({
   setCompareIsSearchingProfile(false);
 }
 
+/**
+ * @param {ShotSelectionRequest} selectionRequest
+ * @param {SetState<PendingShotSelection | null>} setPendingCompareSelection
+ * @param {SetState<string[]>} setComparePendingKeys
+ */
 function applyPendingCompareSelectionState(
   selectionRequest,
   setPendingCompareSelection,
@@ -80,6 +149,11 @@ function applyPendingCompareSelectionState(
   setComparePendingKeys(nextShotKey ? [nextShotKey] : []);
 }
 
+/**
+ * @param {ShotSelectionRequest} selectionRequest
+ * @param {number} loadId
+ * @returns {ShotSelectionRequest | null}
+ */
 function getDirectionalCompareSelectionRequest(selectionRequest, loadId) {
   const nextSelection = getNextDirectionalSelection(selectionRequest);
   if (!nextSelection) return null;
@@ -89,11 +163,20 @@ function getDirectionalCompareSelectionRequest(selectionRequest, loadId) {
   };
 }
 
+/**
+ * @param {Ref<PendingShotSelection | null>} pendingPrimarySelectionRef
+ * @param {Ref<AnalyzerShot | null>} currentShotRef
+ * @returns {string}
+ */
 function getActivePrimaryShotKey(pendingPrimarySelectionRef, currentShotRef) {
   const activePrimaryShot = pendingPrimarySelectionRef.current?.shot || currentShotRef.current;
   return activePrimaryShot ? getShotIdentityKey(activePrimaryShot) : '';
 }
 
+/**
+ * @param {Pick<CompareSelectionOptions, 'requestId' | 'compareSelectionRequestIdRef' | 'loadId' | 'compareLoadIdRef'>} options
+ * @returns {boolean}
+ */
 function shouldAbortCompareLoad({
   requestId,
   compareSelectionRequestIdRef,
@@ -106,6 +189,10 @@ function shouldAbortCompareLoad({
   );
 }
 
+/**
+ * @param {Pick<CompareSelectionOptions, 'selectionRequest' | 'loadId' | 'setPendingCompareSelection' | 'setComparePendingKeys' | 'clearPendingState'>} options
+ * @returns {ShotSelectionRequest | null}
+ */
 function advanceCompareSelectionAfterFailure({
   selectionRequest,
   loadId,
@@ -127,6 +214,9 @@ function advanceCompareSelectionAfterFailure({
   return nextSelection;
 }
 
+/**
+ * @param {Pick<CompareSelectionOptions, 'targetShotKey' | 'shotWithMetadata' | 'item' | 'loadKey' | 'setCompareShots' | 'setPendingCompareSelection' | 'setComparePendingKeys'>} options
+ */
 function commitLoadedCompareSelection({
   targetShotKey,
   shotWithMetadata,
@@ -143,6 +233,9 @@ function commitLoadedCompareSelection({
   setComparePendingKeys([]);
 }
 
+/**
+ * @param {Pick<CompareSelectionOptions, 'requestId' | 'compareSelectionRequestIdRef' | 'item' | 'setCompareIsSearchingProfile'>} options
+ */
 function finalizeCompareSelectionAttempt({
   requestId,
   compareSelectionRequestIdRef,
@@ -154,6 +247,10 @@ function finalizeCompareSelectionAttempt({
   }
 }
 
+/**
+ * @param {Pick<CompareSelectionOptions, 'setPendingCompareSelection' | 'setComparePendingKeys' | 'setCompareIsSearchingProfile'>} options
+ * @returns {() => void}
+ */
 function createComparePendingStateClearer({
   setPendingCompareSelection,
   setComparePendingKeys,
@@ -167,6 +264,10 @@ function createComparePendingStateClearer({
     });
 }
 
+/**
+ * @param {Pick<CompareSelectionOptions, 'activeRequest' | 'pendingPrimarySelectionRef' | 'currentShotRef'>} options
+ * @returns {{ shouldSkip: boolean, targetShotKey: string }}
+ */
 function getSkippableCompareSelection({
   activeRequest,
   pendingPrimarySelectionRef,
@@ -182,6 +283,10 @@ function getSkippableCompareSelection({
   };
 }
 
+/**
+ * @param {Pick<CompareSelectionOptions, 'activeRequest' | 'loadId' | 'setPendingCompareSelection' | 'setComparePendingKeys' | 'clearPendingState'>} options
+ * @returns {ShotSelectionRequest | null}
+ */
 function getNextCompareSelection({
   activeRequest,
   loadId,
@@ -198,6 +303,10 @@ function getNextCompareSelection({
   });
 }
 
+/**
+ * @param {Pick<CompareSelectionOptions, 'activeRequest' | 'clearPendingState' | 'compareLoadIdRef' | 'compareSelectionRequestIdRef' | 'importMode' | 'requestId' | 'setCompareIsSearchingProfile' | 'setComparePendingKeys' | 'setCompareShots' | 'setPendingCompareSelection' | 'targetShotKey'>} options
+ * @returns {Promise<CompareLoadResult>}
+ */
 async function tryLoadActiveCompareSelection({
   activeRequest,
   clearPendingState,
@@ -280,6 +389,11 @@ async function tryLoadActiveCompareSelection({
   }
 }
 
+/**
+ * Loads the compare shot of `selectionRequest`, advancing through its list snapshot on failure.
+ * @param {Pick<CompareSelectionOptions, 'requestId' | 'selectionRequest' | 'importMode' | 'compareSelectionRequestIdRef' | 'compareLoadIdRef' | 'pendingPrimarySelectionRef' | 'currentShotRef' | 'setPendingCompareSelection' | 'setComparePendingKeys' | 'setCompareIsSearchingProfile' | 'setCompareShots'>} options
+ * @returns {Promise<boolean>}
+ */
 export async function executeCompareSelectionLoad({
   requestId,
   selectionRequest,
@@ -351,6 +465,10 @@ export async function executeCompareSelectionLoad({
   return false;
 }
 
+/**
+ * @param {Pick<CompareSelectionOptions, 'item' | 'importMode'>} options
+ * @returns {Promise<{ loadKey: string | number, shotWithMetadata: AnalyzerShot }>}
+ */
 async function loadCompareShotSelection({ item, importMode }) {
   const loadKey = getShotStorageKey(item);
   const loadedShot = hasLoadedShotPayload(item)
@@ -369,6 +487,9 @@ async function loadCompareShotSelection({ item, importMode }) {
   };
 }
 
+/**
+ * @param {Pick<CompareSelectionOptions, 'loadId' | 'compareLoadIdRef' | 'shotKey' | 'shotWithMetadata' | 'setCompareIsSearchingProfile' | 'setCompareShots'>} options
+ */
 async function tryAutoMatchCompareShotProfile({
   loadId,
   compareLoadIdRef,

@@ -27,6 +27,37 @@ import {
   getVisibleLegendItemsForExport,
 } from '../helpers';
 
+/** @typedef {import('chart.js').Chart} Chart */
+/** @typedef {import('../helpers/types').ChartPoint} ChartPoint */
+/** @typedef {import('../helpers/types').ReplayDatasetMeta} ReplayDatasetMeta */
+/** @typedef {import('../helpers/types').ReplayAnnotationMeta} ReplayAnnotationMeta */
+/** @typedef {import('../controls/chartReplayControls').ExportMenuState} ExportMenuState */
+/** @typedef {ReturnType<typeof getVideoExportCapabilities>} VideoExportCapabilities */
+/** @typedef {{ status: string, error: string | null, isCancelled?: boolean }} ReplayExportStatus */
+/**
+ * Replay model for the mounted charts (built by SingleShotChart on each chart build).
+ * @typedef {import('../helpers/types').ShotChartReplayModel & {
+ *   sampleTimesSec: number[],
+ *   shotStartSec: number,
+ *   maxTime: number,
+ * }} ShotChartReplayRuntime
+ */
+/** @typedef {{ mode: 'revealed' } | { mode: 'liveReplay', frameIndex: number, elapsedSec: number }} ReplayVisualSnapshot */
+/**
+ * @typedef {object} ChartInteractionState
+ * @property {boolean} disabled
+ * @property {Chart['options']['events'] | undefined} mainEvents
+ * @property {Chart['options']['events'] | undefined} tempEvents
+ * @property {string} hoverAreaPointerEvents
+ */
+/**
+ * @typedef {object} ShotChartReplayRefs
+ * @property {import('preact').RefObject<Chart | null>} mainChartInstance
+ * @property {import('preact').RefObject<Chart | null>} tempChartInstance
+ * @property {import('preact').RefObject<HTMLElement | null>} hoverAreaRef
+ */
+
+/** @param {VideoExportCapabilities} videoExportCapabilities */
 function shouldUseForcedWebmExport(videoExportCapabilities) {
   return (
     videoExportCapabilities.canRecordMp4 === false &&
@@ -34,6 +65,15 @@ function shouldUseForcedWebmExport(videoExportCapabilities) {
   );
 }
 
+/**
+ * @param {{
+ *   exportFormat: string,
+ *   hasVideoExportSupport: boolean,
+ *   shouldForceWebmExport: boolean,
+ *   shouldHideWebmOption: boolean,
+ * }} options
+ * @returns {'mp4' | 'webm' | null}
+ */
 function getEffectiveVideoExportFormat({
   exportFormat,
   hasVideoExportSupport,
@@ -52,6 +92,10 @@ function getEffectiveVideoExportFormat({
   return null;
 }
 
+/**
+ * @param {{ exportType: string | null, hasVideoExportSupport: boolean }} options
+ * @returns {string | null}
+ */
 function getNextExportType({ exportType, hasVideoExportSupport }) {
   if (hasVideoExportSupport === false && exportType === 'video') {
     return 'image';
@@ -59,6 +103,15 @@ function getNextExportType({ exportType, hasVideoExportSupport }) {
   return exportType;
 }
 
+/**
+ * @param {{
+ *   exportFormat: string,
+ *   hasVideoExportSupport: boolean,
+ *   shouldForceWebmExport: boolean,
+ *   shouldHideWebmOption: boolean,
+ * }} options
+ * @returns {string}
+ */
 function getNextExportFormat({
   exportFormat,
   hasVideoExportSupport,
@@ -76,6 +129,10 @@ function getNextExportFormat({
   return exportFormat;
 }
 
+/**
+ * @param {ChartPoint[]} activeData
+ * @param {ChartPoint[] | undefined} frameChunk
+ */
 function appendReplayChunk(activeData, frameChunk) {
   if (!Array.isArray(frameChunk) || frameChunk.length === 0) return;
   for (const point of frameChunk) {
@@ -86,6 +143,11 @@ function appendReplayChunk(activeData, frameChunk) {
   }
 }
 
+/**
+ * @param {Chart} chart
+ * @param {ReplayDatasetMeta[] | undefined} replayDatasets
+ * @param {{ endFrame: number, shouldReset: boolean, startFrame: number }} frameOptions
+ */
 function applyReplayDatasetFrames(chart, replayDatasets, { endFrame, shouldReset, startFrame }) {
   replayDatasets?.forEach((datasetMeta, datasetIndex) => {
     const dataset = chart.data.datasets[datasetIndex];
@@ -104,19 +166,43 @@ function applyReplayDatasetFrames(chart, replayDatasets, { endFrame, shouldReset
   });
 }
 
+/**
+ * @param {Chart} chart
+ * @param {ReplayAnnotationMeta[] | undefined} annotationMetadata
+ * @param {(meta: ReplayAnnotationMeta) => boolean} isVisible
+ */
 function updateReplayAnnotations(chart, annotationMetadata, isVisible) {
-  const annotations = chart.options?.plugins?.annotation?.annotations || {};
+  const annotations = /** @type {Record<string, { display?: boolean }>} */ (
+    chart.options?.plugins?.annotation?.annotations || {}
+  );
   for (const meta of annotationMetadata || []) {
     const annotation = annotations[meta.key];
     if (annotation) annotation.display = isVisible(meta);
   }
 }
 
+/**
+ * @param {Chart} chart
+ * @param {boolean} enabled
+ * @param {number} revealX
+ */
 function setChartReplayReveal(chart, enabled, revealX) {
   chart.$replayRevealEnabled = enabled;
   chart.$replayRevealX = enabled ? revealX : null;
 }
 
+/**
+ * @param {{
+ *   shotData: import('../types').ShotChartShotData | null | undefined,
+ *   profileData: import('../../../types').AnalyzerProfile | null | undefined,
+ *   exportMenuRef: import('preact').RefObject<HTMLElement | null>,
+ *   chartRefs: ShotChartReplayRefs,
+ *   legendColorByLabel: Record<string, string>,
+ *   visibility: import('../types').ShotChartVisibility,
+ *   hasWeightData: boolean,
+ *   hasWeightFlowData: boolean,
+ * }} options
+ */
 export function useShotChartReplayExport({
   shotData,
   profileData,
@@ -127,36 +213,40 @@ export function useShotChartReplayExport({
   hasWeightData,
   hasWeightFlowData,
 }) {
-  const replayRafRef = useRef(null);
+  const replayRafRef = useRef(/** @type {number | null} */ (null));
   const replayStartPerfMsRef = useRef(0);
   const replayElapsedOffsetSecRef = useRef(0);
   const replayLastAppliedFrameRef = useRef(-1);
-  const replayRuntimeRef = useRef(null);
-  const clearAllHoverRef = useRef(() => {});
-  const chartInteractionStateRef = useRef({
-    disabled: false,
-    mainEvents: undefined,
-    tempEvents: undefined,
-    hoverAreaPointerEvents: '',
-  });
+  const replayRuntimeRef = useRef(/** @type {ShotChartReplayRuntime | null} */ (null));
+  const clearAllHoverRef = useRef(/** @type {(() => void) | null} */ (() => {}));
+  const chartInteractionStateRef = useRef(
+    /** @type {ChartInteractionState} */ ({
+      disabled: false,
+      mainEvents: undefined,
+      tempEvents: undefined,
+      hoverAreaPointerEvents: '',
+    }),
+  );
   const isReplayingRef = useRef(false);
   const isExportingRef = useRef(false);
-  const activeExportTypeRef = useRef(null);
-  const exportAbortControllerRef = useRef(null);
+  const activeExportTypeRef = useRef(/** @type {'video' | 'image' | null} */ (null));
+  const exportAbortControllerRef = useRef(/** @type {AbortController | null} */ (null));
   const isMountedRef = useRef(true);
 
   const [isReplaying, setIsReplaying] = useState(false);
   const [isReplayPaused, setIsReplayPaused] = useState(false);
-  const [exportMenuState, setExportMenuState] = useState({
-    open: false,
-    exportType: DEFAULT_REPLAY_EXPORT_CONFIG.exportType,
-    exportFormat: DEFAULT_REPLAY_EXPORT_CONFIG.exportFormat,
-    includeLegend: DEFAULT_REPLAY_EXPORT_CONFIG.includeLegend,
-    showFormatInfo: false,
-  });
+  const [exportMenuState, setExportMenuState] = useState(
+    /** @type {ExportMenuState} */ ({
+      open: false,
+      exportType: DEFAULT_REPLAY_EXPORT_CONFIG.exportType,
+      exportFormat: DEFAULT_REPLAY_EXPORT_CONFIG.exportFormat,
+      includeLegend: DEFAULT_REPLAY_EXPORT_CONFIG.includeLegend,
+      showFormatInfo: false,
+    }),
+  );
   const [isReplayExporting, setIsReplayExporting] = useState(false);
   const [replayExportStatus, setReplayExportStatus] = useState(
-    /** @type {{ status: string, error: string | null, isCancelled?: boolean }} */ ({
+    /** @type {ReplayExportStatus} */ ({
       status: 'idle',
       error: null,
     }),
@@ -187,12 +277,14 @@ export function useShotChartReplayExport({
   // @ts-expect-error getReplayExportStatusHint takes no arguments (it is a stub that always returns '')
   const replayExportStatusHint = getReplayExportStatusHint(replayExportStatus.status);
 
+  /** @param {ReplayExportStatus} nextStatus */
   const setReplayExportStatusSafely = nextStatus => {
     if (isMountedRef.current) {
       setReplayExportStatus(nextStatus);
     }
   };
 
+  /** @param {(current: ReplayExportStatus) => ReplayExportStatus} updater */
   const updateReplayExportStatusSafely = updater => {
     if (isMountedRef.current) {
       setReplayExportStatus(updater);
@@ -223,13 +315,17 @@ export function useShotChartReplayExport({
       datasetMeta.activeData.length = 0;
     });
 
-    const mainAnnotations = mainChart.options?.plugins?.annotation?.annotations || {};
+    const mainAnnotations = /** @type {Record<string, { display?: boolean }>} */ (
+      mainChart.options?.plugins?.annotation?.annotations || {}
+    );
     for (const meta of runtime.mainAnnotationMeta || []) {
       const annotation = mainAnnotations[meta.key];
       if (annotation) annotation.display = meta.baseDisplay;
     }
 
-    const tempAnnotations = tempChart.options?.plugins?.annotation?.annotations || {};
+    const tempAnnotations = /** @type {Record<string, { display?: boolean }>} */ (
+      tempChart.options?.plugins?.annotation?.annotations || {}
+    );
     for (const meta of runtime.tempAnnotationMeta || []) {
       const annotation = tempAnnotations[meta.key];
       if (annotation) annotation.display = meta.baseDisplay;
@@ -239,6 +335,10 @@ export function useShotChartReplayExport({
     tempChart.update('none');
   };
 
+  /**
+   * @param {boolean} enabled
+   * @param {number | null} [xValue]
+   */
   const setStopOverlayReplayReveal = (enabled, xValue = null) => {
     const revealEnabled = enabled === true && Number.isFinite(Number(xValue));
     const revealX = revealEnabled ? Number(xValue) : null;
@@ -291,6 +391,10 @@ export function useShotChartReplayExport({
     restoreFullReplayVisuals();
   };
 
+  /**
+   * @param {number} frameIndex
+   * @param {{ forceReset?: boolean }} [options]
+   */
   const applyReplayFrame = (frameIndex, options = {}) => {
     const runtime = replayRuntimeRef.current;
     const mainChart = getMainChart();
@@ -332,6 +436,10 @@ export function useShotChartReplayExport({
     tempChart.update('none');
   };
 
+  /**
+   * @param {number} cutoffX
+   * @param {{ revealAll?: boolean }} [options]
+   */
   const applyReplayCutoff = (cutoffX, options = {}) => {
     const runtime = replayRuntimeRef.current;
     const mainChart = getMainChart();
@@ -348,6 +456,7 @@ export function useShotChartReplayExport({
     setChartReplayReveal(tempChart, shouldRevealPartialReplay, effectiveCutoffX);
     setStopOverlayReplayReveal(shouldRevealPartialReplay, effectiveCutoffX);
 
+    /** @param {ReplayAnnotationMeta} meta */
     const isAnnotationVisible = meta =>
       meta.baseDisplay && (revealAll || effectiveCutoffX >= meta.time);
     updateReplayAnnotations(mainChart, runtime.mainAnnotationMeta, isAnnotationVisible);
@@ -362,6 +471,7 @@ export function useShotChartReplayExport({
       ? performance.now()
       : Date.now();
 
+  /** @param {FrameRequestCallback} frameHandler */
   const scheduleReplayFrame = frameHandler => {
     const browserWindow = globalThis.window;
     if (typeof browserWindow?.requestAnimationFrame === 'function') {
@@ -372,6 +482,7 @@ export function useShotChartReplayExport({
   };
 
   const startReplayLoop = () => {
+    /** @param {number} nowMs */
     const frame = nowMs => {
       if (!isReplayingRef.current) return;
       const runtime = replayRuntimeRef.current;
@@ -477,6 +588,7 @@ export function useShotChartReplayExport({
     startReplayLoop();
   };
 
+  /** @returns {ReplayVisualSnapshot} */
   const captureReplayVisualSnapshot = () => {
     const runtime = replayRuntimeRef.current;
     if (!runtime) return { mode: 'revealed' };
@@ -503,6 +615,7 @@ export function useShotChartReplayExport({
     };
   };
 
+  /** @param {ReplayVisualSnapshot | null | undefined} snapshot */
   const restoreReplayVisualSnapshot = snapshot => {
     const runtime = replayRuntimeRef.current;
     stopReplayAnimation(true);
@@ -520,6 +633,10 @@ export function useShotChartReplayExport({
     applyReplayCutoff(runtime.maxTime, { revealAll: true });
   };
 
+  /**
+   * @param {'video' | 'image'} exportType
+   * @param {AbortController | null} [abortController]
+   */
   const beginExportSession = (exportType, abortController = null) => {
     const interactionState = chartInteractionStateRef.current;
     const mainChart = getMainChart();
@@ -603,6 +720,7 @@ export function useShotChartReplayExport({
     includeLegend: exportMenuState.includeLegend,
   });
 
+  /** @param {boolean} includeLegend */
   const getResolvedLegendItems = includeLegend => {
     if (!includeLegend) return [];
     // Legend export should mirror the currently visible chart state rather than the
@@ -664,7 +782,7 @@ export function useShotChartReplayExport({
         legendItems,
         config: exportConfig,
         signal: abortController.signal,
-        onStatusChange: status => {
+        onStatusChange: /** @param {string} status */ status => {
           updateReplayExportStatusSafely(current => ({ ...current, status, error: null }));
         },
       });
@@ -766,15 +884,18 @@ export function useShotChartReplayExport({
     openExportMenu();
   };
 
+  /** @param {string | null} exportType */
   const handleExportTypeChange = exportType => {
     if (exportType === 'video' && hasVideoExportSupport === false) return;
     setExportMenuState(prev => ({ ...prev, exportType }));
   };
 
+  /** @param {string} exportFormat */
   const handleExportFormatChange = exportFormat => {
     setExportMenuState(prev => ({ ...prev, exportFormat }));
   };
 
+  /** @param {boolean} includeLegend */
   const handleIncludeLegendChange = includeLegend => {
     setExportMenuState(prev => ({ ...prev, includeLegend }));
   };
@@ -814,13 +935,16 @@ export function useShotChartReplayExport({
     );
     if (fileExportTypes.length > 0) {
       try {
-        const items = fileExportTypes
-          .map(type => {
-            if (type === 'shot') return { item: shotData, isShot: true };
-            if (type === 'profile' && profileData) return { item: profileData, isShot: false };
-            return null;
-          })
-          .filter(Boolean);
+        // The chart's shot type is a looser view of the analyzer's library shot.
+        const items = /** @type {Parameters<typeof exportLibraryItems>[0]} */ (
+          fileExportTypes
+            .map(type => {
+              if (type === 'shot') return { item: shotData, isShot: true };
+              if (type === 'profile' && profileData) return { item: profileData, isShot: false };
+              return null;
+            })
+            .filter(Boolean)
+        );
         await exportLibraryItems(items);
       } catch (error) {
         setReplayExportStatusSafely({
@@ -875,14 +999,16 @@ export function useShotChartReplayExport({
     if (exportMenuState.open && browserDocument) {
       // The export menu behaves like a lightweight popover: close on outside click
       // or Escape without pushing that responsibility back into the controls component.
+      /** @param {PointerEvent} event */
       const handlePointerDown = event => {
         const menuNode = exportMenuRef.current;
         if (menuNode) {
-          if (menuNode.contains(event.target)) return;
+          if (menuNode.contains(/** @type {Node} */ (event.target))) return;
           setExportMenuState(prev => ({ ...prev, open: false }));
         }
       };
 
+      /** @param {KeyboardEvent} event */
       const handleKeyDown = event => {
         if (event.key !== 'Escape') return;
         setExportMenuState(prev => ({ ...prev, open: false }));

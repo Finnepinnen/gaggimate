@@ -2,6 +2,11 @@ import { Trans } from '@lingui/react/macro';
 import { fmt } from '../utils/format';
 import { NumberCell, SectionTitle } from './statisticsUi.jsx';
 
+/**
+ * @param {object} props
+ * @param {import('../types').ProfileGroupStats[]} props.profileGroups
+ * @param {boolean} [props.showTitle]
+ */
 export function ProfileGroupTable({ profileGroups, showTitle = true }) {
   if (!profileGroups || profileGroups.length === 0) return null;
 

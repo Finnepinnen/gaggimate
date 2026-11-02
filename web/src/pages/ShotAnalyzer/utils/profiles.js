@@ -2,6 +2,14 @@ import { t } from '@lingui/core/macro';
 import { MAX_AUTO_DETECTED_DOSE_GRAMS } from './constants';
 import { cleanName } from './formatting';
 
+/** @typedef {{ label?: string, name?: string, fileName?: string, exportName?: string }} ProfileNameFields */
+/** @typedef {ProfileNameFields & { data?: ProfileNameFields | null }} NamedLibraryItem */
+/** @typedef {{ raw: string, end: number }} DoseNumberToken */
+
+/**
+ * @param {NamedLibraryItem | null | undefined} profile
+ * @returns {string}
+ */
 export function resolveProfileFieldValue(profile) {
   if (!profile || typeof profile !== 'object') return '';
   return (
@@ -17,6 +25,11 @@ export function resolveProfileFieldValue(profile) {
   );
 }
 
+/**
+ * @param {NamedLibraryItem | string | null | undefined} profile
+ * @param {string} [fallback]
+ * @returns {string}
+ */
 export const getProfileDisplayLabel = (profile, fallback = t`Unknown`) => {
   if (typeof profile === 'string') {
     return cleanName(profile).trim() || fallback;
@@ -25,18 +38,26 @@ export const getProfileDisplayLabel = (profile, fallback = t`Unknown`) => {
   return cleanName(String(rawLabel)).trim() || fallback;
 };
 
+/** @param {string | undefined} char */
 function isDigitChar(char) {
   return char >= '0' && char <= '9';
 }
 
+/** @param {string | undefined} char */
 function isAsciiLetterChar(char) {
   return char >= 'a' && char <= 'z';
 }
 
+/** @param {string | undefined} char */
 function isWhitespaceChar(char) {
   return char === ' ' || char === '\n' || char === '\r' || char === '\t';
 }
 
+/**
+ * @param {string} text
+ * @param {number} index
+ * @returns {number}
+ */
 function skipWhitespaceForward(text, index) {
   let cursor = index;
   while (cursor < text.length && isWhitespaceChar(text[cursor])) {
@@ -45,6 +66,11 @@ function skipWhitespaceForward(text, index) {
   return cursor;
 }
 
+/**
+ * @param {string} text
+ * @param {number} index
+ * @returns {number}
+ */
 function skipWhitespaceBackward(text, index) {
   let cursor = index;
   while (cursor >= 0 && isWhitespaceChar(text[cursor])) {
@@ -53,6 +79,11 @@ function skipWhitespaceBackward(text, index) {
   return cursor;
 }
 
+/**
+ * @param {string} text
+ * @param {number} index
+ * @returns {string}
+ */
 function readAsciiWordForward(text, index) {
   let cursor = index;
   while (cursor < text.length && isAsciiLetterChar(text[cursor])) {
@@ -61,6 +92,11 @@ function readAsciiWordForward(text, index) {
   return text.slice(index, cursor);
 }
 
+/**
+ * @param {string} text
+ * @param {number} index
+ * @returns {string}
+ */
 function readAsciiWordBackward(text, index) {
   let cursor = index;
   while (cursor >= 0 && isAsciiLetterChar(text[cursor])) {
@@ -69,6 +105,11 @@ function readAsciiWordBackward(text, index) {
   return text.slice(cursor + 1, index + 1);
 }
 
+/**
+ * @param {string} text
+ * @param {number} index
+ * @returns {DoseNumberToken | null}
+ */
 function readDoseNumberToken(text, index) {
   let cursor = index;
   let seenDecimalSeparator = false;
@@ -106,6 +147,11 @@ function readDoseNumberToken(text, index) {
 
 const RANGE_SEPARATOR_CHARS = new Set(['-', '–', '—', '−']);
 
+/**
+ * @param {string} text
+ * @param {number} numberStart
+ * @returns {boolean}
+ */
 function isRangeValueBefore(text, numberStart) {
   const previousTokenIndex = skipWhitespaceBackward(text, numberStart - 1);
   if (previousTokenIndex < 0) return false;
@@ -128,6 +174,11 @@ function isRangeValueBefore(text, numberStart) {
   return beforeWordIndex >= 0 && isDigitChar(text[beforeWordIndex]);
 }
 
+/**
+ * @param {string} text
+ * @param {number} unitIndex
+ * @returns {boolean}
+ */
 function isRangeValueAfter(text, unitIndex) {
   const nextTokenIndex = skipWhitespaceForward(text, unitIndex + 1);
   if (nextTokenIndex >= text.length) return false;
@@ -147,6 +198,11 @@ function isRangeValueAfter(text, unitIndex) {
   return afterWordIndex < text.length && isDigitChar(text[afterWordIndex]);
 }
 
+/**
+ * @param {string} text
+ * @param {number} startIndex
+ * @returns {{ nextIndex: number, value: number | null }}
+ */
 function readDoseCandidate(text, startIndex) {
   const numberToken = readDoseNumberToken(text, startIndex);
   if (!numberToken) {
@@ -184,10 +240,15 @@ function readDoseCandidate(text, startIndex) {
   };
 }
 
+/**
+ * @param {string | null | undefined} profileName
+ * @returns {number | null} Dose in g when exactly one plausible "<n>g" token is found
+ */
 export const detectDoseFromProfileName = profileName => {
   if (!profileName) return null;
 
   const lower = profileName.toLowerCase();
+  /** @type {number[]} */
   const candidates = [];
 
   let cursor = 0;

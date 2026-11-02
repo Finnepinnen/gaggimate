@@ -10,11 +10,22 @@ import { ProfileMainInformation } from './ProfileMainInformation.jsx';
 import { getProfilePhases, removePhaseAt, updatePhaseAt } from './profilePhases.js';
 import { Trans, useLingui } from '@lingui/react/macro';
 
+/** @typedef {import('./types').EditorProfile} EditorProfile */
+/** @typedef {import('./types').EditorPhase} EditorPhase */
+/** @typedef {import('./types').FieldEvent} FieldEvent */
+/** @typedef {import('../../types').PhaseTarget} PhaseTarget */
+/** @typedef {import('../../types').PumpAdvanced} PumpAdvanced */
+
+/** @param {import('./types').ProfileFormProps} props */
 export function StandardProfileForm(props) {
   const { t } = useLingui();
   const { data, onChange, onSave, saving = true, pressureAvailable = false } = props;
   const phases = getProfilePhases(data);
 
+  /**
+   * @param {keyof EditorProfile} field
+   * @param {unknown} value
+   */
   const onFieldChange = (field, value) => {
     onChange({
       ...data,
@@ -22,6 +33,10 @@ export function StandardProfileForm(props) {
     });
   };
 
+  /**
+   * @param {number} index
+   * @param {EditorPhase} value
+   */
   const onPhaseChange = (index, value) => {
     onChange({
       ...data,
@@ -46,6 +61,7 @@ export function StandardProfileForm(props) {
     });
   };
 
+  /** @param {number} index */
   const onPhaseRemove = index => {
     onChange({
       ...data,
@@ -63,15 +79,21 @@ export function StandardProfileForm(props) {
       <div className='grid grid-cols-1 gap-4 lg:grid-cols-10'>
         <ProfileMainInformation
           data={data}
-          onChangeLabel={e => onFieldChange('label', e.target.value)}
-          onChangeDescription={e => onFieldChange('description', e.target.value)}
-          onChangeTemperature={e => onFieldChange('temperature', e.target.value)}
-          onChangeUtility={e => onFieldChange('utility', !!e.target.checked)}
+          onChangeLabel={(/** @type {FieldEvent} */ e) => onFieldChange('label', e.target.value)}
+          onChangeDescription={(
+            /** @type {import('./types').FieldEvent<HTMLTextAreaElement>} */ e,
+          ) => onFieldChange('description', e.target.value)}
+          onChangeTemperature={(/** @type {FieldEvent} */ e) =>
+            onFieldChange('temperature', e.target.value)
+          }
+          onChangeUtility={(/** @type {FieldEvent} */ e) =>
+            onFieldChange('utility', !!e.target.checked)
+          }
         />
 
         <Card sm={10} title={t`Brew Phases`}>
           <div className='space-y-4' role='group' aria-label={t`Brew phases configuration`}>
-            {phases.map((value, index) => (
+            {phases.map((/** @type {EditorPhase} */ value, /** @type {number} */ index) => (
               <div key={index}>
                 {index > 0 && (
                   <div className='flex flex-col items-center py-2' aria-hidden='true'>
@@ -84,7 +106,7 @@ export function StandardProfileForm(props) {
                 <Phase
                   phase={value}
                   index={index}
-                  onChange={phase => onPhaseChange(index, phase)}
+                  onChange={(/** @type {EditorPhase} */ phase) => onPhaseChange(index, phase)}
                   onRemove={() => onPhaseRemove(index)}
                   pressureAvailable={pressureAvailable}
                 />
@@ -129,8 +151,21 @@ export function StandardProfileForm(props) {
   );
 }
 
+/**
+ * @param {{
+ *   phase: EditorPhase,
+ *   index: number,
+ *   onChange: (phase: EditorPhase) => void,
+ *   onRemove: () => void,
+ *   pressureAvailable: boolean,
+ * }} props
+ */
 function Phase({ phase, index, onChange, onRemove, pressureAvailable }) {
   const { t } = useLingui();
+  /**
+   * @param {keyof EditorPhase} field
+   * @param {unknown} value
+   */
   const onFieldChange = (field, value) => {
     onChange({
       ...phase,
@@ -138,6 +173,7 @@ function Phase({ phase, index, onChange, onRemove, pressureAvailable }) {
     });
   };
 
+  /** @param {number} value */
   const onVolumetricTargetChange = value => {
     if (!Number.isFinite(value) || value <= 0) {
       onChange({
@@ -158,7 +194,9 @@ function Phase({ phase, index, onChange, onRemove, pressureAvailable }) {
   };
 
   const targets = phase?.targets || [];
-  const volumetricTarget = targets.find(tg => tg.type === 'volumetric') || {};
+  const volumetricTarget =
+    targets.find((/** @type {PhaseTarget} */ tg) => tg.type === 'volumetric') ||
+    /** @type {Partial<PhaseTarget>} */ ({});
   const phaseNumber = index + 1;
   const targetWeight = volumetricTarget?.value || 0;
 
@@ -281,7 +319,7 @@ function Phase({ phase, index, onChange, onRemove, pressureAvailable }) {
               type='button'
               className={`join-item btn btn-sm ${phase.valve ? 'btn-primary' : 'btn-outline'}`}
               onClick={() => onFieldChange('valve', 1)}
-              aria-pressed={phase.valve}
+              aria-pressed={/** @type {boolean} */ (/** @type {unknown} */ (phase.valve))}
               aria-label={t`Valve open`}
             >
               <Trans context='valve state'>Open</Trans>
@@ -323,8 +361,8 @@ function Phase({ phase, index, onChange, onRemove, pressureAvailable }) {
                     mode !== 'pressure' &&
                     onFieldChange('pump', {
                       target: 'pressure',
-                      pressure: phase.pump?.pressure || 0,
-                      flow: phase.pump?.flow || 0,
+                      pressure: /** @type {PumpAdvanced} */ (phase.pump)?.pressure || 0,
+                      flow: /** @type {PumpAdvanced} */ (phase.pump)?.flow || 0,
                     })
                   }
                   aria-pressed={mode === 'pressure'}
@@ -339,8 +377,8 @@ function Phase({ phase, index, onChange, onRemove, pressureAvailable }) {
                     mode !== 'flow' &&
                     onFieldChange('pump', {
                       target: 'flow',
-                      pressure: phase.pump?.pressure || 0,
-                      flow: phase.pump?.flow || 0,
+                      pressure: /** @type {PumpAdvanced} */ (phase.pump)?.pressure || 0,
+                      flow: /** @type {PumpAdvanced} */ (phase.pump)?.flow || 0,
                     })
                   }
                   aria-pressed={mode === 'flow'}
@@ -394,7 +432,7 @@ function Phase({ phase, index, onChange, onRemove, pressureAvailable }) {
                   value={pressure}
                   onChange={e =>
                     onFieldChange('pump', {
-                      ...phase.pump,
+                      .../** @type {PumpAdvanced} */ (phase.pump),
                       pressure: parseFloat(e.currentTarget.value),
                     })
                   }
@@ -419,7 +457,7 @@ function Phase({ phase, index, onChange, onRemove, pressureAvailable }) {
                   value={flow}
                   onChange={e =>
                     onFieldChange('pump', {
-                      ...phase.pump,
+                      .../** @type {PumpAdvanced} */ (phase.pump),
                       flow: parseFloat(e.currentTarget.value),
                     })
                   }

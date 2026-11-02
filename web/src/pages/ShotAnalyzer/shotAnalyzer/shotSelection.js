@@ -4,30 +4,63 @@ import { calculateShotMetrics, detectAutoDelay } from '../services/AnalyzerServi
 import { libraryService } from '../services/LibraryService';
 import { cleanName, getProfileDisplayLabel, getShotStorageKey } from '../utils/analyzerUtils';
 
+/** @typedef {import('../types').AnalyzerShot} AnalyzerShot */
+/** @typedef {import('../types').AnalyzerProfile} AnalyzerProfile */
+/** @typedef {import('../types').LibrarySource} LibrarySource */
+/** @typedef {import('../types').ShotAnalysisResult} ShotAnalysisResult */
+/** @typedef {import('../types').ShotSelectionRequest} ShotSelectionRequest */
+/** @typedef {{ profile: AnalyzerProfile, profileName: string }} MatchedProfile */
+
 export const PROFILE_AUTO_MATCH_INITIAL_DELAY_MS = 250;
 export const PROFILE_AUTO_MATCH_RETRY_DELAY_MS = 450;
 export const PROFILE_AUTO_MATCH_MAX_ATTEMPTS = 4;
 const SHOT_SELECTION_DEBOUNCE_MS = 400;
 const DEFAULT_ANALYSIS_DELAY_MS = 200;
 
+/**
+ * @param {AnalyzerShot | null | undefined} item
+ * @returns {boolean} True when `item` already carries its samples
+ */
 export function hasLoadedShotPayload(item) {
   return Boolean(item) && Array.isArray(item.samples);
 }
 
+/**
+ * @param {AnalyzerShot | null | undefined} item
+ * @param {string | number} [loadKey]
+ * @returns {string}
+ */
 function getShotSelectionName(item, loadKey = getShotStorageKey(item)) {
   if (!item) return 'No Shot Loaded';
   return item.name || item.storageKey || String(loadKey || item.id || 'No Shot Loaded');
 }
 
+/**
+ * @param {AnalyzerShot | null | undefined} item
+ * @returns {string}
+ */
 export function getShotSelectionProfileName(item) {
   return item?.profile ? cleanName(item.profile) : 'No Profile Loaded';
 }
 
+/**
+ * @param {AnalyzerShot | Partial<ShotSelectionRequest> | null | undefined} request
+ * @returns {Partial<ShotSelectionRequest>}
+ */
 function createSelectionBaseRequest(request) {
   const isRequestObject = Boolean(request) && typeof request === 'object';
-  return isRequestObject && Object.hasOwn(request, 'item') ? request : { item: request };
+  return isRequestObject && Object.hasOwn(request, 'item')
+    ? /** @type {Partial<ShotSelectionRequest>} */ (request)
+    : { item: /** @type {AnalyzerShot} */ (request) };
 }
 
+/**
+ * Accepts a bare shot or a (partial) selection request.
+ * @param {AnalyzerShot | Partial<ShotSelectionRequest> | null | undefined} request
+ * @param {LibrarySource} importMode Source assumed for items without one
+ * @param {Partial<ShotSelectionRequest>} [defaults]
+ * @returns {ShotSelectionRequest | null}
+ */
 export function normalizeSelectionRequest(request, importMode, defaults = {}) {
   const baseRequest = createSelectionBaseRequest(request);
   const item = baseRequest?.item;
@@ -50,6 +83,10 @@ export function normalizeSelectionRequest(request, importMode, defaults = {}) {
   };
 }
 
+/**
+ * @param {ShotSelectionRequest | null | undefined} request
+ * @returns {ShotSelectionRequest | null}
+ */
 export function getNextDirectionalSelection(request) {
   if (!request?.direction || !Array.isArray(request.listSnapshot)) return null;
 
@@ -68,6 +105,13 @@ export function getNextDirectionalSelection(request) {
   };
 }
 
+/**
+ * @param {AnalyzerProfile[]} allProfiles
+ * @param {string | undefined} shotProfileName
+ * @param {LibrarySource | undefined} shotSource
+ * @param {string} [shotProfileId]
+ * @returns {AnalyzerProfile | null}
+ */
 export function findPreferredProfileMatch(
   allProfiles,
   shotProfileName,
@@ -98,6 +142,10 @@ export function findPreferredProfileMatch(
   return null;
 }
 
+/**
+ * @param {AnalyzerProfile} profileMatch
+ * @returns {string | undefined}
+ */
 function getProfileLookupId(profileMatch) {
   return profileMatch.source === 'gaggimate'
     ? profileMatch.profileId || profileMatch.id
@@ -111,6 +159,11 @@ function getProfileLookupId(profileMatch) {
         profileMatch.data?.exportName;
 }
 
+/**
+ * @param {AnalyzerProfile} profileData
+ * @param {LibrarySource | undefined} profileSource
+ * @returns {AnalyzerProfile}
+ */
 export function normalizeMatchedProfileSource(profileData, profileSource) {
   if (
     profileSource &&
@@ -122,12 +175,18 @@ export function normalizeMatchedProfileSource(profileData, profileSource) {
   return profileData;
 }
 
+/** @returns {boolean} */
 export function shouldAutoScrollAnalyzerOnSelection() {
   const viewportWindow = globalThis.window;
   if (!viewportWindow || typeof viewportWindow.matchMedia !== 'function') return false;
   return viewportWindow.matchMedia('(max-width: 1023px)').matches;
 }
 
+/**
+ * @param {AnalyzerShot} shotWithMetadata
+ * @param {AnalyzerProfile[]} allProfiles
+ * @returns {Promise<MatchedProfile | null>}
+ */
 export async function loadPreferredAutoMatchedProfile(shotWithMetadata, allProfiles) {
   const preferredMatch = findPreferredProfileMatch(
     allProfiles,
@@ -152,6 +211,11 @@ export async function loadPreferredAutoMatchedProfile(shotWithMetadata, allProfi
   };
 }
 
+/**
+ * @param {AnalyzerShot} shotData
+ * @param {AnalyzerProfile | null} profileData
+ * @returns {ShotAnalysisResult}
+ */
 export function analyzeShot(shotData, profileData) {
   let usedSensorDelay = DEFAULT_ANALYSIS_DELAY_MS;
   let isAutoAdjusted = false;
@@ -169,6 +233,14 @@ export function analyzeShot(shotData, profileData) {
   });
 }
 
+/**
+ * @param {object} options
+ * @param {AnalyzerShot} options.item List item that was selected
+ * @param {AnalyzerShot} options.loadedShot Full shot
+ * @param {LibrarySource} options.importMode
+ * @param {string | number} options.loadKey
+ * @returns {AnalyzerShot}
+ */
 export function buildShotWithMetadata({ item, loadedShot, importMode, loadKey }) {
   return {
     ...loadedShot,
@@ -178,6 +250,13 @@ export function buildShotWithMetadata({ item, loadedShot, importMode, loadKey })
   };
 }
 
+/**
+ * @param {object} options
+ * @param {AnalyzerShot} options.item
+ * @param {LibrarySource} options.importMode
+ * @param {AbortSignal} [options.signal]
+ * @returns {Promise<{ loadKey: string | number, shotName: string, shotWithMetadata: AnalyzerShot }>}
+ */
 export async function loadShotSelection({ item, importMode, signal }) {
   const loadKey = getShotStorageKey(item);
   const loadedShot = hasLoadedShotPayload(item)

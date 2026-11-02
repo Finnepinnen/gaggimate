@@ -1,6 +1,11 @@
 import PropTypes from 'prop-types';
 import { Trans } from '@lingui/react/macro';
 
+/**
+ * @param {object} props
+ * @param {number} props.waterLevelPercent
+ * @param {boolean} [props.inCard]
+ */
 export function WaterLevelCard({ waterLevelPercent, inCard = false }) {
   const pct = Math.round(waterLevelPercent);
 

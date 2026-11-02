@@ -14,6 +14,12 @@ import { ActionBarButton } from './ActionBarButtons.jsx';
 
 const MOBILE_STATUS_ACTIONS_MENU_WIDTH = 224;
 
+/** @typedef {(event: import('preact').JSX.TargetedMouseEvent<HTMLElement>) => void} MenuClickHandler */
+
+/**
+ * @param {Element | null} anchorElement
+ * @returns {import('../types').MenuPosition}
+ */
 function getMobileStatusActionsMenuPosition(anchorElement) {
   if (!anchorElement || !globalThis.window) return { top: 0, left: 12, width: 224 };
 
@@ -29,6 +35,18 @@ function getMobileStatusActionsMenuPosition(anchorElement) {
   };
 }
 
+/**
+ * @param {object} props
+ * @param {() => void} props.closeMenu
+ * @param {MenuClickHandler} props.handleImportClick
+ * @param {MenuClickHandler} props.handleModeToggle
+ * @param {boolean} props.isBrowserImportMode
+ * @param {boolean} props.isImporting
+ * @param {string} props.menuItemClasses
+ * @param {import('../types').MenuPosition} props.menuPosition
+ * @param {import('preact').Ref<HTMLDivElement>} props.menuRef
+ * @param {boolean} props.showImportModeToggle
+ */
 function MobileStatusActionsMenuPortal({
   closeMenu,
   handleImportClick,
@@ -93,6 +111,14 @@ function MobileStatusActionsMenuPortal({
   );
 }
 
+/**
+ * @param {object} props
+ * @param {MenuClickHandler} props.handleImportClick
+ * @param {MenuClickHandler} props.handleModeToggle
+ * @param {import('../types').ImportMode} props.importMode
+ * @param {boolean} props.isImporting
+ * @param {boolean} props.showImportModeToggle
+ */
 export function MobileStatusActionsMenu({
   handleImportClick,
   handleModeToggle,
@@ -102,7 +128,9 @@ export function MobileStatusActionsMenu({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 12, width: 224 });
+  /** @type {import('preact').RefObject<HTMLElement>} */
   const buttonRef = useRef(null);
+  /** @type {import('preact').RefObject<HTMLDivElement>} */
   const menuRef = useRef(null);
   const isBrowserImportMode = importMode === 'browser';
 
@@ -112,6 +140,7 @@ export function MobileStatusActionsMenu({
     setMenuPosition(getMobileStatusActionsMenuPosition(buttonRef.current));
   }, []);
 
+  /** @param {Event} event */
   const toggleMenu = event => {
     event.preventDefault();
     event.stopPropagation();
@@ -122,11 +151,13 @@ export function MobileStatusActionsMenu({
   useEffect(() => {
     if (!isOpen) return;
 
+    /** @param {PointerEvent} event */
     const handlePointerDown = event => {
-      const target = event.target;
+      const target = /** @type {Node | null} */ (event.target);
       if (buttonRef.current?.contains(target) || menuRef.current?.contains(target)) return;
       closeMenu();
     };
+    /** @param {KeyboardEvent} event */
     const handleKeyDown = event => {
       if (event.key === 'Escape') closeMenu();
     };

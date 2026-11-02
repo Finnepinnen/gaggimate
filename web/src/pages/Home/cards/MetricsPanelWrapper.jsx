@@ -3,6 +3,12 @@ import { METRIC_DEFINITIONS } from '../../../utils/metricDefinitions.js';
 import { metricOrderSignal } from '../../../utils/dashboardManager.js';
 import { MetricsGrid } from './MetricsGrid.jsx';
 
+/**
+ * @param {object} props
+ * @param {import('../../../utils/metricDefinitions.js').MetricSource} props.ds
+ * @param {boolean} [props.inCard]
+ * @param {boolean} [props.compact]
+ */
 export function MetricsPanelWrapper({ ds, inCard = false, compact = false }) {
   const metricOrder = metricOrderSignal.value;
 

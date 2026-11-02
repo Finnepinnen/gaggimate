@@ -3,6 +3,14 @@ import { CompareShotCharts } from '../../ShotAnalyzer/components/shotChart/Compa
 import { SectionTitle } from './statisticsUi.jsx';
 import { StatisticsPanel } from './statisticsSurfaces.jsx';
 
+/**
+ * @param {object} props
+ * @param {import('../types').StatisticsCompareEntry[]} props.compareEntries
+ * @param {import('../../ShotAnalyzer/utils/constants').CompareTargetDisplayMode} props.compareTargetDisplayMode
+ * @param {(mode: import('../../ShotAnalyzer/utils/constants').CompareTargetDisplayMode) => void} props.onCompareTargetDisplayModeChange
+ * @param {boolean} [props.showTitle]
+ * @param {boolean} [props.embedded]
+ */
 export function StatisticsShotCompareSection({
   compareEntries,
   compareTargetDisplayMode,

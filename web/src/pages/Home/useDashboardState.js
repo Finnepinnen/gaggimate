@@ -76,8 +76,10 @@ export function useDashboardState() {
       : null;
 
   // ── handlers ─────────────────────────────────────────────
+  /** @param {string} tp */
   const send = tp => apiService.send({ tp });
 
+  /** @param {number} newMode */
   const changeMode = newMode => {
     if (!systemReady) return; // locked in standby until the controller is ready
     apiService.send({ tp: 'req:change-mode', mode: newMode });
@@ -119,6 +121,7 @@ export function useDashboardState() {
   const lowerTemp = () => send('req:lower-temp');
   const raiseTarget = () => send(isGrinding ? 'req:raise-grind-target' : 'req:raise-brew-target');
   const lowerTarget = () => send(isGrinding ? 'req:lower-grind-target' : 'req:lower-brew-target');
+  /** @param {0 | 1} target 0 = time, 1 = weight */
   const changeTarget = target =>
     apiService.send({
       tp: isGrinding ? 'req:change-grind-target' : 'req:change-brew-target',

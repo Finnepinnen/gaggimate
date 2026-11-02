@@ -14,6 +14,7 @@ const ICON_TONES = {
   error: 'text-base-content/35 hover:text-error',
 };
 
+/** @type {Partial<Record<AnalyzerControlTone, string>>} */
 const TEXT_TONES = {
   neutral: 'text-base-content/70 hover:text-primary',
   primary: 'text-primary hover:text-primary',

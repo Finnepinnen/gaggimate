@@ -5,6 +5,42 @@ import {
 } from './compareConstants';
 import { shouldShowTargetsForEntry } from './compareModel';
 
+/** @typedef {import('../model/types').ChartPoint} ChartPoint */
+/** @typedef {import('../model/types').ChartVisibility} ChartVisibility */
+/** @typedef {import('../model/types').ShotChartColors} ShotChartColors */
+/** @typedef {import('./types').CompareDataset} CompareDataset */
+/** @typedef {import('./types').CompareDatasetMeta} CompareDatasetMeta */
+/** @typedef {import('./types').CompareEntry} CompareEntry */
+/** @typedef {import('./types').CompareLegendItem} CompareLegendItem */
+/** @typedef {import('./types').CompareModel} CompareModel */
+/** @typedef {import('./types').CompareModelEntry} CompareModelEntry */
+/** @typedef {import('./types').CompareShotStyle} CompareShotStyle */
+/** @typedef {import('./types').CompareStyle} CompareStyle */
+/** @typedef {import('./types').ShotStylePreset} ShotStylePreset */
+
+/**
+ * @typedef {object} MainDatasetSpecParams
+ * @property {CompareEntry} entry
+ * @property {CompareModel} model
+ * @property {ChartVisibility} visibility
+ * @property {ShotChartColors} colors
+ * @property {CompareShotStyle} shotStyle
+ * @property {boolean} [showTargets]
+ * @property {CompareDatasetMeta} compareDatasetMeta
+ * @property {boolean} [showWeightInMainChart]
+ * @property {boolean} [showWeightFlowInMainChart]
+ */
+
+/**
+ * @param {{
+ *   colors: ShotChartColors,
+ *   compareEntries: CompareEntry[],
+ *   resolvedCompareStyle: CompareStyle,
+ *   shotStylePreset: ShotStylePreset,
+ *   showCompareShotLegend: boolean,
+ * }} params
+ * @returns {CompareLegendItem[]}
+ */
 export function getCompareShotLegendItems({
   colors,
   compareEntries,
@@ -16,6 +52,7 @@ export function getCompareShotLegendItems({
   return buildCompareLegendItems(compareEntries, colors, shotStylePreset, resolvedCompareStyle);
 }
 
+/** @type {CanvasRenderingContext2D | null} */
 let scratchContext = null;
 
 function getScratchContext() {
@@ -24,6 +61,10 @@ function getScratchContext() {
   return scratchContext;
 }
 
+/**
+ * @param {string} color
+ * @returns {string}
+ */
 function resolveCanvasColor(color) {
   const ctx = getScratchContext();
   if (!ctx || !color) return color;
@@ -31,12 +72,17 @@ function resolveCanvasColor(color) {
   try {
     ctx.fillStyle = '#000000';
     ctx.fillStyle = color;
-    return ctx.fillStyle || color;
+    return /** @type {string} */ (ctx.fillStyle) || color;
   } catch {
     return color;
   }
 }
 
+/**
+ * @param {string} color
+ * @param {number} alpha
+ * @returns {string}
+ */
 function applyColorAlpha(color, alpha) {
   const resolvedColor = resolveCanvasColor(color);
   if (!resolvedColor) return color;
@@ -75,6 +121,12 @@ function applyColorAlpha(color, alpha) {
   return resolvedColor;
 }
 
+/**
+ * @param {number} index
+ * @param {ShotStylePreset} [preset]
+ * @param {CompareStyle} [compareStyle]
+ * @returns {CompareShotStyle}
+ */
 function getShotStyle(index, preset = 'analyzer', compareStyle = COMPARE_STYLE_FADE) {
   const stylePreset = SHOT_STYLE_PRESETS[preset] || SHOT_STYLE_PRESETS.analyzer;
   const { opacities, lineWidths } = stylePreset;
@@ -96,6 +148,7 @@ function getShotStyle(index, preset = 'analyzer', compareStyle = COMPARE_STYLE_F
   };
 }
 
+/** @param {boolean} [isTarget] */
 function getComparePointStyle(isTarget = false) {
   return {
     pointRadius: 0,
@@ -104,12 +157,23 @@ function getComparePointStyle(isTarget = false) {
   };
 }
 
+/**
+ * @param {string} seriesKey
+ * @returns {CompareDataset['axisScaleMode']}
+ */
 function getDetailChartAxisScaleMode(seriesKey) {
   if (seriesKey === 'weight') return 'weight';
   if (seriesKey === 'weightFlow') return 'weightFlow';
   return undefined;
 }
 
+/**
+ * @param {CompareEntry[]} compareEntries
+ * @param {ShotChartColors} colors
+ * @param {ShotStylePreset} shotStylePreset
+ * @param {CompareStyle} compareStyle
+ * @returns {CompareLegendItem[]}
+ */
 function buildCompareLegendItems(compareEntries, colors, shotStylePreset, compareStyle) {
   return compareEntries.map((entry, index) => {
     const shotStyle = getShotStyle(index, shotStylePreset, compareStyle);
@@ -127,6 +191,10 @@ function buildCompareLegendItems(compareEntries, colors, shotStylePreset, compar
   });
 }
 
+/**
+ * @param {CompareEntry} entry
+ * @returns {string | null}
+ */
 function getCompareLegendAccentColor(entry) {
   if (!entry.accentColor) return null;
   const accentStrength = Number.isFinite(Number(entry.accentStrength))
@@ -138,6 +206,10 @@ function getCompareLegendAccentColor(entry) {
   )}%, transparent)`;
 }
 
+/**
+ * @param {MainDatasetSpecParams} params
+ * @returns {(CompareDataset | null)[]}
+ */
 function buildMainPressureDatasetSpecs({
   entry,
   model,
@@ -182,6 +254,10 @@ function buildMainPressureDatasetSpecs({
   ];
 }
 
+/**
+ * @param {MainDatasetSpecParams} params
+ * @returns {(CompareDataset | null)[]}
+ */
 function buildMainFlowDatasetSpecs({
   entry,
   model,
@@ -241,6 +317,10 @@ function buildMainFlowDatasetSpecs({
   ];
 }
 
+/**
+ * @param {MainDatasetSpecParams} params
+ * @returns {(CompareDataset | null)[]}
+ */
 function buildMainWeightDatasetSpecs({
   entry,
   model,
@@ -287,6 +367,10 @@ function buildMainWeightDatasetSpecs({
   ];
 }
 
+/**
+ * @param {MainDatasetSpecParams} params
+ * @returns {(CompareDataset | null)[]}
+ */
 function buildMainPuckResistanceDatasetSpecs({
   entry,
   model,
@@ -329,6 +413,10 @@ function buildMainPuckResistanceDatasetSpecs({
   ];
 }
 
+/**
+ * @param {MainDatasetSpecParams} params
+ * @returns {CompareDataset[]}
+ */
 function buildMainChartDatasetSpecs({
   entry,
   model,
@@ -380,6 +468,20 @@ function buildMainChartDatasetSpecs({
   ].filter(Boolean);
 }
 
+/**
+ * @param {{
+ *   chart: import('./types').DetailChartDef,
+ *   entry: CompareEntry,
+ *   actualSeries: ChartPoint[],
+ *   targetSeries: ChartPoint[],
+ *   baseColor: string,
+ *   shotStyle: CompareShotStyle,
+ *   compareDatasetMeta: CompareDatasetMeta,
+ *   visibility: ChartVisibility,
+ *   showTargets: boolean,
+ * }} params
+ * @returns {CompareDataset[]}
+ */
 function buildDetailChartDatasetSpecs({
   chart,
   entry,
@@ -425,6 +527,19 @@ function buildDetailChartDatasetSpecs({
   ].filter(Boolean);
 }
 
+/**
+ * @param {{
+ *   compareModels: CompareModelEntry[],
+ *   colors: ShotChartColors,
+ *   visibility: ChartVisibility,
+ *   targetDisplayMode: string,
+ *   shotStylePreset: ShotStylePreset,
+ *   compareStyle: CompareStyle,
+ *   showWeightInMainChart?: boolean,
+ *   showWeightFlowInMainChart?: boolean,
+ * }} params
+ * @returns {CompareDataset[]}
+ */
 export function buildMainChartDatasets({
   compareModels,
   colors,
@@ -441,6 +556,7 @@ export function buildMainChartDatasets({
       entry,
       targetDisplayMode,
     });
+    /** @type {CompareDatasetMeta} */
     const compareDatasetMeta = {
       compareTooltipShotLabel: entry.label,
       compareTooltipShotOrder: index,
@@ -460,6 +576,19 @@ export function buildMainChartDatasets({
   });
 }
 
+/**
+ * @param {{
+ *   chart: import('./types').DetailChartDef,
+ *   compareModels: CompareModelEntry[],
+ *   colors: ShotChartColors,
+ *   includePumpFlowWaterTooltip?: boolean,
+ *   targetDisplayMode: string,
+ *   visibility: ChartVisibility,
+ *   shotStylePreset: ShotStylePreset,
+ *   compareStyle: CompareStyle,
+ * }} params
+ * @returns {CompareDataset[]}
+ */
 export function buildDetailChartDatasets({
   chart,
   compareModels,
@@ -482,6 +611,7 @@ export function buildDetailChartDatasets({
         entry,
         targetDisplayMode,
       });
+    /** @type {CompareDatasetMeta} */
     const compareDatasetMeta = {
       compareTooltipShotLabel: entry.label,
       compareTooltipShotOrder: index,

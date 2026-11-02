@@ -3,7 +3,13 @@ import { faClock } from '@fortawesome/free-solid-svg-icons/faClock';
 import { faWeightScale } from '@fortawesome/free-solid-svg-icons/faWeightScale';
 import { Trans } from '@lingui/react/macro';
 
+/**
+ * @param {object} props
+ * @param {0 | 1} props.value 0 = time, 1 = weight
+ * @param {(value: 0 | 1) => void} props.onChange
+ */
 const TargetToggle = ({ value, onChange }) => {
+  /** @param {boolean} on */
   const pill = on =>
     `flex flex-row cursor-pointer items-center justify-center gap-1.5 rounded-full px-2 py-1 text-xs transition-all duration-200 px-8 ${on ? 'bg-primary text-primary-content font-medium' : 'text-base-content/60 hover:text-base-content'}`;
   return (

@@ -11,12 +11,37 @@ import {
   COMPARE_STYLE_LINE_PATTERN,
 } from './compareConstants';
 
+/** @typedef {import('../model/types').ChartVisibility} ChartVisibility */
+/** @typedef {import('../model/types').ChartSeriesMap} ChartSeriesMap */
+/** @typedef {import('../model/types').PhaseAnnotation} PhaseAnnotation */
+/** @typedef {import('../model/types').PhaseAnnotationMap} PhaseAnnotationMap */
+/** @typedef {import('../model/types').PhaseOverviewRow} PhaseOverviewRow */
+/** @typedef {import('../model/types').ShotChartColors} ShotChartColors */
+/** @typedef {import('../model/types').ShotChartModel} ShotChartModel */
+/** @typedef {import('./types').CompareAlignmentOption} CompareAlignmentOption */
+/** @typedef {import('./types').CompareEntry} CompareEntry */
+/** @typedef {import('./types').CompareModel} CompareModel */
+/** @typedef {import('./types').ShotStylePreset} ShotStylePreset */
+
+/**
+ * @param {string} value
+ * @param {CompareAlignmentOption[]} [options]
+ */
 function normalizeCompareAlignmentMode(value, options = []) {
   const optionValues = new Set(options.map(option => option.value));
   if (optionValues.has(value)) return value;
   return COMPARE_ALIGNMENT_SHOT_START;
 }
 
+/**
+ * @param {unknown} storedVisibility Persisted visibility; validated key by key.
+ * @param {{
+ *   showPhaseAnnotations: boolean,
+ *   showStopAnnotations: boolean,
+ *   showBrewModeAnnotation: boolean,
+ * }} options
+ * @returns {ChartVisibility}
+ */
 export function normalizeCompareVisibility(
   storedVisibility,
   { showPhaseAnnotations, showStopAnnotations, showBrewModeAnnotation },
@@ -34,11 +59,15 @@ export function normalizeCompareVisibility(
     weightFlow: false,
   };
 
+  /** @type {ChartVisibility} */
   const nextVisibility = { ...defaultVisibility };
   if (storedVisibility && typeof storedVisibility === 'object') {
-    Object.keys(INITIAL_VISIBILITY).forEach(key => {
-      if (typeof storedVisibility[key] === 'boolean') {
-        nextVisibility[key] = storedVisibility[key];
+    const stored = /** @type {Partial<Record<keyof ChartVisibility, unknown>>} */ (
+      storedVisibility
+    );
+    /** @type {(keyof ChartVisibility)[]} */ (Object.keys(INITIAL_VISIBILITY)).forEach(key => {
+      if (typeof stored[key] === 'boolean') {
+        nextVisibility[key] = stored[key];
       }
     });
   }
@@ -50,6 +79,10 @@ export function normalizeCompareVisibility(
   return nextVisibility;
 }
 
+/**
+ * @param {ChartVisibility} visibility
+ * @returns {ChartVisibility}
+ */
 export function getMobileCompareVisibility(visibility) {
   return {
     ...visibility,
@@ -68,6 +101,7 @@ export function getMobileCompareVisibility(visibility) {
   };
 }
 
+/** @param {number} containerWidth */
 function getStandardCompareChartHeight(containerWidth) {
   if (globalThis.window === undefined) return MAIN_CHART_HEIGHT_DEFAULT;
   const isSmartphone = globalThis.window.innerWidth <= 640;
@@ -114,6 +148,13 @@ export function getCompareMobileLayoutState() {
   return isStaticMobileTooltipViewport();
 }
 
+/**
+ * @param {{
+ *   shouldUseAnalyzerMobileCompareLayout: boolean,
+ *   shouldUseStatisticsMobileCompactLayout: boolean,
+ * }} params
+ * @returns {{ detail: import('./types').StaticTooltipVariant, main: import('./types').StaticTooltipVariant }}
+ */
 export function getStaticTooltipVariants({
   shouldUseAnalyzerMobileCompareLayout,
   shouldUseStatisticsMobileCompactLayout,
@@ -136,6 +177,14 @@ export function getStaticTooltipVariants({
   };
 }
 
+/**
+ * @param {{
+ *   compareTooltipMode: import('./types').CompareTooltipMode,
+ *   isFullDisplay: boolean,
+ *   isMobileCompareLayout: boolean,
+ *   shotStylePreset: ShotStylePreset,
+ * }} params
+ */
 export function getCompareLayoutFlags({
   compareTooltipMode,
   isFullDisplay,
@@ -159,28 +208,54 @@ export function getCompareLayoutFlags({
   };
 }
 
+/**
+ * @param {ShotStylePreset} shotStylePreset
+ * @returns {import('./types').CompareStyle}
+ */
 export function getResolvedCompareStyle(shotStylePreset) {
   if (shotStylePreset === 'analyzer') return COMPARE_STYLE_LINE_PATTERN;
   return COMPARE_STYLE_FADE;
 }
 
+/**
+ * @template T
+ * @template [F=null]
+ * @param {ShotStylePreset} shotStylePreset
+ * @param {T} value
+ * @param {F} [fallback]
+ * @returns {T | F}
+ */
 export function getAnalyzerCompareValue(shotStylePreset, value, fallback = null) {
   if (shotStylePreset === 'analyzer') return value;
   return fallback;
 }
 
+/**
+ * @param {CompareEntry | null | undefined} entry
+ * @param {number} index
+ * @returns {string | number}
+ */
 export function getCompareEntryKey(entry, index) {
   return entry?.key || entry?.shot?.storageKey || entry?.shot?.id || entry?.label || index;
 }
 
+/** @param {CompareEntry[]} compareEntries */
 export function getCompareEntriesKey(compareEntries) {
   return compareEntries.map((entry, index) => getCompareEntryKey(entry, index)).join('|');
 }
 
+/**
+ * @param {{ showPhaseAnnotations: boolean, showStopAnnotations: boolean }} params
+ * @returns {string[]}
+ */
 export function getHiddenLegendLabels({ showPhaseAnnotations, showStopAnnotations }) {
   return [...(showPhaseAnnotations ? [] : ['Phases']), ...(showStopAnnotations ? [] : ['Stops'])];
 }
 
+/**
+ * @param {CompareEntry[]} compareEntries
+ * @param {keyof import('../model/types').ChartSample} sampleKey
+ */
 export function hasCompareSampleValue(compareEntries, sampleKey) {
   return compareEntries.some(
     entry =>
@@ -189,6 +264,15 @@ export function hasCompareSampleValue(compareEntries, sampleKey) {
   );
 }
 
+/**
+ * @param {{
+ *   colors: ShotChartColors,
+ *   compareAlignmentMode: string,
+ *   compareEntries: CompareEntry[],
+ *   shotStylePreset: ShotStylePreset,
+ *   visibility: ChartVisibility,
+ * }} params
+ */
 export function getCompareModels({
   colors,
   compareAlignmentMode,
@@ -227,6 +311,7 @@ export function getCompareModels({
   };
 }
 
+/** @param {import('./types').AxisRange} xRange */
 export function getScrubberRange(xRange) {
   const min = Number.isFinite(xRange.min) ? xRange.min : 0;
   const max = Number.isFinite(xRange.max) ? xRange.max : 0;
@@ -237,6 +322,10 @@ export function getScrubberRange(xRange) {
   };
 }
 
+/**
+ * @param {import('./types').CompareModelEntry<ShotChartModel>[]} compareModels
+ * @returns {CompareAlignmentOption[]}
+ */
 function getComparePhaseAlignmentOptions(compareModels) {
   const modelRows = compareModels.map(({ model }) =>
     Array.isArray(model?.phaseOverviewRows) ? model.phaseOverviewRows : [],
@@ -248,7 +337,7 @@ function getComparePhaseAlignmentOptions(compareModels) {
   const commonPhaseCount = Math.min(...modelRows.map(rows => rows.length));
   const referenceRows = modelRows[0] || [];
   const phaseOptions = Array.from({ length: commonPhaseCount }, (_, index) => {
-    const row = referenceRows[index] || {};
+    const row = referenceRows[index] || /** @type {Partial<PhaseOverviewRow>} */ ({});
     const phaseNumber = Number.isFinite(Number(row.phaseNumber))
       ? Number(row.phaseNumber)
       : index + 1;
@@ -263,10 +352,15 @@ function getComparePhaseAlignmentOptions(compareModels) {
   return [{ value: COMPARE_ALIGNMENT_SHOT_START, label: t`Shot start` }, ...phaseOptions];
 }
 
+/**
+ * @param {number} phaseNumber
+ * @param {string} phaseName
+ */
 function formatComparePhaseAlignmentLabel(phaseNumber, phaseName) {
   return phaseName ? t`Phase ${phaseNumber}: ${phaseName}` : t`Phase ${phaseNumber}`;
 }
 
+/** @param {unknown} alignmentMode */
 function parsePhaseAlignmentNumber(alignmentMode) {
   if (typeof alignmentMode !== 'string') return null;
   if (!alignmentMode.startsWith(COMPARE_ALIGNMENT_PHASE_PREFIX)) return null;
@@ -274,6 +368,10 @@ function parsePhaseAlignmentNumber(alignmentMode) {
   return Number.isFinite(phaseNumber) && phaseNumber > 0 ? phaseNumber : null;
 }
 
+/**
+ * @param {PhaseOverviewRow[]} rows
+ * @param {number} phaseNumber
+ */
 function findPhaseRowIndex(rows, phaseNumber) {
   if (!Array.isArray(rows)) return -1;
   const byNumberIndex = rows.findIndex(row => Number(row?.phaseNumber) === phaseNumber);
@@ -282,6 +380,10 @@ function findPhaseRowIndex(rows, phaseNumber) {
   return byPositionIndex >= 0 && byPositionIndex < rows.length ? byPositionIndex : -1;
 }
 
+/**
+ * @param {ShotChartModel} model
+ * @param {string} alignmentMode
+ */
 function resolvePhaseAlignmentOffset(model, alignmentMode) {
   const phaseNumber = parsePhaseAlignmentNumber(alignmentMode);
   if (!phaseNumber) return 0;
@@ -300,6 +402,10 @@ function resolvePhaseAlignmentOffset(model, alignmentMode) {
   return 0;
 }
 
+/**
+ * @param {import('../model/types').ChartPoint} point
+ * @param {number} xOffset
+ */
 function shiftPointX(point, xOffset) {
   if (!point || typeof point !== 'object') return point;
   const x = Number(point.x);
@@ -307,22 +413,38 @@ function shiftPointX(point, xOffset) {
   return { ...point, x: x - xOffset };
 }
 
+/**
+ * @param {ChartSeriesMap} series
+ * @param {number} xOffset
+ * @returns {ChartSeriesMap}
+ */
 function shiftSeriesMap(series, xOffset) {
   if (!series || typeof series !== 'object' || xOffset === 0) return series;
 
-  return Object.fromEntries(
-    Object.entries(series).map(([key, points]) => [
-      key,
-      Array.isArray(points) ? points.map(point => shiftPointX(point, xOffset)) : points,
-    ]),
+  return /** @type {ChartSeriesMap} */ (
+    Object.fromEntries(
+      Object.entries(series).map(([key, points]) => [
+        key,
+        Array.isArray(points) ? points.map(point => shiftPointX(point, xOffset)) : points,
+      ]),
+    )
   );
 }
 
+/**
+ * @param {number | undefined} value
+ * @param {number} xOffset
+ */
 function shiftOptionalXValue(value, xOffset) {
   const numericValue = Number(value);
   return Number.isFinite(numericValue) ? numericValue - xOffset : value;
 }
 
+/**
+ * @param {PhaseAnnotation} annotation
+ * @param {number} xOffset
+ * @returns {PhaseAnnotation}
+ */
 function shiftAnnotationX(annotation, xOffset) {
   if (!annotation || typeof annotation !== 'object' || xOffset === 0) return annotation;
 
@@ -335,6 +457,11 @@ function shiftAnnotationX(annotation, xOffset) {
   return nextAnnotation;
 }
 
+/**
+ * @param {PhaseAnnotationMap} annotations
+ * @param {number} xOffset
+ * @returns {PhaseAnnotationMap}
+ */
 function shiftAnnotationMap(annotations, xOffset) {
   if (!annotations || typeof annotations !== 'object' || xOffset === 0) return annotations;
   return Object.fromEntries(
@@ -345,6 +472,11 @@ function shiftAnnotationMap(annotations, xOffset) {
   );
 }
 
+/**
+ * @param {PhaseOverviewRow[]} rows
+ * @param {number} xOffset
+ * @returns {PhaseOverviewRow[]}
+ */
 function shiftPhaseRows(rows, xOffset) {
   if (!Array.isArray(rows) || xOffset === 0) return rows;
   return rows.map(row => ({
@@ -354,6 +486,12 @@ function shiftPhaseRows(rows, xOffset) {
   }));
 }
 
+/**
+ * @template {{ xValue: number }} T
+ * @param {T[]} overlays
+ * @param {number} xOffset
+ * @returns {T[]}
+ */
 function shiftOverlayX(overlays, xOffset) {
   if (!Array.isArray(overlays) || xOffset === 0) return overlays;
   return overlays.map(overlay => ({
@@ -362,6 +500,7 @@ function shiftOverlayX(overlays, xOffset) {
   }));
 }
 
+/** @param {ShotChartModel} model */
 function getModelMinTime(model) {
   const sampleTimes = Array.isArray(model?.sampleTimesSec) ? model.sampleTimesSec : [];
   const firstSampleTime = sampleTimes.find(time => Number.isFinite(Number(time)));
@@ -374,6 +513,11 @@ function getModelMinTime(model) {
   return Number.isFinite(Number(firstPoint?.x)) ? Number(firstPoint.x) : 0;
 }
 
+/**
+ * @param {ShotChartModel} model
+ * @param {string} alignmentMode
+ * @returns {CompareModel}
+ */
 function alignCompareModel(model, alignmentMode) {
   const xOffset = resolvePhaseAlignmentOffset(model, alignmentMode);
   if (!xOffset) {
@@ -402,17 +546,25 @@ function alignCompareModel(model, alignmentMode) {
     phaseOverviewRows: shiftPhaseRows(model.phaseOverviewRows, xOffset),
     getHoverWaterValuesAtX:
       typeof originalWaterGetter === 'function'
-        ? xValue => originalWaterGetter(Number(xValue) + xOffset)
+        ? /** @param {number} xValue */ xValue => originalWaterGetter(Number(xValue) + xOffset)
         : originalWaterGetter,
   };
 }
 
+/**
+ * @param {import('./types').CompareModelEntry[]} compareModels
+ * @returns {import('./types').AxisRange}
+ */
 export function getCompareXRange(compareModels) {
   const min = Math.min(0, ...compareModels.map(({ model }) => Number(model?.minTime || 0)));
   const max = Math.max(1, ...compareModels.map(({ model }) => Number(model?.maxTime || 0)));
   return max <= min ? { min: 0, max: 1 } : { min, max };
 }
 
+/**
+ * @param {{ entry: CompareEntry, targetDisplayMode: string }} params
+ * @returns {boolean}
+ */
 export function shouldShowTargetsForEntry({ entry, targetDisplayMode }) {
   if (targetDisplayMode === COMPARE_TARGET_DISPLAY_MODES.NONE) {
     return false;
@@ -425,6 +577,11 @@ export function shouldShowTargetsForEntry({ entry, targetDisplayMode }) {
   return true;
 }
 
+/**
+ * @param {PhaseAnnotation} annotation
+ * @param {{ ghosted?: boolean }} [options]
+ * @returns {PhaseAnnotation}
+ */
 function cloneCompareAnnotation(annotation, { ghosted = false } = {}) {
   if (!annotation) return annotation;
 
@@ -449,6 +606,12 @@ function cloneCompareAnnotation(annotation, { ghosted = false } = {}) {
   };
 }
 
+/**
+ * @param {PhaseAnnotationMap | null | undefined} annotations
+ * @param {string} prefix
+ * @param {{ ghosted?: boolean, startLabelSuffix?: string | null }} [options]
+ * @returns {PhaseAnnotationMap}
+ */
 export function prefixCompareAnnotations(
   annotations,
   prefix,
@@ -483,6 +646,10 @@ export function prefixCompareAnnotations(
   );
 }
 
+/**
+ * @param {{ shotStylePreset: ShotStylePreset, standardChartWidth: number }} params
+ * @returns {number}
+ */
 export function getResolvedCompareMainChartHeight({ shotStylePreset, standardChartWidth }) {
   if (shotStylePreset === 'analyzer') {
     return getStandardCompareChartHeight(standardChartWidth);

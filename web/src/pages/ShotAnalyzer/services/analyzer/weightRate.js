@@ -1,16 +1,23 @@
+/** @typedef {import('../../../../types').ShotSample} ShotSample */
+
 const PREDICTIVE_WINDOW_MS = 4000;
 
 /**
  * Pick the sample index used as prediction anchor for the phase.
  * For the last phase, prefer the last non-extended-recording sample
  * to avoid tail-rate artifacts from post-stop drip logging.
+ * @param {ShotSample[]} samples
+ * @param {boolean} isLastPhase
+ * @returns {number}
  */
 function getPhaseAnchorIndexForWeightRate(samples, isLastPhase) {
   if (!Array.isArray(samples) || samples.length === 0) return -1;
   if (!isLastPhase) return samples.length - 1;
 
   for (let i = samples.length - 1; i >= 0; i--) {
-    const sys = samples[i].systemInfo || {};
+    const sys =
+      samples[i].systemInfo ||
+      /** @type {Partial<import('../../../../types').ShotSystemInfo>} */ ({});
     if (!sys.extendedRecording) return i;
   }
   return samples.length - 1;
@@ -20,6 +27,10 @@ function getPhaseAnchorIndexForWeightRate(samples, isLastPhase) {
  * Backend-like weight-rate estimation:
  * Linear regression slope of volume over time in the last 4s window.
  * Returns g/s
+ * @param {ShotSample[]} samples
+ * @param {number} endIndex
+ * @param {number} [windowMs]
+ * @returns {number}
  */
 function getRegressionWeightRate(samples, endIndex, windowMs = PREDICTIVE_WINDOW_MS) {
   if (!Array.isArray(samples) || endIndex < 1 || endIndex >= samples.length) return 0;
@@ -61,12 +72,21 @@ function getRegressionWeightRate(samples, endIndex, windowMs = PREDICTIVE_WINDOW
   return volumePerMillisecond * 1000; // g/ms -> g/s
 }
 
+/**
+ * @param {ShotSample[]} samples
+ * @param {boolean} isLastPhase
+ * @returns {number} g/s
+ */
 export function getPhaseWeightRate(samples, isLastPhase) {
   const anchorIndex = getPhaseAnchorIndexForWeightRate(samples, isLastPhase);
   if (anchorIndex < 0) return 0;
   return getRegressionWeightRate(samples, anchorIndex, PREDICTIVE_WINDOW_MS);
 }
 
+/**
+ * @param {ShotSample | null | undefined} sample
+ * @returns {number} g/s
+ */
 export function getSampleInstantWeightRate(sample) {
   if (!sample) return 0;
   if (sample.vf !== undefined && sample.vf > 0.1) return sample.vf;
@@ -74,6 +94,10 @@ export function getSampleInstantWeightRate(sample) {
   return 0;
 }
 
+/**
+ * @param {ShotSample[] | null | undefined} samples
+ * @returns {number} -1 when empty
+ */
 export function getLastNonExtendedIndex(samples) {
   if (!Array.isArray(samples) || samples.length === 0) return -1;
   for (let i = samples.length - 1; i >= 0; i--) {
@@ -85,12 +109,18 @@ export function getLastNonExtendedIndex(samples) {
 /**
  * Excludes only the post-shot extended-recording tail. A zero from the actual
  * brew remains a valid measurement because it is retained when not extended.
+ * @param {ShotSample[]} samples
+ * @returns {ShotSample[]}
  */
 export function getSamplesThroughLastNonExtended(samples) {
   const endIndex = getLastNonExtendedIndex(samples);
   return endIndex >= 0 ? samples.slice(0, endIndex + 1) : [];
 }
 
+/**
+ * @param {ShotSample | null | undefined} sample
+ * @returns {number | null}
+ */
 function getFiniteWeightValue(sample) {
   const weight = Number(sample?.v);
   return Number.isFinite(weight) ? weight : null;
@@ -103,6 +133,8 @@ function getFiniteWeightValue(sample) {
  * valid final-weight updates. A lower value cannot be caused by the brewed
  * drink itself; it is usually scale handling or the cup being removed and is
  * therefore excluded without changing the raw chart data.
+ * @param {ShotSample[] | null | undefined} samples
+ * @returns {ShotSample[]}
  */
 export function getFinalWeightSamples(samples) {
   if (!Array.isArray(samples) || samples.length === 0) return [];
@@ -116,6 +148,7 @@ export function getFinalWeightSamples(samples) {
   }
 
   const acceptedSamples = samples.slice(0, extendedTailStartIndex);
+  /** @type {ShotSample | null} */
   let finalWeightSample = null;
 
   for (let i = acceptedSamples.length - 1; i >= 0; i -= 1) {
@@ -140,6 +173,10 @@ export function getFinalWeightSamples(samples) {
   return acceptedSamples;
 }
 
+/**
+ * @param {ShotSample[] | null | undefined} samples
+ * @returns {ShotSample | null}
+ */
 export function getFinalWeightSample(samples) {
   const weightSamples = getFinalWeightSamples(samples);
 
@@ -150,10 +187,18 @@ export function getFinalWeightSample(samples) {
   return samples?.at(-1) || null;
 }
 
+/**
+ * @param {number | null | undefined} value
+ * @returns {boolean}
+ */
 export function isPositiveFiniteRate(value) {
   return value != null && Number.isFinite(value) && value > 0.1;
 }
 
+/**
+ * @param {ShotSample[]} samples
+ * @returns {ShotSample}
+ */
 export function getPhaseEndSample(samples) {
   return samples.at(-1);
 }

@@ -17,7 +17,11 @@ import {
 } from './constants';
 import { readCssColorVar } from './helpers';
 
+/** @typedef {import('@lingui/core').MessageDescriptor} MessageDescriptor */
+/** @typedef {import('@fortawesome/fontawesome-svg-core').IconDefinition} IconDefinition */
+
 // Series labels are internal keys; these are their translated display names.
+/** @type {Record<string, MessageDescriptor>} */
 const DISPLAY_LABEL_BY_LABEL = {
   Phases: msg`Phases`,
   Stops: msg`Stops`,
@@ -39,6 +43,7 @@ const DISPLAY_LABEL_BY_LABEL = {
 };
 
 // Short legend forms of the series keys, as drawn in exported legends.
+/** @type {Record<string, MessageDescriptor>} */
 const SHORT_LABEL_BY_LABEL = {
   Temp: msg({ message: 'Temp', context: 'short for temperature' }),
   'Target T': msg({ message: 'Target T', context: 'short for target temperature' }),
@@ -46,6 +51,7 @@ const SHORT_LABEL_BY_LABEL = {
   'Target F': msg({ message: 'Target F', context: 'short for target pump flow' }),
 };
 
+/** @type {Record<string, IconDefinition>} */
 const ICON_BY_LABEL = {
   Temp: faTemperatureHalf,
   'Target T': faBullseye,
@@ -62,20 +68,46 @@ const ICON_BY_LABEL = {
   [WATER_DRAWN_TOTAL_LABEL]: faDroplet,
 };
 
+/**
+ * @param {string} label
+ * @returns {string}
+ */
 export function getShotChartDisplayLabel(label) {
   const descriptor = DISPLAY_LABEL_BY_LABEL[label];
   return descriptor ? i18n._(descriptor) : label;
 }
 
+/**
+ * @param {string} label
+ * @returns {string}
+ */
 export function getShotChartShortLabel(label) {
   const descriptor = SHORT_LABEL_BY_LABEL[label] || DISPLAY_LABEL_BY_LABEL[label];
   return descriptor ? i18n._(descriptor) : label;
 }
 
+/**
+ * @param {string} label
+ * @returns {IconDefinition | null}
+ */
 export function getShotChartLabelIcon(label) {
   return ICON_BY_LABEL[label] || null;
 }
 
+/**
+ * @typedef {object} ShotChartBrewModeMeta
+ * @property {string} label
+ * @property {IconDefinition} iconDef
+ * @property {string} backgroundColor
+ * @property {string} textColor
+ * @property {string} borderColor
+ */
+
+/**
+ * @param {{ isBrewByWeight?: boolean } | null | undefined} results
+ * @param {{ weight: string }} colors
+ * @returns {ShotChartBrewModeMeta}
+ */
 export function getShotChartBrewModeMeta(results, colors) {
   return results?.isBrewByWeight
     ? {

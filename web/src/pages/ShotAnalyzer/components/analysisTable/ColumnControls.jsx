@@ -25,6 +25,14 @@ import { getAnalyzerGroupCardVisuals } from './analyzerGroupVisuals';
 import { AnalyzerActionGroup, AnalyzerActionIcon, AnalyzerControl } from '../AnalyzerControl.jsx';
 import { cx } from '../../../../utils/cx.js';
 
+/**
+ * @typedef {object} ColumnPreset
+ * @property {string} id
+ * @property {string} name
+ * @property {string[]} columns
+ */
+
+/** @type {Record<string, string>} */
 const BUILT_IN_PRESET_IDS = {
   ALL_METRICS: 'ALL_METRICS',
   SYSTEM_INFO: 'SYSTEM_INFO',
@@ -54,6 +62,13 @@ function TableToolbarTextButton({ className, children, ...props }) {
   );
 }
 
+/**
+ * @param {object} props
+ * @param {Set<string>} props.activeColumns
+ * @param {(columns: Set<string>) => void} props.onColumnsChange
+ * @param {boolean} [props.isIntegrated]
+ * @param {import('preact').ComponentChildren} [props.headerChildren]
+ */
 export function ColumnControls({
   activeColumns,
   onColumnsChange,
@@ -62,7 +77,7 @@ export function ColumnControls({
 }) {
   const { t } = useLingui();
   const [expanded, setExpanded] = useState(false);
-  const [presets, setPresets] = useState([]);
+  const [presets, setPresets] = useState(/** @type {ColumnPreset[]} */ ([]));
   const [selectedPresetId, setSelectedPresetId] = useState('');
 
   // Load custom presets on mount
@@ -74,6 +89,8 @@ export function ColumnControls({
 
   /**
    * Toggle individual column visibility
+   * @param {string} columnId
+   * @param {boolean} checked
    */
   const toggleColumn = (columnId, checked) => {
     const newColumns = new Set(activeColumns);
@@ -86,6 +103,7 @@ export function ColumnControls({
 
   // --- Action Handlers ---
 
+  /** @param {Event} e */
   const applyStandard = e => {
     e.stopPropagation(); // Prevent closing if called from header
     const userStandard = loadFromStorage(ANALYZER_DB_KEYS.USER_STANDARD);
@@ -125,6 +143,7 @@ export function ColumnControls({
     setSelectedPresetId(newPreset.id);
   };
 
+  /** @param {Event} e */
   const deletePreset = e => {
     e.stopPropagation();
     if (!selectedPresetId || Object.values(BUILT_IN_PRESET_IDS).includes(selectedPresetId)) return;
@@ -137,6 +156,7 @@ export function ColumnControls({
 
   /**
    * Helper to format detailed technical labels
+   * @param {import('../../utils/columns.js').AnalyzerColumn} col
    */
   const getDetailedLabel = col => {
     let suffix = '';
@@ -182,10 +202,12 @@ export function ColumnControls({
               <AnalyzerControl
                 type='button'
                 size='action'
-                onClick={e => {
-                  e.stopPropagation();
-                  handleHeaderToggle();
-                }}
+                onClick={
+                  /** @param {Event} e */ e => {
+                    e.stopPropagation();
+                    handleHeaderToggle();
+                  }
+                }
                 title={expanded ? t`Collapse column settings` : t`Expand column settings`}
                 aria-label={expanded ? t`Collapse column settings` : t`Expand column settings`}
               >
@@ -206,21 +228,23 @@ export function ColumnControls({
                   variant='surface'
                   className='!text-base-content/75 hover:!text-primary h-8 min-h-0 w-[7rem] max-w-[7rem] appearance-none border-0 bg-transparent px-3 pr-7 text-sm font-normal tracking-normal normal-case shadow-none outline-none'
                   value={selectedPresetId}
-                  onChange={e => {
-                    const val = e.currentTarget.value;
-                    if (val === BUILT_IN_PRESET_IDS.ALL_METRICS) {
-                      applyAll();
-                    } else if (val === BUILT_IN_PRESET_IDS.SYSTEM_INFO) {
-                      applySystemInfo();
-                    } else {
-                      const p = presets.find(x => x.id === val);
-                      if (p) {
-                        onColumnsChange(new Set(p.columns));
-                        setSelectedPresetId(p.id);
+                  onChange={
+                    /** @param {import('preact').JSX.TargetedEvent<HTMLSelectElement, Event>} e */ e => {
+                      const val = e.currentTarget.value;
+                      if (val === BUILT_IN_PRESET_IDS.ALL_METRICS) {
+                        applyAll();
+                      } else if (val === BUILT_IN_PRESET_IDS.SYSTEM_INFO) {
+                        applySystemInfo();
+                      } else {
+                        const p = presets.find(x => x.id === val);
+                        if (p) {
+                          onColumnsChange(new Set(p.columns));
+                          setSelectedPresetId(p.id);
+                        }
                       }
                     }
-                  }}
-                  onClick={e => e.stopPropagation()}
+                  }
+                  onClick={/** @param {Event} e */ e => e.stopPropagation()}
                 >
                   <option value='' disabled>
                     {t`Presets...`}
@@ -273,7 +297,9 @@ export function ColumnControls({
               return (
                 <div key={groupKey} className='border-base-content/10 rounded-md border p-2.5'>
                   <div className='grid grid-cols-[minmax(0,1fr)_auto] gap-x-3'>
-                    <h4 className={COLUMN_GROUP_HEADER_CLASS}>{groups[groupKey]}</h4>
+                    <h4 className={COLUMN_GROUP_HEADER_CLASS}>
+                      {/** @type {Record<string, string>} */ (groups)[groupKey]}
+                    </h4>
 
                     <div className='min-w-0'>
                       <div className='space-y-1'>

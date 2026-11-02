@@ -31,7 +31,11 @@ export function ActionBarButton({ className, ...props }) {
   );
 }
 
-/** Square previous/next button in the analyzer action bar. */
+/**
+ * Square previous/next button in the analyzer action bar.
+ *
+ * @param {Record<string, any>} props Passed to the AnalyzerControl.
+ */
 function ActionBarNavButton(props) {
   return (
     <AnalyzerControl
@@ -41,6 +45,13 @@ function ActionBarNavButton(props) {
   );
 }
 
+/**
+ * @param {object} props
+ * @param {boolean} props.canGoPrev
+ * @param {boolean} props.canGoNext
+ * @param {number} props.currentIndex
+ * @param {(targetIndex: number, direction: number) => void} props.onNavigateToIndex
+ */
 export function ActionBarNavigationButtons({
   canGoPrev,
   canGoNext,
@@ -71,6 +82,12 @@ export function ActionBarNavigationButtons({
   );
 }
 
+/**
+ * @param {object} props
+ * @param {boolean} props.compareAvailable
+ * @param {boolean} props.compareMode
+ * @param {() => void} [props.onCompareModeToggle]
+ */
 export function ActionBarCompareButton({ compareAvailable, compareMode, onCompareModeToggle }) {
   const { t } = useLingui();
   return (
@@ -78,11 +95,13 @@ export function ActionBarCompareButton({ compareAvailable, compareMode, onCompar
       type='button'
       className={compareMode ? 'text-primary opacity-100' : undefined}
       disabled={!compareAvailable}
-      onClick={event => {
-        event.preventDefault();
-        event.stopPropagation();
-        onCompareModeToggle?.();
-      }}
+      onClick={
+        /** @param {Event} event */ event => {
+          event.preventDefault();
+          event.stopPropagation();
+          onCompareModeToggle?.();
+        }
+      }
       title={compareMode ? t`Disable compare mode` : t`Enable compare mode`}
     >
       <FontAwesomeIcon icon={faEquals} className='text-sm' />
@@ -93,6 +112,13 @@ export function ActionBarCompareButton({ compareAvailable, compareMode, onCompar
   );
 }
 
+/**
+ * @param {object} props
+ * @param {boolean} props.compareMode
+ * @param {boolean} props.statisticsAvailable
+ * @param {string} props.statsHref
+ * @param {() => void} [props.onShowStats]
+ */
 export function ActionBarStatisticsAction({
   compareMode,
   statisticsAvailable,
@@ -113,10 +139,12 @@ export function ActionBarStatisticsAction({
       <ActionBarButton
         as='a'
         href={statsHref || '/statistics'}
-        onClick={event => {
-          event.stopPropagation();
-          onShowStats?.();
-        }}
+        onClick={
+          /** @param {Event} event */ event => {
+            event.stopPropagation();
+            onShowStats?.();
+          }
+        }
         title={t`Open statistics`}
       >
         {content}
@@ -131,6 +159,14 @@ export function ActionBarStatisticsAction({
   );
 }
 
+/** @typedef {(event: import('preact').JSX.TargetedMouseEvent<HTMLElement>) => void} ActionBarClickHandler */
+
+/**
+ * @param {object} props
+ * @param {import('../types').ImportMode} props.importMode
+ * @param {import('preact').Ref<HTMLElement>} props.modeButtonRef
+ * @param {ActionBarClickHandler} props.handleModeToggle
+ */
 function ActionBarImportModeToggle({ importMode, modeButtonRef, handleModeToggle }) {
   const { t } = useLingui();
   const isBrowserImportMode = importMode === 'browser';
@@ -165,6 +201,15 @@ function ActionBarImportModeToggle({ importMode, modeButtonRef, handleModeToggle
   );
 }
 
+/**
+ * @param {object} props
+ * @param {ActionBarClickHandler} props.handleImportClick
+ * @param {ActionBarClickHandler} props.handleModeToggle
+ * @param {import('../types').ImportMode} props.importMode
+ * @param {boolean} props.isImporting
+ * @param {import('preact').Ref<HTMLElement>} props.modeButtonRef
+ * @param {boolean} props.showImportModeToggle
+ */
 export function ActionBarImportActions({
   handleImportClick,
   handleModeToggle,

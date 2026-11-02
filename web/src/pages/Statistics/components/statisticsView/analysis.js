@@ -16,7 +16,34 @@ import {
   buildStatisticsCompareEntry,
 } from './helpers';
 
+/**
+ * @typedef {import('../../types').DateBasisMode} DateBasisMode
+ * @typedef {import('../../types').StatisticsShotMeta} StatisticsShotMeta
+ * @typedef {import('../../types').StatisticsProfileMeta} StatisticsProfileMeta
+ * @typedef {import('../../../ShotAnalyzer/types').AnalyzerProfile} AnalyzerProfile
+ * @typedef {import('../../../ShotAnalyzer/types').AnalysisSettings} AnalysisSettings
+ * @typedef {import('../../types').StatisticsEntry} StatisticsEntry
+ * @typedef {import('../../types').StatisticsRunRequest} StatisticsRunRequest
+ * @typedef {import('../../types').StatisticsProgress} StatisticsProgress
+ * @typedef {import('../../types').StatisticsCompareEntry} StatisticsCompareEntry
+ * @typedef {import('../../types').StatisticsResult} StatisticsResult
+ * @typedef {Map<string, StatisticsProfileMeta>} ProfileLookupMap
+ * @typedef {Map<string, Promise<AnalyzerProfile | null>>} LoadedProfileCache
+ * @typedef {{ current: StatisticsEntry[] | null }} EntriesRef
+ * @typedef {{
+ *   fallbackProfileMap: ProfileLookupMap,
+ *   loadedProfileCache: LoadedProfileCache,
+ *   profileMap: ProfileLookupMap,
+ * }} ProfileLookupContext
+ */
+
+/**
+ * @param {StatisticsProfileMeta[]} profileList
+ * @param {ProfileLookupMap | null} [existingMap] - Keys already covered; skipped here.
+ * @returns {ProfileLookupMap}
+ */
 export function buildProfileLookupMap(profileList, existingMap = null) {
+  /** @type {ProfileLookupMap} */
   const profileMap = new Map();
   for (const profile of profileList) {
     const displayName = getProfileDisplayLabel(profile, '');
@@ -26,11 +53,22 @@ export function buildProfileLookupMap(profileList, existingMap = null) {
   return profileMap;
 }
 
+/**
+ * @param {StatisticsShotMeta} shot
+ * @returns {string | number}
+ */
 export function getStatisticsShotId(shot) {
   if (shot.source === 'gaggimate') return shot.id;
   return shot.storageKey || shot.name || shot.id;
 }
 
+/**
+ * @param {object} args
+ * @param {StatisticsShotMeta | null | undefined} args.loadedShot
+ * @param {StatisticsShotMeta} args.shot
+ * @param {string | number} args.shotId
+ * @returns {StatisticsShotMeta | null}
+ */
 export function buildFullStatisticsShot({ loadedShot, shot, shotId }) {
   if (!loadedShot) return null;
   return {
@@ -41,6 +79,13 @@ export function buildFullStatisticsShot({ loadedShot, shot, shotId }) {
   };
 }
 
+/**
+ * @param {object} args
+ * @param {ProfileLookupMap} args.fallbackProfileMap
+ * @param {StatisticsShotMeta} args.fullShot
+ * @param {ProfileLookupMap} args.profileMap
+ * @returns {StatisticsProfileMeta | null}
+ */
 export function resolveMatchedProfileEntry({ fallbackProfileMap, fullShot, profileMap }) {
   const profileField = fullShot.profile || '';
   const profileKey = cleanName(profileField).toLowerCase();
@@ -48,11 +93,21 @@ export function resolveMatchedProfileEntry({ fallbackProfileMap, fullShot, profi
   return profileMap.get(profileKey) || fallbackProfileMap.get(profileKey) || null;
 }
 
+/**
+ * @param {StatisticsProfileMeta} profileEntry
+ * @returns {string | undefined}
+ */
 export function getProfileLoadId(profileEntry) {
   if (profileEntry.source === 'gaggimate') return profileEntry.profileId || profileEntry.id;
   return profileEntry.label || profileEntry.name;
 }
 
+/**
+ * @param {object} args
+ * @param {LoadedProfileCache} args.loadedProfileCache
+ * @param {StatisticsProfileMeta | null} args.matchedProfileEntry
+ * @returns {Promise<AnalyzerProfile | null>}
+ */
 export async function loadStatisticsMatchedProfile({ loadedProfileCache, matchedProfileEntry }) {
   if (!matchedProfileEntry) return null;
   if (matchedProfileEntry.data) return matchedProfileEntry.data;
@@ -64,12 +119,19 @@ export async function loadStatisticsMatchedProfile({ loadedProfileCache, matched
   if (!loadedProfileCache.has(cacheKey)) {
     loadedProfileCache.set(
       cacheKey,
-      libraryService.loadProfile(profileId, matchedProfileEntry.source).catch(() => null),
+      libraryService
+        .loadProfile(profileId, matchedProfileEntry.source)
+        .catch(/** @returns {null} */ () => null),
     );
   }
   return loadedProfileCache.get(cacheKey);
 }
 
+/**
+ * @param {AnalyzerProfile | null} profile
+ * @param {StatisticsProfileMeta | null} matchedProfileEntry
+ * @returns {AnalyzerProfile | null}
+ */
 export function attachProfileSource(profile, matchedProfileEntry) {
   if (profile && matchedProfileEntry?.source && !profile.source) {
     return { ...profile, source: matchedProfileEntry.source };
@@ -77,6 +139,11 @@ export function attachProfileSource(profile, matchedProfileEntry) {
   return profile;
 }
 
+/**
+ * @param {StatisticsShotMeta} fullShot
+ * @param {AnalyzerProfile | null} matchedProfile
+ * @returns {AnalysisSettings}
+ */
 export function getStatisticsAnalysisSettings(fullShot, matchedProfile) {
   const settings = { ...DEFAULT_SETTINGS };
   const autoResult = detectAutoDelay(fullShot, matchedProfile, settings.scaleDelayMs);
@@ -87,6 +154,10 @@ export function getStatisticsAnalysisSettings(fullShot, matchedProfile) {
   return settings;
 }
 
+/**
+ * @param {ProfileLookupContext & { shot: StatisticsShotMeta }} args
+ * @returns {Promise<StatisticsEntry | null>}
+ */
 export async function analyzeStatisticsShot({
   fallbackProfileMap,
   loadedProfileCache,
@@ -130,6 +201,9 @@ export async function analyzeStatisticsShot({
   }
 }
 
+/**
+ * @param {ProfileLookupContext & { batch: StatisticsShotMeta[] }} args
+ */
 export async function analyzeStatisticsShotBatch({
   batch,
   fallbackProfileMap,
@@ -148,6 +222,7 @@ export async function analyzeStatisticsShotBatch({
   );
 }
 
+/** @param {StatisticsRunRequest} runRequest */
 export function getStatisticsRunSources(runRequest) {
   const shotList = Array.isArray(runRequest.shots) ? runRequest.shots : [];
   const profileList = Array.isArray(runRequest.profiles) ? runRequest.profiles : [];
@@ -158,22 +233,35 @@ export function getStatisticsRunSources(runRequest) {
   return { fallbackProfileList, profileList, shotList };
 }
 
+/**
+ * @param {StatisticsEntry[]} targetEntries
+ * @param {(StatisticsEntry | null)[]} batchResults
+ */
 function appendDefinedEntries(targetEntries, batchResults) {
   for (const entry of batchResults) {
     if (entry) targetEntries.push(entry);
   }
 }
 
+/**
+ * @param {object} args
+ * @param {() => boolean} args.isCurrentRun
+ * @param {(progress: StatisticsProgress) => void} args.onProgress
+ * @param {StatisticsRunRequest} args.runRequest
+ * @returns {Promise<StatisticsEntry[] | null>} null when superseded by a newer run
+ */
 export async function runStatisticsAnalysis({ isCurrentRun, onProgress, runRequest }) {
   const { fallbackProfileList, profileList, shotList } = getStatisticsRunSources(runRequest);
   const profileMap = buildProfileLookupMap(profileList);
   const fallbackProfileMap = buildProfileLookupMap(fallbackProfileList, profileMap);
+  /** @type {LoadedProfileCache} */
   const loadedProfileCache = new Map();
   const total = shotList.length;
 
   onProgress({ current: 0, total });
   if (total === 0) return [];
 
+  /** @type {StatisticsEntry[]} */
   const entries = [];
   for (let i = 0; i < total; i += 2) {
     if (!isCurrentRun()) return null;
@@ -194,6 +282,12 @@ export async function runStatisticsAnalysis({ isCurrentRun, onProgress, runReque
   return entries;
 }
 
+/**
+ * @param {StatisticsResult | null} result
+ * @param {StatisticsRunRequest | null} runRequest
+ * @param {EntriesRef} entriesRef
+ * @returns {StatisticsCompareEntry[]}
+ */
 export function buildStatisticsCompareEntries(result, runRequest, entriesRef) {
   if (!result) return [];
 
@@ -250,8 +344,10 @@ export function buildStatisticsCompareEntries(result, runRequest, entriesRef) {
     .filter(Boolean);
 }
 
+/** @param {EntriesRef} entriesRef */
 export function getBuiltProfileCount(entriesRef) {
   const cachedEntries = Array.isArray(entriesRef.current) ? entriesRef.current : [];
+  /** @type {Set<string>} */
   const profileNames = new Set();
 
   cachedEntries.forEach(entry => {
@@ -265,6 +361,11 @@ export function getBuiltProfileCount(entriesRef) {
   return profileNames.size;
 }
 
+/**
+ * @param {EntriesRef} entriesRef
+ * @param {DateBasisMode} dateBasisMode
+ * @returns {{ startMs: number | null, endMs: number | null }}
+ */
 export function getBuiltDateRange(entriesRef, dateBasisMode) {
   const cachedEntries = Array.isArray(entriesRef.current) ? entriesRef.current : [];
   const timestamps = cachedEntries
@@ -282,6 +383,11 @@ export function getBuiltDateRange(entriesRef, dateBasisMode) {
   };
 }
 
+/**
+ * @param {{ timestamp?: number, shotDate?: number, uploadedAt?: number } | null | undefined} shotMeta
+ * @param {DateBasisMode} dateBasisMode
+ * @returns {number | null}
+ */
 function resolveShotEffectiveTimestampMs(shotMeta, dateBasisMode) {
   if (dateBasisMode === 'shot' || dateBasisMode === 'auto') {
     const ts = shotMeta?.timestamp || shotMeta?.shotDate || 0;

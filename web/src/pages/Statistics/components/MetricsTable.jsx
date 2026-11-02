@@ -13,6 +13,23 @@ import { fmt } from '../utils/format';
 import { StatisticsMetricHeader } from './StatisticsMetricHeader';
 import { DenseValue, SmallLabel } from './statisticsUi.jsx';
 
+/**
+ * @typedef {import('../types').AggregatedStat} AggregatedStat
+ * @typedef {{
+ *   key: import('../types').StatisticsMetricKey,
+ *   label: import('@lingui/core').MessageDescriptor,
+ *   unit: string,
+ *   colorClass: string,
+ *   accentColor: string,
+ *   icon: import('@fortawesome/fontawesome-svg-core').IconDefinition,
+ *   averageDescription: string,
+ *   digits?: number,
+ *   avgPrefix?: string,
+ *   requiresData?: boolean,
+ * }} MetricRow
+ */
+
+/** @type {MetricRow[]} */
 const METRIC_ROWS = [
   {
     key: 'w',
@@ -127,16 +144,26 @@ const METRIC_ROWS = [
   },
 ];
 
+/**
+ * @param {number} value
+ * @param {number} min
+ * @param {number} max
+ */
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
+/**
+ * @param {number} value
+ * @param {MetricRow} row
+ */
 function formatMetricValue(value, row) {
   const formatted = fmt(value, row.digits);
   if (formatted === '-') return formatted;
   return `${row.avgPrefix || ''}${formatted}`;
 }
 
+/** @param {AggregatedStat | undefined} metric */
 function getSpreadRatio(metric) {
   if (!metric) return 0;
   const stdDev = Number(metric.stdDev);
@@ -157,6 +184,7 @@ function getSpreadRatio(metric) {
   return 0;
 }
 
+/** @param {AggregatedStat | undefined} metric */
 function getMetricPositions(metric) {
   const min = Number(metric?.min);
   const max = Number(metric?.max);
@@ -185,6 +213,7 @@ function getMetricPositions(metric) {
   };
 }
 
+/** @param {{ row: MetricRow, metric: AggregatedStat }} props */
 function MetricRangeViz({ row, metric }) {
   const { i18n } = useLingui();
   const spreadRatio = getSpreadRatio(metric);
@@ -261,6 +290,7 @@ function MetricRangeViz({ row, metric }) {
   );
 }
 
+/** @param {{ metrics: import('../types').StatisticsMetrics | null | undefined }} props */
 export function MetricsTable({ metrics }) {
   if (!metrics || Object.keys(metrics).length === 0) return null;
 

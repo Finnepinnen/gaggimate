@@ -17,6 +17,11 @@ import { getAnalyzerColumnVisual } from './analyzerGroupVisuals';
 import { AnalyzerActionGroup, AnalyzerActionIcon, AnalyzerControl } from '../AnalyzerControl.jsx';
 import { getAnalysisHeaderLabel } from './analysisTableModel';
 
+/**
+ * @param {object} props
+ * @param {(amount: number) => void} props.onScrollTable
+ * @param {(direction: 'start' | 'end') => void} props.onScrollToBound
+ */
 export function AnalysisTableToolbarActions({ onScrollTable, onScrollToBound }) {
   return (
     <AnalyzerActionGroup className='hidden sm:flex'>
@@ -38,6 +43,16 @@ export function AnalysisTableToolbarActions({ onScrollTable, onScrollToBound }) 
   );
 }
 
+/**
+ * @param {object} props
+ * @param {boolean} props.compareMode
+ * @param {boolean} props.hasProfilePhaseStops
+ * @param {import('../../utils/columns.js').AnalyzerColumn[]} props.visibleColumns
+ * @param {string} props.subtleDividerClass
+ * @param {string} props.strongDividerClass
+ * @param {string} props.tableHeaderTextClass
+ * @param {string} props.tableHeaderSubtextClass
+ */
 export function AnalysisTableHeader({
   compareMode,
   hasProfilePhaseStops,
@@ -101,11 +116,22 @@ export function AnalysisTableHeader({
   );
 }
 
+/**
+ * @param {object} props
+ * @param {string} props.label
+ * @param {string} [props.colorClass]
+ * @param {import('preact').JSX.CSSProperties} [props.style]
+ * @param {string} [props.details]
+ */
 export function StatusBadge({ label, colorClass = '', style = {}, details }) {
+  /** @type {import('preact').RefObject<HTMLButtonElement>} */
   const triggerRef = useRef(null);
+  /** @type {import('preact').RefObject<HTMLDivElement>} */
   const popoverRef = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
-  const [popoverStyle, setPopoverStyle] = useState(null);
+  const [popoverStyle, setPopoverStyle] = useState(
+    /** @type {import('preact').JSX.CSSProperties | null} */ (null),
+  );
 
   const updatePopoverPosition = useCallback(() => {
     const triggerElement = triggerRef.current;
@@ -146,17 +172,21 @@ export function StatusBadge({ label, colorClass = '', style = {}, details }) {
     if (!isOpen) return undefined;
     updatePopoverPosition();
 
+    /** @param {PointerEvent} event */
     const handlePointerDown = event => {
-      if (triggerRef.current?.contains(event.target)) return;
-      if (popoverRef.current?.contains(event.target)) return;
+      const target = /** @type {Node | null} */ (event.target);
+      if (triggerRef.current?.contains(target)) return;
+      if (popoverRef.current?.contains(target)) return;
       closePopover();
     };
+    /** @param {KeyboardEvent} event */
     const handleKeyDown = event => {
       if (event.key === 'Escape') closePopover();
     };
     const handleResize = () => updatePopoverPosition();
+    /** @param {Event} event */
     const handleScroll = event => {
-      if (popoverRef.current?.contains(event.target)) return;
+      if (popoverRef.current?.contains(/** @type {Node | null} */ (event.target))) return;
       closePopover();
     };
 

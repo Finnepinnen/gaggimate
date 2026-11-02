@@ -1,15 +1,29 @@
 import { useLayoutEffect, useState } from 'preact/hooks';
 
+/** @param {import('preact/hooks').Dispatch<import('preact/hooks').StateUpdater<number>>} setDesktopSingleDetailsHeight */
 function resetMeasuredDesktopDetailsHeight(setDesktopSingleDetailsHeight) {
   setDesktopSingleDetailsHeight(prev => (prev === 0 ? prev : 0));
 }
 
+/**
+ * @param {number} singleDesktopDetailsHeight px
+ * @returns {{ height: string } | undefined}
+ */
 function getDesktopSingleChartStyle(singleDesktopDetailsHeight) {
   if (!singleDesktopDetailsHeight) return undefined;
   return { height: `${singleDesktopDetailsHeight}px` };
 }
 
-/** Keeps the desktop single chart aligned with the measured details column. */
+/**
+ * Keeps the desktop single chart aligned with the measured details column.
+ * @param {object} options
+ * @param {import('../types').ShotAnalysisResult | null} options.analysisResults
+ * @param {string} options.chartMountKey
+ * @param {import('../types').AnalyzerShot | null} options.currentShot
+ * @param {boolean} options.isCompareActive
+ * @param {import('preact').RefObject<HTMLElement>} options.shotDetailsColumnRef
+ * @returns {{ singleDesktopDetailsHeight: number, singleDesktopChartStyle: { height: string } | undefined }}
+ */
 export function useDesktopShotDetailsHeight({
   analysisResults,
   chartMountKey,

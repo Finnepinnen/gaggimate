@@ -2,6 +2,12 @@ import { Trans, useLingui } from '@lingui/react/macro';
 import Section from '../../../components/Card.jsx';
 import { machine } from '../../../services/ApiService.js';
 
+/**
+ * @param {{
+ *   formData: import('../types').SettingsFormData,
+ *   onChange: import('../types').FormChange,
+ * }} props
+ */
 export function HeaterCoordinationSection({ formData, onChange }) {
   const { t } = useLingui();
   if (!machine.value.capabilities.dualBoiler) return null;

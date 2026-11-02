@@ -7,6 +7,18 @@ import {
   normalizeCompareVisibility,
 } from './compareModel';
 
+/** @typedef {import('./types').ShotStylePreset} ShotStylePreset */
+/** @typedef {import('preact/hooks').Dispatch<import('preact/hooks').StateUpdater<string>>} SetCompareAlignmentMode */
+
+/**
+ * @param {{
+ *   enableDualMainChartAnnotations: boolean,
+ *   showBrewModeAnnotation: boolean,
+ *   showPhaseAnnotations: boolean,
+ *   showStopAnnotations: boolean,
+ *   shotStylePreset: ShotStylePreset,
+ * }} params
+ */
 export function useCompareVisibilityState({
   enableDualMainChartAnnotations,
   showBrewModeAnnotation,
@@ -34,9 +46,17 @@ export function useCompareVisibilityState({
 }
 
 export function useInitialCompareAlignmentState() {
-  return useState(() => COMPARE_ALIGNMENT_SHOT_START);
+  return useState(() => /** @type {string} */ (COMPARE_ALIGNMENT_SHOT_START));
 }
 
+/**
+ * @param {{
+ *   compareAlignmentMode: string,
+ *   resolvedCompareAlignmentMode: string,
+ *   setCompareAlignmentMode: SetCompareAlignmentMode,
+ *   shotStylePreset: ShotStylePreset,
+ * }} params
+ */
 export function useResolvedCompareAlignmentState({
   compareAlignmentMode,
   resolvedCompareAlignmentMode,
@@ -55,6 +75,13 @@ export function useResolvedCompareAlignmentState({
   ]);
 }
 
+/**
+ * @param {{
+ *   compareEntries: import('./types').CompareEntry[],
+ *   setCompareAlignmentMode: SetCompareAlignmentMode,
+ *   shotStylePreset: ShotStylePreset,
+ * }} params
+ */
 export function useResetAnalyzerCompareAlignmentOnSecondaryShotChange({
   compareEntries,
   setCompareAlignmentMode,
@@ -68,6 +95,13 @@ export function useResetAnalyzerCompareAlignmentOnSecondaryShotChange({
   }, [secondaryShotKey, setCompareAlignmentMode, shotStylePreset]);
 }
 
+/**
+ * @param {{
+ *   isFullDisplay: boolean,
+ *   mainChartCardRef: import('preact').RefObject<HTMLElement>,
+ *   shotStylePreset: ShotStylePreset,
+ * }} params
+ */
 export function useCompareViewportState({ isFullDisplay, mainChartCardRef, shotStylePreset }) {
   const [viewportResizeNonce, setViewportResizeNonce] = useState(0);
   const [standardChartWidth, setStandardChartWidth] = useState(0);
@@ -85,6 +119,7 @@ export function useCompareViewportState({ isFullDisplay, mainChartCardRef, shotS
     }
 
     const mediaQuery = globalThis.window.matchMedia('(max-width: 640px)');
+    /** @param {MediaQueryListEvent} event */
     const handleChange = event => setIsMobileCompareLayout(event.matches);
     setIsMobileCompareLayout(mediaQuery.matches);
     mediaQuery.addEventListener('change', handleChange);
@@ -116,6 +151,14 @@ export function useCompareViewportState({ isFullDisplay, mainChartCardRef, shotS
   return { isMobileCompareLayout, standardChartWidth };
 }
 
+/**
+ * @param {{
+ *   hasWeightData: boolean,
+ *   hasWeightFlowData: boolean,
+ *   setVisibility: import('./types').SetVisibility,
+ * }} params
+ * @returns {import('./types').LegendToggleHandler}
+ */
 export function getCompareLegendToggleHandler({ hasWeightData, hasWeightFlowData, setVisibility }) {
   return label => {
     const key = COMPARE_LEGEND_KEY_BY_LABEL[label];

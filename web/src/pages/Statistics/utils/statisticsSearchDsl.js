@@ -5,8 +5,23 @@
 // - date expressions are evaluated in local/browser time
 import { t } from '@lingui/core/macro';
 
+/**
+ * @typedef {import('../types').DateBasisMode} DateBasisMode
+ * @typedef {import('../types').DateOperator} DateOperator
+ * @typedef {import('../types').StatisticsShotMeta} StatisticsShotMeta
+ * @typedef {import('../types').StatisticsQueryClause} StatisticsQueryClause
+ * @typedef {import('../types').StatisticsQueryIssue} StatisticsQueryIssue
+ * @typedef {import('../types').ParsedStatisticsQuery} ParsedStatisticsQuery
+ * @typedef {import('../types').ShotMetaPredicate} ShotMetaPredicate
+ * @typedef {import('../types').ShotCandidateFilter} ShotCandidateFilter
+ * @typedef {{ value?: string, exact?: boolean, error?: string }} ParsedClauseValue
+ * @typedef {{ valueMs: number | null, hasTime: boolean, error: string | null }} ParsedDateExpression
+ * @typedef {{ dateMatchers: ShotMetaPredicate[], matchesPinnedShot?: ShotMetaPredicate }} ClauseMatchContext
+ */
+
 const SUPPORTED_FIELDS = new Set(['name', 'profile', 'id', 'source', 'date', 'pinned']);
 const SUPPORTED_FIELD_LIST = Array.from(SUPPORTED_FIELDS).join(', ');
+/** @type {Record<string, string>} */
 const SOURCE_ALIASES = {
   gm: 'gaggimate',
   gaggimate: 'gaggimate',
@@ -16,12 +31,17 @@ const SOURCE_ALIASES = {
   both: 'both',
 };
 
+/** @param {unknown} value */
 function normalizeText(value) {
   return String(value ?? '')
     .trim()
     .toLowerCase();
 }
 
+/**
+ * @param {unknown} queryString
+ * @returns {string[]}
+ */
 function splitQueryClauses(queryString) {
   const input = String(queryString ?? '');
   const parts = [];
@@ -55,6 +75,10 @@ function splitQueryClauses(queryString) {
   return parts;
 }
 
+/**
+ * @param {unknown} rawValue
+ * @returns {ParsedClauseValue}
+ */
 function parseQuotedOrPlainValue(rawValue) {
   const trimmed = String(rawValue ?? '').trim();
   if (!trimmed) {
@@ -75,6 +99,10 @@ function parseQuotedOrPlainValue(rawValue) {
   return { value: trimmed, exact: false };
 }
 
+/**
+ * @param {unknown} rawValue
+ * @returns {{ value: boolean | null, error: string | null }}
+ */
 function parsePinnedBooleanValue(rawValue) {
   const value = normalizeText(rawValue);
   if (['true', 'yes', '1'].includes(value)) return { value: true, error: null };
@@ -82,9 +110,16 @@ function parsePinnedBooleanValue(rawValue) {
   return { value: null, error: t`pinned: use true or false.` };
 }
 
+/**
+ * @param {unknown} queryString
+ * @returns {ParsedStatisticsQuery}
+ */
 export function parseStatisticsQuery(queryString) {
+  /** @type {StatisticsQueryClause[]} */
   const clauses = [];
+  /** @type {StatisticsQueryIssue[]} */
   const errors = [];
+  /** @type {StatisticsQueryIssue[]} */
   const warnings = [];
 
   const rawClauses = splitQueryClauses(queryString);
@@ -153,7 +188,7 @@ export function parseStatisticsQuery(queryString) {
 
       clauses.push({
         field: 'date',
-        op,
+        op: /** @type {DateOperator} */ (op),
         value: exprTrimmed,
         exact: false,
         raw: trimmed,
@@ -184,6 +219,10 @@ export function parseStatisticsQuery(queryString) {
   return { clauses, errors, warnings };
 }
 
+/**
+ * @param {unknown} value
+ * @returns {number | null}
+ */
 function normalizeEpochInputToMs(value) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric) || numeric <= 0) return null;
@@ -194,6 +233,11 @@ function normalizeEpochInputToMs(value) {
   return null;
 }
 
+/**
+ * @param {StatisticsShotMeta | null | undefined} shotMeta
+ * @param {DateBasisMode} [dateBasisMode]
+ * @returns {number | null} epoch ms
+ */
 export function resolveShotEffectiveTimestampMs(shotMeta, dateBasisMode = 'auto') {
   const shotTsMs = normalizeEpochInputToMs(shotMeta?.timestamp ?? shotMeta?.shotDate);
   const uploadTsMs = normalizeEpochInputToMs(shotMeta?.uploadedAt);
@@ -203,6 +247,10 @@ export function resolveShotEffectiveTimestampMs(shotMeta, dateBasisMode = 'auto'
   return shotTsMs ?? uploadTsMs;
 }
 
+/**
+ * @param {unknown} expr
+ * @returns {{ valueMs?: number, hasTime?: boolean, error?: string } | null}
+ */
 function parseAbsoluteLocalDateExpression(expr) {
   const match = String(expr ?? '')
     .trim()
@@ -247,6 +295,11 @@ function parseAbsoluteLocalDateExpression(expr) {
   return { valueMs: date.getTime(), hasTime };
 }
 
+/**
+ * @param {unknown} expr
+ * @param {Date} [now]
+ * @returns {ParsedDateExpression}
+ */
 export function parseDateExpressionToEpochMs(expr, now = new Date()) {
   const trimmed = String(expr ?? '').trim();
   if (!trimmed) {
@@ -286,6 +339,7 @@ export function parseDateExpressionToEpochMs(expr, now = new Date()) {
   return { valueMs: absolute.valueMs, hasTime: absolute.hasTime, error: null };
 }
 
+/** @param {number} ms */
 function getDayBounds(ms) {
   const date = new Date(ms);
   const start = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0).getTime();
@@ -301,6 +355,10 @@ function getDayBounds(ms) {
   return { start, end };
 }
 
+/**
+ * @param {unknown[]} values
+ * @param {StatisticsQueryClause} clause
+ */
 function matchesTextClause(values, clause) {
   const needle = normalizeText(clause?.value);
   if (!needle) return true;
@@ -312,6 +370,11 @@ function matchesTextClause(values, clause) {
   return normalizedValues.some(value => value.includes(needle));
 }
 
+/**
+ * @param {StatisticsShotMeta} shotMeta
+ * @param {string} field
+ * @returns {unknown[]}
+ */
 function getTextValuesForField(shotMeta, field) {
   switch (field) {
     case 'name':
@@ -342,11 +405,16 @@ function getTextValuesForField(shotMeta, field) {
   }
 }
 
+/** @param {unknown} raw */
 function normalizeSourceValueForMatch(raw) {
   const value = normalizeText(raw);
   return SOURCE_ALIASES[value] || value;
 }
 
+/**
+ * @param {StatisticsShotMeta} shotMeta
+ * @param {StatisticsQueryClause} clause
+ */
 function matchesSourceClause(shotMeta, clause) {
   const source = normalizeSourceValueForMatch(shotMeta?.source);
   const wanted = normalizeSourceValueForMatch(clause?.value);
@@ -355,6 +423,11 @@ function matchesSourceClause(shotMeta, clause) {
   return source.includes(wanted);
 }
 
+/**
+ * @param {StatisticsQueryClause} clause
+ * @param {{ now: Date, dateBasisMode: DateBasisMode }} options
+ * @returns {{ matcher: ShotMetaPredicate | null, error: StatisticsQueryIssue | null }}
+ */
 function compileDateClause(clause, options) {
   const parsed = parseDateExpressionToEpochMs(clause.value, options.now);
   if (parsed.error || !Number.isFinite(parsed.valueMs)) {
@@ -374,6 +447,7 @@ function compileDateClause(clause, options) {
   const bounds = hasTime ? null : getDayBounds(valueMs);
   const op = clause.op;
 
+  /** @type {ShotMetaPredicate} */
   const matcher = shotMeta => {
     const ts = resolveShotEffectiveTimestampMs(shotMeta, options.dateBasisMode);
     if (!Number.isFinite(ts)) return false;
@@ -398,6 +472,11 @@ function compileDateClause(clause, options) {
   return { matcher, error: null };
 }
 
+/**
+ * @param {StatisticsShotMeta} shotMeta
+ * @param {StatisticsQueryClause} clause
+ * @param {ClauseMatchContext} ctx
+ */
 function matchClauseAgainstShotMeta(shotMeta, clause, ctx) {
   if (clause.field === 'date') {
     return ctx.dateMatchers.every(matcher => matcher(shotMeta));
@@ -418,9 +497,19 @@ function matchClauseAgainstShotMeta(shotMeta, clause, ctx) {
   return matchesTextClause(values, clause);
 }
 
+/**
+ * @param {object} args
+ * @param {StatisticsQueryClause[]} args.clauses
+ * @param {Date} args.now
+ * @param {DateBasisMode} args.dateBasisMode
+ * @param {StatisticsQueryIssue[]} args.errors - Receives compile errors.
+ */
 function groupShotCandidateClauses({ clauses, now, dateBasisMode, errors }) {
+  /** @type {StatisticsQueryClause[]} */
   const freeClauses = [];
+  /** @type {Map<string, StatisticsQueryClause[]>} */
   const fieldClauseGroups = new Map();
+  /** @type {ShotMetaPredicate[]} */
   const dateMatchers = [];
 
   for (const clause of clauses) {
@@ -474,6 +563,11 @@ function groupShotCandidateClauses({ clauses, now, dateBasisMode, errors }) {
   };
 }
 
+/**
+ * @param {ParsedStatisticsQuery | null | undefined} parsedQuery
+ * @param {{ now?: Date, dateBasisMode?: DateBasisMode, matchesPinnedShot?: ShotMetaPredicate }} [options]
+ * @returns {ShotCandidateFilter}
+ */
 export function buildShotCandidatePredicate(parsedQuery, options = {}) {
   const now = options.now instanceof Date ? options.now : new Date();
   const dateBasisMode = options.dateBasisMode || 'auto';
@@ -491,6 +585,7 @@ export function buildShotCandidatePredicate(parsedQuery, options = {}) {
     errors,
   });
 
+  /** @type {ShotMetaPredicate} */
   const predicate = shotMeta => {
     if (!shotMeta) return false;
 

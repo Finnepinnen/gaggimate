@@ -1,3 +1,16 @@
+/**
+ * @typedef {import('./types').ChartPoint} ChartPoint
+ * @typedef {'weight' | 'weightFlow'} SpikeSeriesKind
+ */
+
+/**
+ * @typedef {object} SpikeResistantPeakOptions
+ * @property {number} [windowSec]
+ * @property {number} [supportRatio]
+ * @property {number} [fallbackPercentile]
+ * @property {SpikeSeriesKind | string} [seriesKind]
+ */
+
 const SCALE_SPIKE_WINDOW_SEC = 2;
 
 const SCALE_SPIKE_SUPPORT_RATIO = 0.85;
@@ -6,6 +19,10 @@ const SCALE_SPIKE_FALLBACK_PERCENTILE = 0.95;
 
 const SCALE_SPIKE_BASELINE_LOOKBACK_SEC = 0.75;
 
+/**
+ * @param {number[]} values
+ * @returns {number | null}
+ */
 function getMedianValue(values) {
   if (!Array.isArray(values) || values.length === 0) return null;
   const sorted = [...values].sort((a, b) => a - b);
@@ -14,6 +31,10 @@ function getMedianValue(values) {
   return (sorted[middleIndex - 1] + sorted[middleIndex]) / 2;
 }
 
+/**
+ * @param {Array<{ x?: unknown, y?: unknown } | null | undefined> | null | undefined} points
+ * @returns {ChartPoint[]}
+ */
 function getFiniteSeriesPoints(points) {
   return (points || [])
     .map(point => ({
@@ -23,6 +44,11 @@ function getFiniteSeriesPoints(points) {
     .filter(point => Number.isFinite(point.x) && Number.isFinite(point.y));
 }
 
+/**
+ * @param {number[]} values
+ * @param {number} percentile 0..1
+ * @returns {number | null}
+ */
 export function getPercentileValue(values, percentile) {
   if (!Array.isArray(values) || values.length === 0) return null;
   const sorted = [...values].sort((a, b) => a - b);
@@ -35,6 +61,10 @@ export function getPercentileValue(values, percentile) {
   return sorted[lowerIndex] + (sorted[upperIndex] - sorted[lowerIndex]) * ratio;
 }
 
+/**
+ * @param {{ rawFinitePoints: ChartPoint[], point: ChartPoint, index: number, windowSec: number, minTransientRise: number, recoveryTolerance: number }} options
+ * @returns {boolean}
+ */
 function isTransientScaleSpikePoint({
   rawFinitePoints,
   point,
@@ -66,6 +96,11 @@ function isTransientScaleSpikePoint({
   return futureMin <= baseline + recoveryTolerance;
 }
 
+/**
+ * @param {Parameters<typeof getFiniteSeriesPoints>[0]} points
+ * @param {SpikeResistantPeakOptions} [options]
+ * @returns {ChartPoint | null}
+ */
 function getSpikeResistantSeriesPeak(
   points,
   {
@@ -107,12 +142,13 @@ function getSpikeResistantSeriesPeak(
   const rawMaxPoint = finitePoints.reduce((maxPoint, point) => {
     if (!maxPoint || point.y > maxPoint.y) return point;
     return maxPoint;
-  }, null);
+  }, /** @type {ChartPoint | null} */ (null));
   const totalDuration = Math.max(0, finitePoints[finitePoints.length - 1].x - finitePoints[0].x);
   if (totalDuration <= windowSec) {
     return rawMaxPoint;
   }
 
+  /** @type {ChartPoint | null} */
   let sustainedPeak = null;
   for (let i = 0; i < finitePoints.length; i += 1) {
     const candidate = finitePoints[i];
@@ -142,17 +178,26 @@ function getSpikeResistantSeriesPeak(
     if (point.y > percentileMax) return bestPoint;
     if (!bestPoint || point.y > bestPoint.y) return point;
     return bestPoint;
-  }, null);
+  }, /** @type {ChartPoint | null} */ (null));
 
   return percentilePeak || rawMaxPoint;
 }
 
+/**
+ * @param {Parameters<typeof getFiniteSeriesPoints>[0]} points
+ * @param {SpikeResistantPeakOptions & { fallback?: number }} [options]
+ * @returns {number}
+ */
 export function getSpikeResistantSeriesMax(points, options = {}) {
   const { fallback = 1, ...peakOptions } = options;
   const peak = getSpikeResistantSeriesPeak(points, peakOptions);
   return Math.max(fallback, Number.isFinite(peak?.y) ? peak.y : fallback);
 }
 
+/**
+ * @param {{ finitePoints: ChartPoint[], index: number, supportRatio: number }} options
+ * @returns {{ startX: number, endX: number }}
+ */
 function getSupportedSeriesWindow({ finitePoints, index, supportRatio }) {
   const candidate = finitePoints[index];
   const threshold = candidate.y * supportRatio;
@@ -172,6 +217,10 @@ function getSupportedSeriesWindow({ finitePoints, index, supportRatio }) {
   return { startX, endX };
 }
 
+/**
+ * @param {number | string} value
+ * @returns {number | string}
+ */
 function formatAxisTick(value) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return value;
@@ -180,6 +229,12 @@ function formatAxisTick(value) {
   return rounded < 0 ? `-${absolute}` : absolute;
 }
 
+/**
+ * @param {number | string} value
+ * @param {number} index
+ * @param {import('chart.js').Tick[]} ticks
+ * @returns {number | string}
+ */
 export function formatUniqueAxisTick(value, index, ticks) {
   if (Array.isArray(ticks) && index === ticks.length - 1) return '';
 
@@ -190,6 +245,13 @@ export function formatUniqueAxisTick(value, index, ticks) {
   return formatAxisTick(previousValue) === formatted ? '' : formatted;
 }
 
+/**
+ * @this {import('chart.js').Scale | undefined}
+ * @param {number | string} value
+ * @param {number} index
+ * @param {import('chart.js').Tick[]} ticks
+ * @returns {number | string}
+ */
 export function formatResponsiveXAxisTick(value, index, ticks) {
   const formatted = formatAxisTick(value);
   const tickCount = Array.isArray(ticks) ? ticks.length : 0;

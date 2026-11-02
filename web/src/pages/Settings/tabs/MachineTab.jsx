@@ -17,6 +17,17 @@ const tofDistance = computed(() => machine.value.status.tofDistance);
 const hardwareScaleAvailable = computed(() => !!machine.value.capabilities.hardwareScale);
 const status = computed(() => machine.value.status);
 
+/** @typedef {import('../types').FieldChangeHandler} FieldChangeHandler */
+
+/**
+ * @param {{
+ *   id: string,
+ *   label: string,
+ *   value: string | undefined,
+ *   fallback: string,
+ *   onChange: FieldChangeHandler,
+ * }} props
+ */
 function SunriseColorField({ id, label, value, fallback, onChange }) {
   return (
     <SettingsFormField label={label} htmlFor={id} noMargin>
@@ -36,6 +47,15 @@ function SunriseColorField({ id, label, value, fallback, onChange }) {
   );
 }
 
+/**
+ * @param {{
+ *   id: string,
+ *   label: string,
+ *   value: number | string | undefined,
+ *   onChange: FieldChangeHandler,
+ *   onUseCurrent: () => void,
+ * }} props
+ */
 function TankDistanceField({ id, label, value, onChange, onUseCurrent }) {
   const { t } = useLingui();
   const distance = tofDistance.value;
@@ -66,10 +86,17 @@ function TankDistanceField({ id, label, value, onChange, onUseCurrent }) {
   );
 }
 
+/**
+ * @param {{
+ *   formData: import('../types').SettingsFormData,
+ *   onChange: import('../types').FormChange,
+ *   setField: import('../types').SetField,
+ * }} props
+ */
 export function MachineTab({ formData, onChange, setField }) {
   const { t } = useLingui();
   const apiService = useContext(ApiServiceContext);
-  const [steamPumpDraft, setSteamPumpDraft] = useState(null);
+  const [steamPumpDraft, setSteamPumpDraft] = useState(/** @type {string | null} */ (null));
   const [calibrationWeight, setCalibrationWeight] = useState('');
 
   const tareScale = useCallback(() => {
@@ -77,6 +104,7 @@ export function MachineTab({ formData, onChange, setField }) {
   }, [apiService]);
 
   const changeHardwareScaleSampleRate = useCallback(
+    /** @param {import('preact').JSX.TargetedEvent<HTMLSelectElement, Event>} event */
     event => {
       const sampleRate = Number.parseInt(event.currentTarget.value, 10) === 80 ? 80 : 10;
       const defaultAlpha = sampleRate === 80 ? '0.40' : '0.80';
@@ -88,6 +116,7 @@ export function MachineTab({ formData, onChange, setField }) {
   );
 
   const calibrateLoadCell = useCallback(
+    /** @param {1 | 2} cellNumber */
     cellNumber => {
       const measuredWeight =
         cellNumber === 1

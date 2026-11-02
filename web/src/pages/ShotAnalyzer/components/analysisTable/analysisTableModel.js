@@ -2,6 +2,19 @@ import { msg, t } from '@lingui/core/macro';
 import { i18n } from '../../../../i18n.js';
 import { utilityColors } from '../../utils/analyzerUtils';
 
+/** @typedef {import('../../types').ShotAnalysisResult} ShotAnalysisResult */
+/** @typedef {import('../../types').AnalysisCompareEntry} AnalysisCompareEntry */
+/** @typedef {import('../../utils/columns.js').AnalyzerColumn} AnalyzerColumn */
+
+/**
+ * @typedef {object} AnalysisWarningBadge
+ * @property {string} key
+ * @property {string} label
+ * @property {string} colorClass
+ * @property {string} details
+ * @property {import('preact').JSX.CSSProperties} [style]
+ */
+
 const NEUTRAL_STATUS_BADGE_CLASS = 'bg-base-content/10 text-base-content/80 border-base-content/15';
 const WARNING_BADGE_HIGH_SCALE_LABEL = msg`HIGH SCALE DELAY`;
 const WARNING_BADGE_SCALE_LOST_LABEL = msg`SCALE LOST`;
@@ -14,12 +27,18 @@ const WARNING_HELP_COPY = {
   slowSampling: msg`Excessive delay while writing samples. Possible causes include a slow SD card or high OS/system load.`,
 };
 
+/** @param {ShotAnalysisResult} results */
 function getDelayReviewLabel(results) {
   const phaseNumber = results?.delayReviewPhaseNumber;
   return phaseNumber ? t`REVIEW PHASE ${phaseNumber}` : t`PHASE REVIEW ADVISED`;
 }
 
+/**
+ * @param {ShotAnalysisResult | null | undefined} results
+ * @returns {AnalysisWarningBadge[]}
+ */
 export function buildAnalysisWarningBadges(results) {
+  /** @type {AnalysisWarningBadge[]} */
   const badges = [];
 
   if (results?.hasSlowSampleInterval) {
@@ -80,6 +99,7 @@ export function buildAnalysisWarningBadges(results) {
   return badges;
 }
 
+/** @param {unknown} value */
 function stripTrailingParentheticalSuffix(value) {
   const label = String(value || '');
   const suffixStart = label.lastIndexOf(' (');
@@ -87,6 +107,7 @@ function stripTrailingParentheticalSuffix(value) {
   return label.slice(0, suffixStart);
 }
 
+/** @param {AnalyzerColumn} col */
 function getAnalysisHeaderBaseLabel(col) {
   if (col.id === 'duration') return t`Time`;
   if (col.id === 'water') return t`Pumped Water (phase)`;
@@ -99,7 +120,9 @@ function getAnalysisHeaderBaseLabel(col) {
   return stripTrailingParentheticalSuffix(col.label);
 }
 
+/** @param {AnalyzerColumn} col */
 export function getAnalysisHeaderLabel(col) {
+  /** @type {Record<string, string>} */
   const suffixByType = {
     se: ` ${t({ message: 'S/E', context: 'column type, short for start/end' })}`,
     mm: ` ${t({ message: 'Min/Max', context: 'column type' })}`,
@@ -109,14 +132,23 @@ export function getAnalysisHeaderLabel(col) {
   return `${getAnalysisHeaderBaseLabel(col)}${suffixByType[col.type] || ''}`;
 }
 
+/**
+ * @param {AnalysisCompareEntry | null | undefined} entry
+ * @param {number} index
+ */
 function getCompareAccentColor(entry, index) {
   return entry?.accentColor || (index === 0 ? 'var(--color-primary)' : 'var(--color-secondary)');
 }
 
+/** @param {AnalysisCompareEntry | null | undefined} entry */
 function getCompareAccentStrength(entry) {
   return Number.isFinite(Number(entry?.accentStrength)) ? Number(entry.accentStrength) : 1;
 }
 
+/**
+ * @param {AnalysisCompareEntry} entry
+ * @param {number} index
+ */
 export function getCompareRowStyle(entry, index) {
   const strength = getCompareAccentStrength(entry);
   const statusbarStrength = Math.round(100 * strength);
@@ -130,11 +162,16 @@ export function getCompareRowStyle(entry, index) {
   };
 }
 
+/**
+ * @param {boolean} compareMode
+ * @param {AnalysisCompareEntry[]} compareEntries
+ */
 export function getMaxComparePhaseCount(compareMode, compareEntries) {
   if (!compareMode) return 0;
   return Math.max(...compareEntries.map(entry => entry?.results?.phases?.length || 0), 0);
 }
 
+/** @param {ShotAnalysisResult | null | undefined} results */
 export function hasAnalysisProfilePhaseStops(results) {
   return Boolean(results?.phases?.some(phase => phase.exit?.reason));
 }

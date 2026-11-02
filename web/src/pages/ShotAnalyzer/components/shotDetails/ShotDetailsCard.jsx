@@ -13,6 +13,10 @@ import { useShotNotesState } from '../useShotNotesState';
 import { ShotMainInfoCard } from './ShotMainInfoCard';
 import { MetricValueGrid } from './ShotMetricCards';
 
+/** @typedef {import('preact').JSX.TargetedPointerEvent<HTMLInputElement>} DoseInputPointerEvent */
+/** @typedef {import('preact').JSX.TargetedKeyboardEvent<HTMLInputElement>} DoseInputKeyboardEvent */
+
+/** @type {{ value: 'bitter' | 'balanced' | 'sour', label: import('@lingui/core').MessageDescriptor }[]} */
 const tasteOptions = [
   { value: 'bitter', label: msg`Bitter` },
   { value: 'balanced', label: msg`Balanced` },
@@ -30,6 +34,10 @@ const EMPTY_DOSE_DEFAULTS = {
   doseOut: 36,
 };
 
+/**
+ * @param {DoseInputPointerEvent} event
+ * @param {number} fallbackValue
+ */
 function initializeEmptyDoseStepper(event, fallbackValue) {
   const input = event.currentTarget;
   if (input.value !== '') return;
@@ -42,6 +50,10 @@ function initializeEmptyDoseStepper(event, fallbackValue) {
   input.value = (fallbackValue + (isIncrement ? -0.1 : 0.1)).toFixed(1);
 }
 
+/**
+ * @param {DoseInputKeyboardEvent} event
+ * @param {number} fallbackValue
+ */
 function initializeEmptyDoseKeyboardStepper(event, fallbackValue) {
   const input = event.currentTarget;
   if (input.value !== '' || !['ArrowUp', 'ArrowDown'].includes(event.key)) return;
@@ -49,6 +61,10 @@ function initializeEmptyDoseKeyboardStepper(event, fallbackValue) {
   input.value = (fallbackValue + (event.key === 'ArrowUp' ? -0.1 : 0.1)).toFixed(1);
 }
 
+/**
+ * @param {string} taste
+ * @returns {import('preact').JSX.CSSProperties | undefined}
+ */
 function getSelectedTasteButtonStyle(taste) {
   const tasteStyle = getNotesTasteStyle(taste);
   if (!tasteStyle) return undefined;
@@ -57,6 +73,14 @@ function getSelectedTasteButtonStyle(taste) {
   };
 }
 
+/**
+ * @param {object} props
+ * @param {import('@fortawesome/fontawesome-svg-core').IconDefinition} [props.icon]
+ * @param {string} props.label
+ * @param {import('preact').ComponentChildren} [props.children]
+ * @param {string} [props.className]
+ * @param {import('preact').ComponentChildren} [props.action]
+ */
 function DetailField({ icon, label, children, className = '', action = null }) {
   return (
     <div className={className}>
@@ -72,6 +96,11 @@ function DetailField({ icon, label, children, className = '', action = null }) {
   );
 }
 
+/**
+ * @param {object} props
+ * @param {import('../../types').AnalysisCompareEntry} props.entry
+ * @param {boolean} props.isCompare
+ */
 export function ShotDetailsCard({ entry, isCompare }) {
   const { t, i18n } = useLingui();
   const { flushSave, handleFieldChange, loading, notes, updateAndSave } = useShotNotesState({

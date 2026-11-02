@@ -4,6 +4,14 @@ import { Trans, useLingui } from '@lingui/react/macro';
 import { WarningIcon } from '../../components/WarningIcon.jsx';
 import { WARNING_LEVEL } from '../../utils/warnings.js';
 
+/** @typedef {ReturnType<typeof import('../../utils/warnings.js').activeWarnings>[number]} ActiveWarning */
+
+/**
+ * @param {object} props
+ * @param {ActiveWarning[]} props.warnings
+ * @param {() => void} props.onBack
+ * @param {() => void} props.onIgnore
+ */
 // Portaled to <body> and lifted above the sidebar (z-9999) so the backdrop dims the whole page.
 export function BrewConfirmModal({ warnings, onBack, onIgnore }) {
   const { t } = useLingui();

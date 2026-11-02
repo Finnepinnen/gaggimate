@@ -9,12 +9,16 @@ import { faCaretRight } from '@fortawesome/free-solid-svg-icons/faCaretRight';
 import { Spinner } from '../../../components/Spinner.jsx';
 import Section from '../../../components/Card.jsx';
 
+/**
+ * @param {Blob} blob
+ * @returns {Promise<string>} Data URL.
+ */
 const imageUrlToBase64 = async blob => {
   return new Promise((onSuccess, onError) => {
     try {
       const reader = new FileReader();
       reader.onload = function () {
-        onSuccess(this.result);
+        onSuccess(/** @type {string} */ (this.result));
       };
       reader.onerror = function () {
         onError(new Error('FileReader failed to read image blob.'));
@@ -26,16 +30,19 @@ const imageUrlToBase64 = async blob => {
   });
 };
 
+/** @param {number} rssi dBm */
 const getRssiStatusClass = rssi => {
   if (rssi < -90) return 'status-error';
   if (rssi < -80) return 'status-warning';
   return 'status-success';
 };
 
+/** @param {{ phase: number, progress: number }} props */
 function OtaProgressView({ phase, progress }) {
   const { t } = useLingui();
   const finished = phase === 4;
   const failed = phase === 5;
+  /** @param {number} p */
   const getOtaPhaseText = p => {
     switch (p) {
       case 1:
@@ -74,6 +81,7 @@ function OtaProgressView({ phase, progress }) {
   );
 }
 
+/** @param {{ formData: OtaSettings }} props */
 function StorageAndMemorySection({ formData }) {
   const { t } = useLingui();
   return (
@@ -149,6 +157,15 @@ function StorageAndMemorySection({ formData }) {
   );
 }
 
+/**
+ * @param {{
+ *   downloadSupportData: () => void,
+ *   onHistoryRebuild: () => void,
+ *   rebuilding: boolean,
+ *   rebuilt: boolean,
+ *   rebuildProgress: { total: number, current: number, status: string },
+ * }} props
+ */
 function MaintenanceSection({
   downloadSupportData,
   onHistoryRebuild,
@@ -321,9 +338,11 @@ export function SystemTab() {
     }, 500);
   }, [apiService]);
 
+  /** @type {import('preact').RefObject<HTMLFormElement>} */
   const formRef = useRef();
 
   const onSubmit = useCallback(
+    /** @param {import('preact').JSX.TargetedSubmitEvent<HTMLFormElement>} e */
     async e => {
       e.preventDefault();
       setSubmitting(true);
@@ -335,6 +354,7 @@ export function SystemTab() {
   );
 
   const onUpdate = useCallback(
+    /** @param {'controller' | 'display' | 'both'} component */
     component => {
       apiService.send({ tp: 'req:ota-start', cp: component });
     },

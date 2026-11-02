@@ -80,17 +80,20 @@ function StatisticsSearchHelpContent() {
 
 export function StatisticsSearchHelp() {
   const { t } = useLingui();
-  const detailsRef = useRef(null);
+  const detailsRef = useRef(/** @type {HTMLDetailsElement | null} */ (null));
   const [isOpen, setIsOpen] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(
     () => globalThis.window?.matchMedia?.('(max-width: 639px)').matches || false,
   );
-  const [mobilePortalTarget, setMobilePortalTarget] = useState(null);
+  const [mobilePortalTarget, setMobilePortalTarget] = useState(
+    /** @type {Element | null} */ (null),
+  );
 
   useEffect(() => {
     if (globalThis.window?.matchMedia === undefined) return undefined;
 
     const mediaQuery = globalThis.window.matchMedia('(max-width: 639px)');
+    /** @param {MediaQueryListEvent} event */
     const handleChange = event => setIsMobileViewport(event.matches);
     setIsMobileViewport(mediaQuery.matches);
 

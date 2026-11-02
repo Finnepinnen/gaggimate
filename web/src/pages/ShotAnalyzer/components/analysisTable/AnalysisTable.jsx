@@ -27,14 +27,24 @@ import {
   useVerticalWheelForwarding,
 } from './useAnalysisTableInteraction';
 
+/** @param {number} shotNumber */
 function getShotAriaLabel(shotNumber) {
   return t`Shot ${shotNumber}`;
 }
 
+/** @param {number} phaseNumber */
 function getPhaseHeading(phaseNumber) {
   return t`Phase ${phaseNumber}`;
 }
 
+/**
+ * @param {object} props
+ * @param {import('../../types').ShotAnalysisResult | null | undefined} props.results
+ * @param {import('../../types').AnalysisCompareEntry[]} [props.compareEntries]
+ * @param {boolean} [props.isCompareActive]
+ * @param {Set<string>} props.activeColumns
+ * @param {(columns: Set<string>) => void} props.onColumnsChange
+ */
 export function AnalysisTable({
   results,
   compareEntries = [],
@@ -46,13 +56,16 @@ export function AnalysisTable({
 
   const isTouchOptimized = useTouchOptimizedPointer();
 
+  /** @type {import('preact').RefObject<HTMLDivElement>} */
   const tableContainerRef = useRef(null);
   const visibleColumns = columnConfig.filter(col => activeColumns.has(col.id));
   const compareTableColumnCount = visibleColumns.length + 2;
   const maxComparePhaseCount = getMaxComparePhaseCount(compareMode, compareEntries);
   const hasProfilePhaseStops = hasAnalysisProfilePhaseStops(results);
 
+  /** @param {number} amount */
   const scrollTable = amount => scrollAnalysisTable(tableContainerRef, amount);
+  /** @param {'start' | 'end'} direction */
   const scrollToBound = direction => scrollAnalysisTableToBound(tableContainerRef, direction);
 
   useVerticalWheelForwarding(tableContainerRef);
@@ -282,7 +295,7 @@ export function AnalysisTable({
                   {results.phases.map((phase, idx) => (
                     <tr
                       key={
-                        phase.key ||
+                        /** @type {{ key?: string }} */ (phase).key ||
                         [
                           phase.number,
                           phase.displayName || phase.name,

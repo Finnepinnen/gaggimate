@@ -16,6 +16,40 @@ import { AnalyzerControl } from '../AnalyzerControl.jsx';
 import { cx } from '../../../../utils/cx.js';
 import { getLoadedNameLabel } from './libraryDisplay';
 
+/** @typedef {import('../types').LibraryItem} LibraryItem */
+/** @typedef {import('preact').JSX.TargetedMouseEvent<HTMLElement>} ControlClickEvent */
+
+/**
+ * @typedef {object} StatusBarProps
+ * @property {LibraryItem | null} [currentShot]
+ * @property {LibraryItem | null} [currentProfile]
+ * @property {string} currentShotName
+ * @property {string} currentProfileName
+ * @property {boolean} [isShotPending]
+ * @property {boolean} [canRetryProfileSearch]
+ * @property {() => void} [onUnloadShot]
+ * @property {() => void} [onUnloadProfile]
+ * @property {(() => unknown) | null} [onExportShot]
+ * @property {(() => unknown) | null} [onExportProfile]
+ * @property {() => void} [onRetryProfileSearch]
+ * @property {() => void} [onTogglePanel]
+ * @property {() => void} [onShotPanelToggle]
+ * @property {() => void} [onProfilePanelToggle]
+ * @property {boolean} [isMismatch]
+ * @property {boolean} [compareMode]
+ * @property {boolean} [isSearchingProfile]
+ * @property {boolean} [compact]
+ * @property {number | null} [compareBadgeNumber]
+ * @property {boolean} [ghosted]
+ */
+
+/**
+ * @param {object} options
+ * @param {boolean | undefined} options.isMismatch
+ * @param {LibraryItem | null | undefined} options.currentProfile
+ * @param {string} options.badgeBaseClass
+ * @param {string} options.loadedShadowClass
+ */
 function getProfileBadgeClasses({ isMismatch, currentProfile, badgeBaseClass, loadedShadowClass }) {
   if (isMismatch) return `${badgeBaseClass} ${loadedShadowClass} border-transparent text-white`;
   if (currentProfile) {
@@ -24,6 +58,12 @@ function getProfileBadgeClasses({ isMismatch, currentProfile, badgeBaseClass, lo
   return `${badgeBaseClass} border-base-content/15 bg-transparent text-base-content/70 shadow-none hover:bg-base-content/5`;
 }
 
+/**
+ * @param {object} options
+ * @param {boolean} options.ghosted
+ * @param {string} options.badgeBaseClass
+ * @param {LibraryItem | null | undefined} options.currentShot
+ */
 function getShotBadgeClasses({ ghosted, badgeBaseClass, currentShot }) {
   if (ghosted) {
     return getGhostedBadgeClasses(badgeBaseClass, Boolean(currentShot));
@@ -34,6 +74,10 @@ function getShotBadgeClasses({ ghosted, badgeBaseClass, currentShot }) {
   return `${badgeBaseClass} border-base-content/15 bg-transparent text-base-content/70 shadow-none hover:bg-base-content/5`;
 }
 
+/**
+ * @param {string} baseClasses
+ * @param {boolean} isActive
+ */
 function getGhostedBadgeClasses(baseClasses, isActive) {
   if (isActive) {
     // Secondary compare slots stay visually tied to the active theme while
@@ -43,6 +87,7 @@ function getGhostedBadgeClasses(baseClasses, isActive) {
   return `${baseClasses} border-base-content/10 bg-transparent text-base-content/65 hover:bg-base-content/5 shadow-none`;
 }
 
+/** @param {boolean | undefined} isMismatch */
 function getProfileBadgeTitle(isMismatch) {
   if (isMismatch) {
     return t`Profile mismatch detected. Use Import below or drop files here to import.`;
@@ -50,6 +95,11 @@ function getProfileBadgeTitle(isMismatch) {
   return t`Click to open the library. Use Import below or drop files here to import.`;
 }
 
+/**
+ * @param {object} options
+ * @param {LibraryItem | null | undefined} options.currentShot
+ * @param {boolean} options.ghosted
+ */
 function getCompareSlotBadgeClasses({ currentShot, ghosted }) {
   if (!currentShot) return 'bg-base-100 text-base-content/55 ring-base-200';
   return ghosted
@@ -57,6 +107,10 @@ function getCompareSlotBadgeClasses({ currentShot, ghosted }) {
     : 'bg-primary text-primary-content ring-base-100';
 }
 
+/**
+ * @param {LibraryItem | null | undefined} currentShot
+ * @param {string} currentShotName
+ */
 function getShotBadgeLabel(currentShot, currentShotName) {
   if (currentShot?.source === 'gaggimate') {
     return `#${currentShot.id}`;
@@ -64,6 +118,11 @@ function getShotBadgeLabel(currentShot, currentShotName) {
   return getLoadedNameLabel(cleanName(currentShotName));
 }
 
+/**
+ * @param {object} options
+ * @param {boolean | undefined} options.isMismatch
+ * @param {boolean} options.ghosted
+ */
 function getMismatchProfileBadgeStyle({ isMismatch, ghosted }) {
   if (!isMismatch) return undefined;
 
@@ -96,6 +155,15 @@ function BadgeIconButton({ compact, ghosted, children, ...props }) {
   );
 }
 
+/**
+ * @param {object} options
+ * @param {boolean} options.compact
+ * @param {boolean} options.ghosted
+ * @param {LibraryItem | null | undefined} options.currentShot
+ * @param {LibraryItem | null | undefined} options.currentProfile
+ * @param {boolean | undefined} options.isMismatch
+ * @param {boolean} options.isSearchingProfile
+ */
 function getStatusBarViewModel({
   compact,
   ghosted,
@@ -138,6 +206,18 @@ function getStatusBarViewModel({
   };
 }
 
+/**
+ * @param {object} props
+ * @param {LibraryItem | null | undefined} props.currentProfile
+ * @param {string} props.currentProfileName
+ * @param {boolean | undefined} props.isMismatch
+ * @param {boolean} props.isSearchingProfile
+ * @param {boolean} props.canRetryProfileSearch
+ * @param {(() => void) | undefined} props.onRetryProfileSearch
+ * @param {(() => void) | undefined} props.onUnloadProfile
+ * @param {boolean} props.compact
+ * @param {boolean} props.ghosted
+ */
 function ProfileTrailingControl({
   currentProfile,
   currentProfileName,
@@ -163,10 +243,12 @@ function ProfileTrailingControl({
             compact={compact}
             ghosted={ghosted}
             type='button'
-            onClick={event => {
-              event.stopPropagation();
-              onRetryProfileSearch();
-            }}
+            onClick={
+              /** @param {ControlClickEvent} event */ event => {
+                event.stopPropagation();
+                onRetryProfileSearch();
+              }
+            }
             title={retryTitle}
             aria-label={retryTitle}
             disabled={isSearchingProfile}
@@ -179,10 +261,12 @@ function ProfileTrailingControl({
           compact={compact}
           ghosted={ghosted}
           type='button'
-          onClick={event => {
-            event.stopPropagation();
-            onUnloadProfile();
-          }}
+          onClick={
+            /** @param {ControlClickEvent} event */ event => {
+              event.stopPropagation();
+              onUnloadProfile();
+            }
+          }
         >
           <FontAwesomeIcon icon={faTimes} />
         </BadgeIconButton>
@@ -197,10 +281,12 @@ function ProfileTrailingControl({
           compact={compact}
           ghosted={ghosted}
           type='button'
-          onClick={event => {
-            event.stopPropagation();
-            onRetryProfileSearch();
-          }}
+          onClick={
+            /** @param {ControlClickEvent} event */ event => {
+              event.stopPropagation();
+              onRetryProfileSearch();
+            }
+          }
           title={retryTitle}
           aria-label={retryTitle}
           disabled={isSearchingProfile}
@@ -214,10 +300,12 @@ function ProfileTrailingControl({
           compact={compact}
           ghosted={ghosted}
           type='button'
-          onClick={event => {
-            event.stopPropagation();
-            onUnloadProfile();
-          }}
+          onClick={
+            /** @param {ControlClickEvent} event */ event => {
+              event.stopPropagation();
+              onUnloadProfile();
+            }
+          }
         >
           <FontAwesomeIcon icon={faTimes} />
         </BadgeIconButton>
@@ -226,6 +314,14 @@ function ProfileTrailingControl({
   );
 }
 
+/**
+ * @param {object} props
+ * @param {boolean} props.available
+ * @param {boolean} props.compact
+ * @param {boolean} props.ghosted
+ * @param {(() => unknown) | null | undefined} props.onExport
+ * @param {string} props.label
+ */
 function BadgeExportControl({ available, compact, ghosted, onExport, label }) {
   if (!available || !onExport) return null;
 
@@ -234,10 +330,12 @@ function BadgeExportControl({ available, compact, ghosted, onExport, label }) {
       compact={compact}
       ghosted={ghosted}
       type='button'
-      onClick={event => {
-        event.stopPropagation();
-        onExport();
-      }}
+      onClick={
+        /** @param {ControlClickEvent} event */ event => {
+          event.stopPropagation();
+          onExport();
+        }
+      }
       title={label}
       aria-label={label}
     >
@@ -246,6 +344,13 @@ function BadgeExportControl({ available, compact, ghosted, onExport, label }) {
   );
 }
 
+/**
+ * @param {object} props
+ * @param {LibraryItem | null | undefined} props.currentShot
+ * @param {boolean} props.compact
+ * @param {boolean} props.ghosted
+ * @param {(() => void) | undefined} props.onUnloadShot
+ */
 function ShotTrailingControl({ currentShot, compact, ghosted, onUnloadShot }) {
   return (
     <div className='flex items-center gap-1'>
@@ -254,10 +359,12 @@ function ShotTrailingControl({ currentShot, compact, ghosted, onUnloadShot }) {
           compact={compact}
           ghosted={ghosted}
           type='button'
-          onClick={event => {
-            event.stopPropagation();
-            onUnloadShot();
-          }}
+          onClick={
+            /** @param {ControlClickEvent} event */ event => {
+              event.stopPropagation();
+              onUnloadShot();
+            }
+          }
         >
           <FontAwesomeIcon icon={faTimes} />
         </BadgeIconButton>
@@ -266,6 +373,19 @@ function ShotTrailingControl({ currentShot, compact, ghosted, onUnloadShot }) {
   );
 }
 
+/**
+ * @param {object} props
+ * @param {LibraryItem | null | undefined} props.currentShot
+ * @param {string} props.currentShotName
+ * @param {boolean} props.isShotPending
+ * @param {boolean} props.compact
+ * @param {string} props.shotBadgeClasses
+ * @param {boolean} props.showShotChevron
+ * @param {(() => void) | undefined} props.handleShotPanelToggle
+ * @param {boolean} props.ghosted
+ * @param {(() => void) | undefined} props.onUnloadShot
+ * @param {(() => unknown) | null | undefined} props.onExportShot
+ */
 function ShotBadge({
   currentShot,
   currentShotName,
@@ -319,6 +439,23 @@ function ShotBadge({
   );
 }
 
+/**
+ * @param {object} props
+ * @param {LibraryItem | null | undefined} props.currentProfile
+ * @param {string} props.currentProfileName
+ * @param {boolean} props.compact
+ * @param {string} props.profileBadgeClasses
+ * @param {import('preact').JSX.CSSProperties | undefined} props.mismatchProfileBadgeStyle
+ * @param {boolean | undefined} props.isMismatch
+ * @param {boolean} props.showProfileChevron
+ * @param {(() => void) | undefined} props.handleProfilePanelToggle
+ * @param {boolean} props.ghosted
+ * @param {boolean} props.isSearchingProfile
+ * @param {boolean} props.canRetryProfileSearch
+ * @param {(() => void) | undefined} props.onRetryProfileSearch
+ * @param {(() => void) | undefined} props.onUnloadProfile
+ * @param {(() => unknown) | null | undefined} props.onExportProfile
+ */
 function ProfileBadge({
   currentProfile,
   currentProfileName,
@@ -388,6 +525,7 @@ function ProfileBadge({
   );
 }
 
+/** @param {StatusBarProps} props */
 export function StatusBar({
   currentShot,
   currentProfile,

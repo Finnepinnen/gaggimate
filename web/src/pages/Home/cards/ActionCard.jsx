@@ -9,6 +9,34 @@ import TargetToggle from '../TargetToggle.jsx';
 import Adjuster from '../Adjuster.jsx';
 import { FlushButton } from '../FlushButton.jsx';
 
+/** @typedef {import('../../../types').WarningState} WarningState */
+
+/**
+ * @param {object} props
+ * @param {number} props.mode
+ * @param {boolean} props.isActive
+ * @param {boolean} props.isFinished
+ * @param {boolean} props.isBrewing
+ * @param {boolean} props.isGrinding
+ * @param {boolean} props.isFlushing
+ * @param {() => void} props.activate
+ * @param {() => void} props.deactivate
+ * @param {() => void} props.clear
+ * @param {() => void} props.startFlush
+ * @param {() => void} props.stopFlush
+ * @param {boolean} [props.inCard]
+ * @param {number} props.currentTemperature
+ * @param {number} props.targetTemperature
+ * @param {(target: 0 | 1) => void} props.changeTarget
+ * @param {number} props.grindTarget 1 = volumetric
+ * @param {boolean} [props.volumetricAvailable]
+ * @param {number} props.grindTargetDuration ms
+ * @param {number} props.grindTargetVolume g
+ * @param {() => void} props.raiseTarget
+ * @param {() => void} props.lowerTarget
+ * @param {WarningState[]} [props.warnings]
+ * @param {string} [props.systemMessage]
+ */
 export function ActionCard({
   mode,
   isActive,

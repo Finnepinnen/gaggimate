@@ -6,8 +6,24 @@ import { faPlus } from '@fortawesome/free-solid-svg-icons/faPlus';
 import { Tooltip } from '../../components/Tooltip.jsx';
 import { Trans, useLingui } from '@lingui/react/macro';
 
+/** @typedef {import('./types').EditorPhase} EditorPhase */
+/** @typedef {import('../../types').PhaseTarget} PhaseTarget */
+/** @typedef {import('../../types').PumpAdvanced} PumpAdvanced */
+
+/**
+ * @param {{
+ *   phase: EditorPhase,
+ *   index: number,
+ *   onChange: (phase: EditorPhase) => void,
+ *   pressureAvailable: boolean,
+ * }} props
+ */
 export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
   const { t, i18n } = useLingui();
+  /**
+   * @param {keyof EditorPhase} field
+   * @param {unknown} value
+   */
   const onFieldChange = (field, value) => {
     onChange({
       ...phase,
@@ -15,6 +31,10 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
     });
   };
 
+  /**
+   * @param {number} index
+   * @param {PhaseTarget} value
+   */
   const onTargetChange = (index, value) => {
     const newPhase = {
       ...phase,
@@ -23,7 +43,9 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
     onChange(newPhase);
   };
 
+  /** @param {number} index */
   const onTargetRemove = index => {
+    /** @type {EditorPhase} */
     const newPhase = {
       ...phase,
       targets: [],
@@ -36,6 +58,7 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
     onChange(newPhase);
   };
 
+  /** @param {PhaseTarget} target */
   const onTargetAdd = target => {
     onChange({
       ...phase,
@@ -49,10 +72,14 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
   const pressure = !isNumber(phase.pump) ? phase.pump.pressure : 0;
   const flow = !isNumber(phase.pump) ? phase.pump.flow : 0;
   let mode = isNumber(phase.pump) ? (phase.pump === 0 ? 'off' : 'power') : phase.pump.target;
-  if (mode === 'pressure' && phase.pump.pressure === -1) mode = 'hold-pressure';
-  if (mode === 'flow' && phase.pump.flow === -1) mode = 'hold-flow';
+  if (mode === 'pressure' && /** @type {PumpAdvanced} */ (phase.pump).pressure === -1)
+    mode = 'hold-pressure';
+  if (mode === 'flow' && /** @type {PumpAdvanced} */ (phase.pump).flow === -1) mode = 'hold-flow';
   const availableTargetTypes = TargetTypes.filter(
-    tt => !targets.find(t2 => t2.type === tt.type && t2.operator === tt.operator),
+    tt =>
+      !targets.find(
+        (/** @type {PhaseTarget} */ t2) => t2.type === tt.type && t2.operator === tt.operator,
+      ),
   );
   const phaseNumber = index + 1;
 
@@ -164,7 +191,7 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
               type='button'
               className={`join-item btn btn-sm ${phase.valve ? 'btn-primary' : 'btn-outline'}`}
               onClick={() => onFieldChange('valve', 1)}
-              aria-pressed={phase.valve}
+              aria-pressed={/** @type {boolean} */ (/** @type {unknown} */ (phase.valve))}
               aria-label={t`Valve open`}
             >
               <Trans context='valve state'>Open</Trans>
@@ -210,8 +237,8 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
                     mode !== 'pressure' &&
                     onFieldChange('pump', {
                       target: 'pressure',
-                      pressure: Math.max(phase.pump.pressure || 0, 0),
-                      flow: Math.max(phase.pump?.flow || 0, 0),
+                      pressure: Math.max(/** @type {PumpAdvanced} */ (phase.pump).pressure || 0, 0),
+                      flow: Math.max(/** @type {PumpAdvanced} */ (phase.pump)?.flow || 0, 0),
                     })
                   }
                   aria-pressed={mode === 'pressure'}
@@ -226,8 +253,8 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
                     mode !== 'flow' &&
                     onFieldChange('pump', {
                       target: 'flow',
-                      pressure: Math.max(phase.pump.pressure || 0, 0),
-                      flow: Math.max(phase.pump?.flow || 0, 0),
+                      pressure: Math.max(/** @type {PumpAdvanced} */ (phase.pump).pressure || 0, 0),
+                      flow: Math.max(/** @type {PumpAdvanced} */ (phase.pump)?.flow || 0, 0),
                     })
                   }
                   aria-pressed={mode === 'flow'}
@@ -243,7 +270,7 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
                     onFieldChange('pump', {
                       target: 'pressure',
                       pressure: -1,
-                      flow: Math.max(phase.pump?.flow || 0, 0),
+                      flow: Math.max(/** @type {PumpAdvanced} */ (phase.pump)?.flow || 0, 0),
                     })
                   }
                   aria-pressed={mode === 'hold-pressure'}
@@ -258,7 +285,7 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
                     mode !== 'hold-flow' &&
                     onFieldChange('pump', {
                       target: 'flow',
-                      pressure: Math.max(phase.pump.pressure || 0, 0),
+                      pressure: Math.max(/** @type {PumpAdvanced} */ (phase.pump).pressure || 0, 0),
                       flow: -1,
                     })
                   }
@@ -322,7 +349,7 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
                     value={pressure.toString()}
                     onChange={e =>
                       onFieldChange('pump', {
-                        ...phase.pump,
+                        .../** @type {PumpAdvanced} */ (phase.pump),
                         pressure: parseFloat(e.currentTarget.value),
                       })
                     }
@@ -352,7 +379,7 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
                     value={flow.toString()}
                     onChange={e =>
                       onFieldChange('pump', {
-                        ...phase.pump,
+                        .../** @type {PumpAdvanced} */ (phase.pump),
                         flow: parseFloat(e.currentTarget.value),
                       })
                     }
@@ -594,7 +621,7 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
           </ul>
         </div>
       </div>
-      {targets.map((target, idx) => (
+      {targets.map((/** @type {PhaseTarget} */ target, /** @type {number} */ idx) => (
         <Fragment key={idx}>
           {idx !== 0 && (
             <div className='divider'>
@@ -602,7 +629,7 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
             </div>
           )}
           <ExtendedPhaseTarget
-            onChange={value => onTargetChange(idx, value)}
+            onChange={(/** @type {PhaseTarget} */ value) => onTargetChange(idx, value)}
             onRemove={() => onTargetRemove(idx)}
             target={target}
             index={idx}

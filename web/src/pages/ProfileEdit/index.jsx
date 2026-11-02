@@ -41,7 +41,7 @@ export function ProfileEdit() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { params } = useRoute();
-  const [data, setData] = useState(null);
+  const [data, setData] = useState(/** @type {import('./types').EditorProfile | null} */ (null));
   useEffect(() => {
     async function fetchData() {
       if (params.id === 'new') {
@@ -109,6 +109,7 @@ export function ProfileEdit() {
     fetchData();
   }, [params.id, setData, isConnected, apiService]);
   const onSave = useCallback(
+    /** @param {import('./types').EditorProfile} data */
     async data => {
       setSaving(true);
       console.log(data);

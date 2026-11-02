@@ -8,6 +8,22 @@ import { PhaseStatistics } from '../PhaseStatistics';
 import { TrendChart } from '../TrendChart';
 import { ActivityHeatmap } from '../ActivityHeatmap';
 
+/**
+ * @typedef {import('../../types').StatisticsDetailSection} StatisticsDetailSection
+ * @typedef {import('../../types').StatisticsResult} StatisticsResult
+ * @typedef {import('../../types').StatisticsCompareEntry} StatisticsCompareEntry
+ * @typedef {import('../../../ShotAnalyzer/utils/constants').CompareTargetDisplayMode} CompareTargetDisplayMode
+ * @typedef {{
+ *   hasMetricStatistics: boolean,
+ *   hasTrendStatistics: boolean,
+ *   hasPhaseStatistics: boolean,
+ *   hasProfileGroupStatistics: boolean,
+ *   resolvedStatisticsDetailSection: StatisticsDetailSection,
+ *   setStatisticsDetailSection: (section: StatisticsDetailSection) => void,
+ * }} DetailSectionState
+ */
+
+/** @param {DetailSectionState & { hasCompareStatistics: boolean }} props */
 function StatisticsDetailHeader({
   hasCompareStatistics,
   hasMetricStatistics,
@@ -18,13 +34,15 @@ function StatisticsDetailHeader({
   setStatisticsDetailSection,
 }) {
   const { t } = useLingui();
-  const availableTabs = [
-    hasMetricStatistics ? { id: 'metrics', label: t`Global metric averages` } : null,
-    hasTrendStatistics ? { id: 'trends', label: t`Trends` } : null,
-    hasCompareStatistics ? { id: 'compare', label: t`Shot Charts` } : null,
-    hasProfileGroupStatistics ? { id: 'profile', label: t`Per-profile statistics` } : null,
-    hasPhaseStatistics ? { id: 'phase', label: t`Per-phase statistics` } : null,
-  ].filter(Boolean);
+  const availableTabs = /** @type {{ id: StatisticsDetailSection, label: string }[]} */ (
+    [
+      hasMetricStatistics ? { id: 'metrics', label: t`Global metric averages` } : null,
+      hasTrendStatistics ? { id: 'trends', label: t`Trends` } : null,
+      hasCompareStatistics ? { id: 'compare', label: t`Shot Charts` } : null,
+      hasProfileGroupStatistics ? { id: 'profile', label: t`Per-profile statistics` } : null,
+      hasPhaseStatistics ? { id: 'phase', label: t`Per-phase statistics` } : null,
+    ].filter(Boolean)
+  );
 
   if (availableTabs.length > 1) {
     return (
@@ -49,6 +67,16 @@ function StatisticsDetailHeader({
   return <h3 className='text-xs font-semibold tracking-widest uppercase opacity-90'>{title}</h3>;
 }
 
+/**
+ * @param {DetailSectionState & {
+ *   compareEntries: StatisticsCompareEntry[],
+ *   compareTargetDisplayMode: CompareTargetDisplayMode,
+ *   onCompareTargetDisplayModeChange: (mode: CompareTargetDisplayMode) => void,
+ *   result: StatisticsResult | null,
+ *   hidePhaseExitReasons?: boolean,
+ *   chartRunKey?: string,
+ * }} props
+ */
 export function StatisticsDetailSectionPanel({
   compareEntries,
   compareTargetDisplayMode,

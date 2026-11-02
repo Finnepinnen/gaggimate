@@ -20,6 +20,9 @@ export const MAX_PINNED_PROFILES = 10;
 export const MAX_PINNED_SHOTS_PER_PROFILE = 3;
 export const PINNED_NO_PROFILE_BUCKET = '__no_profile__';
 
+/** @typedef {'none' | 'perShot' | 'mainShotOnly'} CompareTargetDisplayMode */
+
+/** @type {{ NONE: 'none', PER_SHOT: 'perShot', MAIN_SHOT_ONLY: 'mainShotOnly' }} */
 export const COMPARE_TARGET_DISPLAY_MODES = {
   NONE: 'none',
   PER_SHOT: 'perShot',
@@ -103,7 +106,12 @@ const notesTasteStyles = {
   },
 };
 
-export const getNotesTasteStyle = taste => notesTasteStyles[taste] || null;
+/**
+ * @param {string | null | undefined} taste 'bitter' | 'balanced' | 'sour'
+ * @returns {{ color: string, borderColor: string, selectedBackground: string } | null}
+ */
+export const getNotesTasteStyle = taste =>
+  notesTasteStyles[/** @type {keyof typeof notesTasteStyles} */ (taste)] || null;
 
 export const groupColors = {
   basics: {

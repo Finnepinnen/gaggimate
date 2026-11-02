@@ -1,9 +1,19 @@
+/** @typedef {import('./tooltipTypes').TooltipRow} TooltipRow */
+/** @typedef {import('./tooltipTypes').TooltipPhaseSummary} TooltipPhaseSummary */
+/** @typedef {import('./tooltipTypes').ExternalTooltipState} ExternalTooltipState */
+/** @typedef {import('./tooltipTypes').ExternalTooltipLayout} ExternalTooltipLayout */
+
+/**
+ * @param {TooltipRow | null | undefined} row
+ * @returns {string}
+ */
 export function getTooltipRowTextKey(row) {
   return `${row?.shotLabel || ''}|${row?.label || ''}|${row?.displayLabel || ''}|${row?.valueText || ''}|${
     row?.color || ''
   }|${row?.spacerBefore ? '1' : '0'}`;
 }
 
+/** @param {TooltipPhaseSummary | null | undefined} summary */
 function getPhaseSummaryKey(summary) {
   return `${summary?.shotLabel || ''}|${summary?.shotNumber || ''}|${summary?.phaseLabel || ''}|${
     summary?.skipNotice || ''
@@ -12,6 +22,7 @@ function getPhaseSummaryKey(summary) {
   }|${summary?.stopValue || ''}|${summary?.stopTargetValue || ''}|${summary?.color || ''}`;
 }
 
+/** @returns {ExternalTooltipState} */
 export function createHiddenExternalTooltipState() {
   return {
     visible: false,
@@ -33,6 +44,7 @@ export function createHiddenExternalTooltipState() {
   };
 }
 
+/** @returns {ExternalTooltipLayout} */
 export function createHiddenExternalTooltipLayout() {
   return {
     visible: false,
@@ -41,6 +53,10 @@ export function createHiddenExternalTooltipLayout() {
   };
 }
 
+/**
+ * @param {string[]} [a]
+ * @param {string[]} [b]
+ */
 function areStringArraysEqual(a = [], b = []) {
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; i++) {
@@ -49,6 +65,10 @@ function areStringArraysEqual(a = [], b = []) {
   return true;
 }
 
+/**
+ * @param {TooltipRow[]} [a]
+ * @param {TooltipRow[]} [b]
+ */
 function areTooltipRowsEqual(a = [], b = []) {
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; i++) {
@@ -57,6 +77,10 @@ function areTooltipRowsEqual(a = [], b = []) {
   return true;
 }
 
+/**
+ * @param {TooltipPhaseSummary[]} [a]
+ * @param {TooltipPhaseSummary[]} [b]
+ */
 function arePhaseSummariesEqual(a = [], b = []) {
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; i++) {
@@ -65,6 +89,11 @@ function arePhaseSummariesEqual(a = [], b = []) {
   return true;
 }
 
+/**
+ * @param {ExternalTooltipState | null | undefined} a
+ * @param {ExternalTooltipState | null | undefined} b
+ * @returns {boolean}
+ */
 export function areTooltipStatesEqual(a, b) {
   if (!a || !b) return false;
   return (
@@ -87,11 +116,21 @@ export function areTooltipStatesEqual(a, b) {
   );
 }
 
+/**
+ * @param {ExternalTooltipLayout | null | undefined} a
+ * @param {ExternalTooltipLayout | null | undefined} b
+ * @returns {boolean}
+ */
 export function areTooltipLayoutsEqual(a, b) {
   if (!a || !b) return false;
   return a.visible === b.visible && a.x === b.x && a.y === b.y;
 }
 
+/**
+ * @param {number | null | undefined} primaryBound
+ * @param {number | null | undefined} fallbackBound
+ * @returns {number | undefined}
+ */
 export function getFiniteTooltipBound(primaryBound, fallbackBound) {
   if (Number.isFinite(primaryBound)) return primaryBound;
   if (Number.isFinite(fallbackBound)) return fallbackBound;

@@ -4,8 +4,21 @@ import { LAST_PHASE_OVERSHOOT_MAX_G } from './delayTracking';
 import { isWeightType } from './exitReasons.js';
 import { calculatePumpedWaterAtSample } from './waterIntegration';
 
+/** @typedef {import('../../../../types').ShotSample} ShotSample */
+/** @typedef {import('../../types').AnalyzerTarget} AnalyzerTarget */
+/** @typedef {import('../../types').TargetContext} TargetContext */
+/** @typedef {import('../../types').TargetMatch} TargetMatch */
+/** @typedef {import('../../types').TargetValues} TargetValues */
+/** @typedef {import('../../types').TargetCalcValues} TargetCalcValues */
+/** @typedef {{ anchorValue: number, nextValue: number, predictedValue: number }} LookAheadValues */
+
 export const PREDICTION_INTERVAL_MS = 100;
 
+/**
+ * @param {AnalyzerTarget['operator']} operator
+ * @param {number} currentValue
+ * @param {number} nextValue
+ */
 function isDirectionallyValidLookAhead(operator, currentValue, nextValue) {
   if (!Number.isFinite(currentValue) || !Number.isFinite(nextValue)) return false;
   if (operator === 'gte') return nextValue >= currentValue;
@@ -13,10 +26,18 @@ function isDirectionallyValidLookAhead(operator, currentValue, nextValue) {
   return true;
 }
 
+/**
+ * @param {AnalyzerTarget} target
+ * @returns {boolean}
+ */
 export function isWeightTarget(target) {
   return isWeightType(target.type);
 }
 
+/**
+ * @param {AnalyzerTarget} target
+ * @param {TargetContext} context
+ */
 function shouldSkipTarget(target, context) {
   const weightTarget = isWeightTarget(target);
   if (!weightTarget) return false;
@@ -28,6 +49,12 @@ function shouldSkipTarget(target, context) {
   );
 }
 
+/**
+ * @param {AnalyzerTarget} target
+ * @param {number} value
+ * @param {TargetContext} context
+ * @returns {boolean}
+ */
 export function isTargetHit(target, value, context) {
   if (target.operator === 'lte') return value <= target.value;
   if (target.operator !== 'gte' || value < target.value) return false;
@@ -39,6 +66,11 @@ export function isTargetHit(target, value, context) {
   );
 }
 
+/**
+ * @param {AnalyzerTarget} target
+ * @param {TargetValues} values
+ * @returns {number | undefined}
+ */
 function getTargetValue(target, values) {
   if (target.type === 'pressure') return values.pressure;
   if (target.type === 'flow') return values.flow;
@@ -47,6 +79,13 @@ function getTargetValue(target, values) {
   return undefined;
 }
 
+/**
+ * @param {AnalyzerTarget} target
+ * @param {number} value
+ * @param {number} delayMs
+ * @param {ShotSample | null} [observedSample]
+ * @returns {TargetMatch}
+ */
 function createTargetMatch(target, value, delayMs, observedSample = null) {
   return {
     target,
@@ -56,6 +95,13 @@ function createTargetMatch(target, value, delayMs, observedSample = null) {
   };
 }
 
+/**
+ * @param {AnalyzerTarget[]} targets
+ * @param {TargetValues} values
+ * @param {number} delayMs
+ * @param {TargetContext} context
+ * @returns {TargetMatch | null}
+ */
 export function findTargetMatch(targets, values, delayMs, context) {
   for (const target of targets) {
     if (shouldSkipTarget(target, context)) continue;
@@ -70,6 +116,13 @@ export function findTargetMatch(targets, values, delayMs, context) {
   return null;
 }
 
+/**
+ * @param {AnalyzerTarget} target
+ * @param {ShotSample} nextSample
+ * @param {number} delayMs
+ * @param {TargetContext} context
+ * @returns {LookAheadValues | null}
+ */
 function getLookAheadTargetValues(target, nextSample, delayMs, context) {
   const horizon = Math.max(0, delayMs) / 1000;
 
@@ -108,6 +161,13 @@ function getLookAheadTargetValues(target, nextSample, delayMs, context) {
   return null;
 }
 
+/**
+ * @param {AnalyzerTarget} target
+ * @param {ShotSample} nextSample
+ * @param {number} delayMs
+ * @param {TargetContext} context
+ * @returns {number | undefined}
+ */
 function getLookAheadMatchedValue(target, nextSample, delayMs, context) {
   const values = getLookAheadTargetValues(target, nextSample, delayMs, context);
   if (!values) return undefined;
@@ -120,6 +180,12 @@ function getLookAheadMatchedValue(target, nextSample, delayMs, context) {
   return directionIsValid ? values.nextValue : values.predictedValue;
 }
 
+/**
+ * @param {AnalyzerTarget[]} targets
+ * @param {ShotSample} nextSample
+ * @param {TargetContext} context
+ * @returns {TargetMatch | null}
+ */
 export function findTargetMatchWithDirection(targets, nextSample, context) {
   const rawDelayMs = Number(nextSample?.t) - Number(context.anchor?.t);
   const delayMs = Number.isFinite(rawDelayMs) ? Math.max(0, rawDelayMs) : 0;
@@ -137,6 +203,11 @@ export function findTargetMatchWithDirection(targets, nextSample, context) {
   return null;
 }
 
+/**
+ * @param {number} delayMs
+ * @param {TargetContext} context
+ * @returns {TargetValues}
+ */
 export function predictTargetValuesAtDelay(delayMs, context) {
   const horizon = Math.max(0, delayMs) / 1000;
   return {
@@ -147,6 +218,11 @@ export function predictTargetValuesAtDelay(delayMs, context) {
   };
 }
 
+/**
+ * @param {AnalyzerTarget} target
+ * @param {TargetContext} context
+ * @returns {{ delayMs: number, value: number } | null}
+ */
 function getManualTargetValue(target, context) {
   const scaleDelaySec = context.normalizedScaleDelayMs / 1000;
   const sensorDelaySec = context.normalizedSensorDelayMs / 1000;
@@ -178,6 +254,11 @@ function getManualTargetValue(target, context) {
   return null;
 }
 
+/**
+ * @param {AnalyzerTarget[]} targets
+ * @param {TargetContext} context
+ * @returns {TargetMatch | null}
+ */
 export function findManualTargetMatch(targets, context) {
   for (const target of targets) {
     if (shouldSkipTarget(target, context)) continue;
@@ -192,6 +273,11 @@ export function findManualTargetMatch(targets, context) {
   return null;
 }
 
+/**
+ * @param {AnalyzerTarget} target
+ * @param {TargetContext} context
+ * @returns {number | undefined}
+ */
 function getCalculatedTargetValueAtDelay(target, context) {
   if (context.observedSample) {
     return getLookAheadMatchedValue(target, context.observedSample, context.matchDelayMs, context);
@@ -200,10 +286,18 @@ function getCalculatedTargetValueAtDelay(target, context) {
   return getTargetValue(target, predictTargetValuesAtDelay(context.matchDelayMs, context));
 }
 
+/**
+ * @param {AnalyzerTarget[]} targets
+ * @param {TargetMatch} match
+ * @param {TargetContext} context
+ * @returns {TargetCalcValues | null}
+ */
 export function buildTargetCalcValues(targets, match, context) {
   if (match.delayMs <= 0) return null;
 
+  /** @type {TargetCalcValues} */
   const targetCalcValues = {};
+  /** @type {TargetContext} */
   const calcContext = {
     ...context,
     matchDelayMs: match.delayMs,
@@ -227,7 +321,7 @@ export function buildTargetCalcValues(targets, match, context) {
 
 /**
  * Format stop reason type into human-readable string
- * @param {string} type - Raw stop reason type
+ * @param {string | null | undefined} type - Raw stop reason type
  * @returns {string} Formatted reason
  */
 export function formatStopReason(type) {

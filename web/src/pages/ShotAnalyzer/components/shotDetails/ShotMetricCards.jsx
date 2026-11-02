@@ -9,6 +9,8 @@ import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react/macro';
 import { formatMetricValue } from '../../utils/analyzerUtils';
 
+/** @typedef {import('../../types').TotalStats} TotalStats */
+
 /**
  * @type {Array<{
  *   key: string,
@@ -16,7 +18,7 @@ import { formatMetricValue } from '../../utils/analyzerUtils';
  *   unit: string,
  *   color: string,
  *   icon: import('@fortawesome/fontawesome-svg-core').IconDefinition,
- *   getValue: (total: any) => any,
+ *   getValue: (total: TotalStats | undefined) => number | null | undefined,
  *   digits?: number,
  * }>}
  */
@@ -79,6 +81,12 @@ const metricRows = [
   },
 ];
 
+/**
+ * @param {object} props
+ * @param {string} props.label
+ * @param {string} props.unit
+ * @param {number | null | undefined} props.value
+ */
 function SummaryMetric({ label, unit, value }) {
   return (
     <div className='min-w-0 flex-1 text-center'>
@@ -95,6 +103,11 @@ function SummaryMetric({ label, unit, value }) {
   );
 }
 
+/**
+ * @param {object} props
+ * @param {TotalStats | undefined} props.total
+ * @param {string} [props.className]
+ */
 export function ShotSummaryMetricsRow({ total, className = '' }) {
   const { t } = useLingui();
   return (
@@ -106,6 +119,12 @@ export function ShotSummaryMetricsRow({ total, className = '' }) {
   );
 }
 
+/**
+ * @param {object} props
+ * @param {TotalStats | undefined} props.total
+ * @param {string[]} [props.excludeKeys]
+ * @param {boolean} [props.flat]
+ */
 export function MetricValueGrid({ total, excludeKeys = [], flat }) {
   const { i18n } = useLingui();
   const items = metricRows

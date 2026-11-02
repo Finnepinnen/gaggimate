@@ -1,5 +1,10 @@
 import { t } from '@lingui/core/macro';
 
+/**
+ * @param {{ phaseTransitions?: Array<{ phaseNumber: number, phaseName?: string }>, profile?: string | { phases?: Array<{ name: string }> } | null }} shot
+ * @param {number} phaseNumber
+ * @returns {string}
+ */
 export function getPhaseName(shot, phaseNumber) {
   if (shot.phaseTransitions?.length > 0) {
     const transition = shot.phaseTransitions.find(t => t.phaseNumber === phaseNumber);
@@ -8,8 +13,11 @@ export function getPhaseName(shot, phaseNumber) {
     }
   }
 
-  if (shot.profile?.phases?.[phaseNumber]) {
-    return shot.profile.phases[phaseNumber].name;
+  const profile = /** @type {{ phases?: Array<{ name: string }> } | null | undefined} */ (
+    shot.profile
+  );
+  if (profile?.phases?.[phaseNumber]) {
+    return profile.phases[phaseNumber].name;
   }
 
   return phaseNumber === 0
@@ -17,12 +25,21 @@ export function getPhaseName(shot, phaseNumber) {
     : `P${phaseNumber + 1}`;
 }
 
+/**
+ * @param {unknown} value
+ * @returns {number | null}
+ */
 export function toNumberOrNull(value) {
   if (value === null || value === undefined) return null;
   const numeric = Number(value);
   return Number.isFinite(numeric) ? numeric : null;
 }
 
+/**
+ * @param {Iterable<number>} arr
+ * @param {number} [fallback]
+ * @returns {number}
+ */
 export function safeMax(arr, fallback = 0) {
   let max = -Infinity;
   for (const value of arr) {
@@ -31,6 +48,11 @@ export function safeMax(arr, fallback = 0) {
   return max === -Infinity ? fallback : max;
 }
 
+/**
+ * @param {Iterable<number>} arr
+ * @param {number} [fallback]
+ * @returns {number}
+ */
 export function safeMin(arr, fallback = 0) {
   let min = Infinity;
   for (const value of arr) {
@@ -39,6 +61,11 @@ export function safeMin(arr, fallback = 0) {
   return min === Infinity ? fallback : min;
 }
 
+/**
+ * @param {ArrayLike<number> | null | undefined} sampleTimesSec
+ * @param {number} xValue
+ * @returns {number}
+ */
 export function findLastSampleIndexAtOrBeforeX(sampleTimesSec, xValue) {
   if (!Array.isArray(sampleTimesSec) || sampleTimesSec.length === 0 || !Number.isFinite(xValue)) {
     return -1;

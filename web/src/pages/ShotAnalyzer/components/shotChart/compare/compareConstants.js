@@ -1,3 +1,4 @@
+/** @type {Record<import('./types').ShotStylePreset, { opacities: number[], lineWidths: number[] }>} */
 export const SHOT_STYLE_PRESETS = {
   analyzer: {
     opacities: [1, 0.46, 0.34, 0.26, 0.2, 0.15],
@@ -38,6 +39,7 @@ export const MOBILE_COMPARE_FIXED_SERIES_LABELS = [
 
 export const MOBILE_COMPARE_CONTEXT_LABEL_SET = new Set(MOBILE_COMPARE_CONTEXT_LEGEND_LABELS);
 
+/** @type {Record<string, import('../model/types').ChartVisibilityKey | undefined>} */
 export const COMPARE_LEGEND_KEY_BY_LABEL = {
   Phases: 'phaseNames',
   Stops: 'stops',
@@ -54,6 +56,12 @@ export const COMPARE_LEGEND_KEY_BY_LABEL = {
   'Weight Flow': 'weightFlow',
 };
 
+/**
+ * @param {string} id
+ * @param {string} title
+ * @param {import('../model/types').ChartSeriesKey & import('../model/types').ChartVisibilityKey & keyof import('../model/types').ShotChartColors} seriesKey
+ * @returns {import('./types').DetailChartDef}
+ */
 function createDetailChartWithoutTarget(id, title, seriesKey) {
   return {
     id,
@@ -69,6 +77,7 @@ function createDetailChartWithoutTarget(id, title, seriesKey) {
   };
 }
 
+/** @type {import('./types').DetailChartDef[]} */
 export const DETAIL_CHARTS = [
   {
     id: 'pressure',

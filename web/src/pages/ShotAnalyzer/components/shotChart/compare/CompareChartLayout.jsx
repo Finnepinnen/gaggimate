@@ -19,6 +19,7 @@ import {
   getDetailEmptyStaticTooltipContent,
 } from './CompareMetricContent';
 
+/** @param {import('./types').CompareMobileLegendSectionProps} props */
 export function CompareMobileLegendSection({
   hiddenLegendLabels,
   isExpanded,
@@ -46,6 +47,7 @@ export function CompareMobileLegendSection({
   );
 }
 
+/** @param {import('./types').CompareControlsProps} props */
 export function CompareControls({
   compareAlignmentMode,
   compareAlignmentOptions,
@@ -127,6 +129,7 @@ export function CompareControls({
   );
 }
 
+/** @param {import('./types').CompareDetailChartCardProps} props */
 function CompareDetailChartCard({
   chart,
   chartCardClass,
@@ -157,7 +160,7 @@ function CompareDetailChartCard({
     ? detailMetricPageByChartId[chart.id] || COMPARE_DETAIL_METRIC_PAGE_KEYS.PUMP_FLOW
     : null;
   const handleMetricPageChange = isPagedPumpFlowMetric
-    ? pageKey => onDetailMetricPageChange(chart.id, pageKey)
+    ? /** @param {string} pageKey */ pageKey => onDetailMetricPageChange(chart.id, pageKey)
     : null;
 
   return (
@@ -205,6 +208,13 @@ function CompareDetailChartCard({
   );
 }
 
+/**
+ * @param {{
+ *   detailCharts: import('./types').CompareDetailChart[],
+ *   isMobileDetailExpanded: boolean,
+ *   shouldCollapseDetailCharts: boolean,
+ * }} params
+ */
 function getVisibleCompareDetailCharts({
   detailCharts,
   isMobileDetailExpanded,
@@ -213,10 +223,14 @@ function getVisibleCompareDetailCharts({
   return shouldCollapseDetailCharts && !isMobileDetailExpanded ? [] : detailCharts;
 }
 
+/** @param {boolean} isFullDisplay */
 function getCompareChartsBodyClassName(isFullDisplay) {
   return isFullDisplay ? 'min-h-0 flex-1 overflow-y-auto pr-1' : 'w-full';
 }
 
+/**
+ * @param {{ isMobileCompareCollapsed: boolean, shouldUseAnalyzerMobileCompareLayout: boolean }} params
+ */
 function getCompareChartsStackClassName({
   isMobileCompareCollapsed,
   shouldUseAnalyzerMobileCompareLayout,
@@ -234,6 +248,12 @@ function getCompareChartsStackClassName({
     .join(' ');
 }
 
+/**
+ * @param {Pick<
+ *   import('./types').CompareChartsBodyProps,
+ *   'isMobileDetailExpanded' | 'setIsMobileDetailExpanded' | 'shouldCollapseDetailCharts'
+ * >} props
+ */
 function CompareDetailChartsToggle({
   isMobileDetailExpanded,
   setIsMobileDetailExpanded,
@@ -264,6 +284,7 @@ function CompareDetailChartsToggle({
   );
 }
 
+/** @param {import('./types').CompareMainChartCardProps} props */
 function CompareMainChartCard({
   chartCardClass,
   compareEntries,
@@ -355,6 +376,7 @@ function CompareMainChartCard({
   );
 }
 
+/** @param {import('./types').CompareChartsBodyProps} props */
 export function CompareChartsBody({
   chartCardClass,
   compareEntries,
@@ -490,6 +512,14 @@ export function CompareChartsBody({
   );
 }
 
+/**
+ * @param {{
+ *   charts: import('preact').ComponentChildren,
+ *   controls: import('preact').ComponentChildren,
+ *   isFullDisplay: boolean,
+ *   onCloseFullDisplay: () => void,
+ * }} props
+ */
 export function CompareChartsShell({ charts, controls, isFullDisplay, onCloseFullDisplay }) {
   if (isFullDisplay && globalThis.document !== undefined) {
     return createPortal(

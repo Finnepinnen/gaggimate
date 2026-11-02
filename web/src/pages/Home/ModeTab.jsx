@@ -1,5 +1,14 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
+/**
+ * @param {object} props
+ * @param {import('./utils.js').Mode} props.mode
+ * @param {boolean} props.active
+ * @param {() => void} props.onClick
+ * @param {0 | import('@fortawesome/fontawesome-svg-core').RotateProp} [props.rotation] 0 = none
+ * @param {boolean} [props.compact]
+ * @param {boolean} [props.disabled]
+ */
 export const ModeTab = ({
   mode,
   active,
@@ -25,12 +34,24 @@ export const ModeTab = ({
       }`}
     >
       {compact ? (
-        <FontAwesomeIcon icon={mode.icon} className='h-3.5 w-3.5' rotation={rotation} />
+        <FontAwesomeIcon
+          icon={mode.icon}
+          className='h-3.5 w-3.5'
+          rotation={
+            /** @type {import('@fortawesome/fontawesome-svg-core').RotateProp} */ (rotation)
+          }
+        />
       ) : (
         <>
           <span className='hidden @sm:contents'>{mode.label}</span>
           <span className='@sm:hidden'>
-            <FontAwesomeIcon icon={mode.icon} className='h-3.5 w-3.5' rotation={rotation} />
+            <FontAwesomeIcon
+              icon={mode.icon}
+              className='h-3.5 w-3.5'
+              rotation={
+                /** @type {import('@fortawesome/fontawesome-svg-core').RotateProp} */ (rotation)
+              }
+            />
           </span>
         </>
       )}

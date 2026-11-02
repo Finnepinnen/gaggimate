@@ -30,6 +30,7 @@ function DeepDiveLogoMark() {
   );
 }
 
+/** @param {{ loading?: boolean }} props */
 export function EmptyState({ loading }) {
   if (loading) {
     return (

@@ -2,6 +2,16 @@
 import { DATE_ONLY_PATTERN, DATE_TIME_PATTERN } from './constants';
 import { plural, t } from '@lingui/core/macro';
 
+/**
+ * @typedef {import('../../types').StatisticsQueryIssue} StatisticsQueryIssue
+ * @typedef {{ label: string, fromText: string, toText: string, isAuto: boolean }} DateRangeDisplay
+ */
+
+/**
+ * @template {string | number | null | undefined} V
+ * @param {V} value - `YYYY-MM-DD`, `YYYY-MM-DDTHH:MM`, or epoch ms
+ * @returns {string | V} The input unchanged when it can't be parsed
+ */
 export function formatToolbarDateTimeDisplay(value) {
   if (!value) return '';
   const valueText = String(value);
@@ -32,6 +42,14 @@ export function formatToolbarDateTimeDisplay(value) {
   }
 }
 
+/**
+ * @param {object} args
+ * @param {string} args.dateFromLocal
+ * @param {string} args.dateToLocal
+ * @param {string} args.dateFromPreviewLocal
+ * @param {string} args.dateToPreviewLocal
+ * @returns {DateRangeDisplay}
+ */
 export function getDateRangeDisplay({
   dateFromLocal,
   dateToLocal,
@@ -74,25 +92,35 @@ export function getDateRangeDisplay({
   return { label: t`Auto Range`, fromText: t`No dates`, toText: '', isAuto: true };
 }
 
+/** @param {unknown} value */
 function toCount(value) {
   const numericValue = Number(value);
   return Number.isFinite(numericValue) ? numericValue : 0;
 }
 
+/** @param {unknown} value */
 export function formatShotCountLabel(value) {
   return plural(toCount(value), { one: '# shot', other: '# shots' });
 }
 
+/** @param {unknown} value */
 export function formatProfileCountLabel(value) {
   return plural(toCount(value), { one: '# profile', other: '# profiles' });
 }
 
+/**
+ * @param {number | null} startValue - epoch ms
+ * @param {number | null} endValue - epoch ms
+ */
 export function formatCollapsedDateRangeText(startValue, endValue) {
   const fromText = formatToolbarDateTimeDisplay(startValue) || t`No dates`;
   const toText = formatToolbarDateTimeDisplay(endValue) || '';
   return toText ? `${fromText} - ${toText}` : fromText;
 }
 
+/**
+ * @param {{ metadataLoading: boolean, candidateCount: number | null }} args
+ */
 export function getCandidateSummary({ metadataLoading, candidateCount }) {
   if (metadataLoading) {
     return {
@@ -114,11 +142,17 @@ export function getCandidateSummary({ metadataLoading, candidateCount }) {
   };
 }
 
+/**
+ * @param {object} args
+ * @param {StatisticsQueryIssue[]} args.parseErrors
+ * @param {StatisticsQueryIssue[]} args.parseWarnings
+ * @param {string | null} args.metadataError
+ */
 export function getToolbarMessages({ parseErrors, parseWarnings, metadataError }) {
   const topError = parseErrors[0]?.message || null;
   const topWarning = topError ? null : parseWarnings[0]?.message || null;
   const noticeMessage = topError || metadataError || topWarning || null;
-  const noticeTone = topError ? 'error' : 'warning';
+  const noticeTone = /** @type {'error' | 'warning'} */ (topError ? 'error' : 'warning');
 
   return {
     topError,
@@ -128,23 +162,29 @@ export function getToolbarMessages({ parseErrors, parseWarnings, metadataError }
   };
 }
 
+/** @param {import('../../types').DateBasisMode} value */
 export function getDateBasisOptionTitle(value) {
   if (value === 'shot') return t`Use shot timestamp only`;
   if (value === 'auto') return t`Use shot timestamp, fallback to upload time`;
   return t`Use upload time only`;
 }
 
+/** @param {Element} target */
 export function closeParentDetails(target) {
   const details = target.closest('details');
   if (details) details.open = false;
 }
 
+/** @param {Element} toolbarNode */
 export function closeOpenToolbarDetails(toolbarNode) {
-  toolbarNode.querySelectorAll('details[open]').forEach(detailsNode => {
+  /** @type {NodeListOf<HTMLDetailsElement>} */ (
+    toolbarNode.querySelectorAll('details[open]')
+  ).forEach(detailsNode => {
     detailsNode.open = false;
   });
 }
 
+/** @param {EventTarget | null} target */
 export function isToolbarFloatingPanelTarget(target) {
   return target instanceof Element && target.closest('[data-statistics-toolbar-floating-panel]');
 }

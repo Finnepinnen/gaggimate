@@ -6,6 +6,18 @@ import {
   getFiniteTooltipBound,
 } from './tooltipState';
 
+/** @typedef {import('./tooltipTypes').ExternalTooltipState} ExternalTooltipState */
+/** @typedef {import('./tooltipTypes').ExternalTooltipLayout} ExternalTooltipLayout */
+
+/**
+ * @param {object} options
+ * @param {ExternalTooltipState} options.tooltipState
+ * @param {number} options.tooltipWidth
+ * @param {number} options.tooltipHeight
+ * @param {number} options.fallbackWidth
+ * @param {number} options.fallbackHeight
+ * @returns {ExternalTooltipLayout}
+ */
 function getExternalTooltipLayout({
   tooltipState,
   tooltipWidth,
@@ -38,6 +50,14 @@ function getExternalTooltipLayout({
   });
 }
 
+/**
+ * @param {object} options
+ * @param {{ current: HTMLElement | null }} options.containerRef
+ * @param {boolean} options.disabled
+ * @param {import('preact/hooks').Dispatch<import('preact/hooks').StateUpdater<ExternalTooltipLayout>>} options.setTooltipLayout
+ * @param {{ current: HTMLElement | null }} options.tooltipRef
+ * @param {ExternalTooltipState} options.tooltipState
+ */
 export function useMeasuredExternalTooltipLayout({
   containerRef,
   disabled,

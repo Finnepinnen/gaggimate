@@ -43,34 +43,58 @@ import {
 } from './shotAnalyzerViewModel';
 import { useDesktopShotDetailsHeight } from './useDesktopShotDetailsHeight';
 
+/** @typedef {import('../types').AnalyzerProfile} AnalyzerProfile */
+/** @typedef {import('../types').AnalyzerShot} AnalyzerShot */
+/** @typedef {import('../types').CompareResultEntry} CompareResultEntry */
+/** @typedef {import('../types').CompareShotEntry} CompareShotEntry */
+/** @typedef {import('../types').LibrarySource} LibrarySource */
+/** @typedef {import('../types').PendingShotSelection} PendingShotSelection */
+/** @typedef {import('../types').ProfileSelectionMode} ProfileSelectionMode */
+/** @typedef {import('../types').ShotAnalysisResult} ShotAnalysisResult */
+/** @typedef {import('../types').ShotSelectionRequest} ShotSelectionRequest */
+/** @typedef {AnalyzerShot | Partial<ShotSelectionRequest>} ShotSelectionInput Bare shot or (partial) selection request */
+/** @typedef {{ preserveCompare?: boolean, requestSelectionScroll?: boolean }} PrimaryShotLoadOptions */
+
 export function ShotAnalyzer() {
   const apiService = useContext(ApiServiceContext);
   const { params } = useRoute();
   // --- State ---
-  const [currentShot, setCurrentShot] = useState(null);
+  const [currentShot, setCurrentShot] = useState(/** @type {AnalyzerShot | null} */ (null));
   const [loading, setLoading] = useState(false);
-  const [currentProfile, setCurrentProfile] = useState(null);
+  const [currentProfile, setCurrentProfile] = useState(
+    /** @type {AnalyzerProfile | null} */ (null),
+  );
   const [currentShotName, setCurrentShotName] = useState('No Shot Loaded');
   const [currentProfileName, setCurrentProfileName] = useState('No Profile Loaded');
-  const [currentProfileSelectionMode, setCurrentProfileSelectionMode] = useState('none');
-  const [pendingPrimarySelection, setPendingPrimarySelection] = useState(null);
-  const [pendingCompareSelection, setPendingCompareSelection] = useState(null);
+  const [currentProfileSelectionMode, setCurrentProfileSelectionMode] = useState(
+    /** @type {ProfileSelectionMode} */ ('none'),
+  );
+  const [pendingPrimarySelection, setPendingPrimarySelection] = useState(
+    /** @type {PendingShotSelection | null} */ (null),
+  );
+  const [pendingCompareSelection, setPendingCompareSelection] = useState(
+    /** @type {PendingShotSelection | null} */ (null),
+  );
 
-  const [importMode, setImportMode] = useState('temp');
+  const [importMode, setImportMode] = useState(/** @type {'temp' | 'browser'} */ ('temp'));
 
   const [isMatchingProfile, setIsMatchingProfile] = useState(false);
   const [isSearchingProfile, setIsSearchingProfile] = useState(false);
 
-  const [activeColumns, setActiveColumns] = useState(() => {
-    const userStandard = loadFromStorage(ANALYZER_DB_KEYS.USER_STANDARD);
-    return userStandard ? new Set(userStandard) : getDefaultColumns();
-  });
+  const [activeColumns, setActiveColumns] = useState(
+    /** @returns {Set<string>} */ () => {
+      const userStandard = loadFromStorage(ANALYZER_DB_KEYS.USER_STANDARD);
+      return userStandard ? new Set(userStandard) : getDefaultColumns();
+    },
+  );
 
-  const [analysisResults, setAnalysisResults] = useState(null);
+  const [analysisResults, setAnalysisResults] = useState(
+    /** @type {ShotAnalysisResult | null} */ (null),
+  );
   const [compareMode, setCompareMode] = useState(false);
-  const [compareShots, setCompareShots] = useState([]);
-  const [comparePendingKeys, setComparePendingKeys] = useState([]);
-  const [compareResults, setCompareResults] = useState([]);
+  const [compareShots, setCompareShots] = useState(/** @type {CompareShotEntry[]} */ ([]));
+  const [comparePendingKeys, setComparePendingKeys] = useState(/** @type {string[]} */ ([]));
+  const [compareResults, setCompareResults] = useState(/** @type {CompareResultEntry[]} */ ([]));
   const [compareTargetDisplayMode, setCompareTargetDisplayMode] = useState(() =>
     normalizeCompareTargetDisplayMode(
       loadFromStorage(ANALYZER_DB_KEYS.COMPARE_TARGET_DISPLAY_MODE),
@@ -79,22 +103,30 @@ export function ShotAnalyzer() {
   const [compareIsSearchingProfile, setCompareIsSearchingProfile] = useState(false);
   const [pendingMobileAnalysisScroll, setPendingMobileAnalysisScroll] = useState(false);
   const [pendingDesktopLibraryScroll, setPendingDesktopLibraryScroll] = useState(false);
-  const analysisSectionRef = useRef(null);
-  const libraryPanelRef = useRef(null);
-  const shotDetailsColumnRef = useRef(null);
+  const analysisSectionRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const libraryPanelRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const shotDetailsColumnRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const profileMatchIdRef = useRef(0);
   const compareProfileMatchIdRef = useRef(0);
   const analysisIdRef = useRef(0);
-  const profileSearchTimerRef = useRef(null);
+  const profileSearchTimerRef = useRef(/** @type {ReturnType<typeof setTimeout> | null} */ (null));
   const compareLoadIdRef = useRef(0);
-  const primarySelectionTimerRef = useRef(null);
-  const compareSelectionTimerRef = useRef(null);
+  const primarySelectionTimerRef = useRef(
+    /** @type {ReturnType<typeof setTimeout> | null} */ (null),
+  );
+  const compareSelectionTimerRef = useRef(
+    /** @type {ReturnType<typeof setTimeout> | null} */ (null),
+  );
   const primarySelectionRequestIdRef = useRef(0);
   const compareSelectionRequestIdRef = useRef(0);
-  const primarySelectionAbortRef = useRef(null);
+  const primarySelectionAbortRef = useRef(
+    /** @type {{ requestId: number, controller: AbortController | null } | null} */ (null),
+  );
   const handledDeepLinkKeyRef = useRef('');
-  const clearPendingPrimarySelectionRef = useRef(null);
-  const handleShotSelectRef = useRef(null);
+  const clearPendingPrimarySelectionRef = useRef(/** @type {(() => void) | null} */ (null));
+  const handleShotSelectRef = useRef(
+    /** @type {((request: ShotSelectionInput) => number | undefined) | null} */ (null),
+  );
   const currentShotRef = useRef(currentShot);
   const compareShotsRef = useRef(compareShots);
   const pendingPrimarySelectionRef = useRef(pendingPrimarySelection);
@@ -116,15 +148,23 @@ export function ShotAnalyzer() {
     pendingCompareSelectionRef.current = pendingCompareSelection;
   }, [pendingCompareSelection]);
 
-  const updateCurrentShot = useCallback(nextShot => {
-    currentShotRef.current = nextShot;
-    setCurrentShot(nextShot);
-  }, []);
+  const updateCurrentShot = useCallback(
+    /** @param {AnalyzerShot | null} nextShot */
+    nextShot => {
+      currentShotRef.current = nextShot;
+      setCurrentShot(nextShot);
+    },
+    [],
+  );
 
-  const updatePendingPrimarySelection = useCallback(nextSelection => {
-    pendingPrimarySelectionRef.current = nextSelection;
-    setPendingPrimarySelection(nextSelection);
-  }, []);
+  const updatePendingPrimarySelection = useCallback(
+    /** @param {PendingShotSelection | null} nextSelection */
+    nextSelection => {
+      pendingPrimarySelectionRef.current = nextSelection;
+      setPendingPrimarySelection(nextSelection);
+    },
+    [],
+  );
 
   const clearPrimarySelectionTimer = useCallback(() => {
     if (primarySelectionTimerRef.current) {
@@ -140,15 +180,19 @@ export function ShotAnalyzer() {
     }
   }, []);
 
-  const abortPrimarySelectionLoad = useCallback(requestId => {
-    const activeRequest = primarySelectionAbortRef.current;
-    if (!activeRequest) return false;
-    if (requestId != null && activeRequest.requestId !== requestId) return false;
+  const abortPrimarySelectionLoad = useCallback(
+    /** @param {number} [requestId] Only abort this request */
+    requestId => {
+      const activeRequest = primarySelectionAbortRef.current;
+      if (!activeRequest) return false;
+      if (requestId != null && activeRequest.requestId !== requestId) return false;
 
-    primarySelectionAbortRef.current = null;
-    activeRequest.controller?.abort();
-    return true;
-  }, []);
+      primarySelectionAbortRef.current = null;
+      activeRequest.controller?.abort();
+      return true;
+    },
+    [],
+  );
 
   const cancelPrimaryProfileSearch = useCallback(() => {
     if (profileSearchTimerRef.current) {
@@ -195,6 +239,11 @@ export function ShotAnalyzer() {
     [clearPendingCompareSelection],
   );
 
+  /**
+   * @param {number} attempt
+   * @param {(attempt: number) => void} callback
+   * @returns {boolean} Whether a retry was scheduled
+   */
   const scheduleProfileAutoMatchRetry = (attempt, callback) => {
     if (attempt + 1 >= PROFILE_AUTO_MATCH_MAX_ATTEMPTS) return false;
     profileSearchTimerRef.current = setTimeout(() => {
@@ -300,13 +349,14 @@ export function ShotAnalyzer() {
         console.error(`Compare analysis failed for ${entry.key}:`, error);
       }
       return acc;
-    }, []);
+    }, /** @type {CompareResultEntry[]} */ ([]));
 
     setCompareResults(nextResults);
   }, [compareShots]);
 
   // --- Data Handlers ---
   const normalizePrimarySelectionRequest = useCallback(
+    /** @param {ShotSelectionInput} request */
     request =>
       normalizeSelectionRequest(request, importMode, {
         preserveCompare: false,
@@ -316,11 +366,17 @@ export function ShotAnalyzer() {
   );
 
   const normalizeCompareSelectionRequest = useCallback(
+    /** @param {ShotSelectionInput} request */
     request => normalizeSelectionRequest(request, importMode),
     [importMode],
   );
 
   const commitPrimaryShotLoad = useCallback(
+    /**
+     * @param {AnalyzerShot} shotData
+     * @param {string} name
+     * @param {PrimaryShotLoadOptions} [options]
+     */
     (shotData, name, { preserveCompare = false, requestSelectionScroll = false } = {}) => {
       const shotWithMetadata = {
         ...shotData,
@@ -440,6 +496,12 @@ export function ShotAnalyzer() {
   );
 
   const tryLoadPrimarySelection = useCallback(
+    /**
+     * @param {number} requestId
+     * @param {ShotSelectionRequest} selectionRequest
+     * @param {AbortSignal | undefined} signal
+     * @returns {Promise<boolean>} Whether a shot was committed
+     */
     async (requestId, selectionRequest, signal) => {
       if (requestId !== primarySelectionRequestIdRef.current) return false;
 
@@ -513,6 +575,11 @@ export function ShotAnalyzer() {
   );
 
   const launchPrimarySelectionLoad = useCallback(
+    /**
+     * @param {number} requestId
+     * @param {ShotSelectionRequest} selectionRequest
+     * @param {AbortSignal | undefined} signal
+     */
     (requestId, selectionRequest, signal) => {
       tryLoadPrimarySelection(requestId, selectionRequest, signal).catch(error => {
         console.error('Primary selection load failed:', error);
@@ -522,6 +589,10 @@ export function ShotAnalyzer() {
   );
 
   const handleShotSelect = useCallback(
+    /**
+     * @param {ShotSelectionInput} request
+     * @returns {number | undefined} Request id when a load was started
+     */
     request => {
       const selectionRequest = normalizePrimarySelectionRequest(request);
       if (!selectionRequest?.item) return;
@@ -598,7 +669,7 @@ export function ShotAnalyzer() {
     const requestId = handleShotSelectRef.current({
       item: {
         id: params.id,
-        source: serviceSource,
+        source: /** @type {LibrarySource} */ (serviceSource),
       },
       name: params.id,
       debounceMs: 0,
@@ -610,6 +681,11 @@ export function ShotAnalyzer() {
     };
   }, [apiService, params.id, params.source]);
 
+  /**
+   * @param {AnalyzerProfile} data
+   * @param {string} name
+   * @param {LibrarySource} source
+   */
   const handleProfileLoad = (data, name, source) => {
     cancelPrimaryProfileSearch();
     const nextProfile = normalizeMatchedProfileSource(data, source);
@@ -698,6 +774,10 @@ export function ShotAnalyzer() {
   };
 
   const tryLoadCompareSelection = useCallback(
+    /**
+     * @param {number} requestId
+     * @param {ShotSelectionRequest} selectionRequest
+     */
     (requestId, selectionRequest) =>
       executeCompareSelectionLoad({
         requestId,
@@ -716,6 +796,10 @@ export function ShotAnalyzer() {
   );
 
   const launchCompareSelectionLoad = useCallback(
+    /**
+     * @param {number} requestId
+     * @param {ShotSelectionRequest} selectionRequest
+     */
     (requestId, selectionRequest) => {
       tryLoadCompareSelection(requestId, selectionRequest)
         .then(didLoadCompareShot => {
@@ -731,6 +815,10 @@ export function ShotAnalyzer() {
   );
 
   const handleCompareShotToggle = useCallback(
+    /**
+     * @param {ShotSelectionInput} request
+     * @param {boolean} checked
+     */
     (request, checked) => {
       if (!checked) {
         clearPendingCompareSelection();
@@ -801,6 +889,11 @@ export function ShotAnalyzer() {
     ],
   );
 
+  /**
+   * @param {AnalyzerProfile} data
+   * @param {string} name
+   * @param {LibrarySource} source
+   */
   const handleCompareProfileLoad = (data, name, source) => {
     cancelCompareProfileSearch();
     const nextProfile = normalizeMatchedProfileSource(data, source);
@@ -987,16 +1080,18 @@ export function ShotAnalyzer() {
               setAnalysisResults(null);
             }}
             onProfileUnload={handleProfileUnload}
-            onShowStats={context =>
-              persistStatisticsInitialContext({
-                context: {
-                  ...context,
-                  preferredDetailSection: compareMode ? 'compare' : null,
-                },
-                currentProfile,
-                currentProfileName,
-                currentShot,
-              })
+            onShowStats={
+              /** @param {Parameters<typeof persistStatisticsInitialContext>[0]['context']} context */
+              context =>
+                persistStatisticsInitialContext({
+                  context: {
+                    ...context,
+                    preferredDetailSection: compareMode ? 'compare' : null,
+                  },
+                  currentProfile,
+                  currentProfileName,
+                  currentShot,
+                })
             }
             statsHref={statsHref}
             importMode={importMode}

@@ -1,12 +1,23 @@
 import { createEmptyMetricStats } from './metricStats';
 
+/** @typedef {import('../../../../types').ShotSample} ShotSample */
+/** @typedef {import('../../types').MetricStats} MetricStats */
+
 export const MAX_VALID_PUCK_RESISTANCE = 100;
 
+/**
+ * @param {ShotSample | null | undefined} sample
+ * @returns {number | null}
+ */
 export function getPuckResistanceValue(sample) {
   const value = Number(sample?.pr);
   return Number.isFinite(value) && value > 0 && value < MAX_VALID_PUCK_RESISTANCE ? value : null;
 }
 
+/**
+ * @param {ShotSample | null | undefined} sample
+ * @returns {number | null}
+ */
 export function getLiquidResistanceValue(sample) {
   const puckResistance = getPuckResistanceValue(sample);
   const pressure = Number(sample?.cp);
@@ -15,6 +26,11 @@ export function getLiquidResistanceValue(sample) {
   return puckResistance * Math.sqrt(pressure);
 }
 
+/**
+ * @param {ShotSample[] | null | undefined} samples
+ * @param {(sample: ShotSample) => number | null} [getValue]
+ * @returns {MetricStats}
+ */
 export function getPuckResistanceStats(samples, getValue) {
   const sourceSamples = Array.isArray(samples) ? samples : [];
   const valueGetter = typeof getValue === 'function' ? getValue : getPuckResistanceValue;
@@ -24,6 +40,7 @@ export function getPuckResistanceStats(samples, getValue) {
   let max = -Infinity;
   let weightedSum = 0;
   let totalTime = 0;
+  /** @type {{ timestamp: number, value: number } | null} */
   let previousSample = null;
 
   for (const sample of sourceSamples) {
@@ -62,10 +79,18 @@ export function getPuckResistanceStats(samples, getValue) {
   };
 }
 
+/**
+ * @param {ShotSample[] | null | undefined} samples
+ * @returns {MetricStats}
+ */
 export function getNativePuckResistanceStats(samples) {
   return getPuckResistanceStats(samples, getPuckResistanceValue);
 }
 
+/**
+ * @param {ShotSample[] | null | undefined} samples
+ * @returns {MetricStats}
+ */
 export function getLiquidResistanceStats(samples) {
   return getPuckResistanceStats(samples, getLiquidResistanceValue);
 }

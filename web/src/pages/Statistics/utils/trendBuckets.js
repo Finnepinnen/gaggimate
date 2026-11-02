@@ -2,12 +2,21 @@
 // focused on per-shot outputs. Buckets use local/browser time for user-facing charts.
 import { t } from '@lingui/core/macro';
 
+/**
+ * @typedef {import('../types').TrendGranularity} TrendGranularity
+ * @typedef {import('../types').TrendEntry} TrendEntry
+ * @typedef {import('../types').TrendMetricKey} TrendMetricKey
+ * @typedef {import('../types').TrendBucketPoint} TrendBucketPoint
+ */
+
+/** @param {unknown} timestamp - epoch seconds or ms */
 function normalizeTimestampMs(timestamp) {
   const value = Number(timestamp);
   if (!Number.isFinite(value)) return null;
   return value < 1e10 ? value * 1000 : value;
 }
 
+/** @param {number} ms */
 function cloneAtLocalMidnight(ms) {
   const date = new Date(ms);
   if (!Number.isFinite(date.getTime())) return null;
@@ -15,6 +24,10 @@ function cloneAtLocalMidnight(ms) {
   return date;
 }
 
+/**
+ * @param {unknown} timestamp - epoch seconds or ms
+ * @returns {number | null}
+ */
 export function getDayStartLocalMs(timestamp) {
   const ms = normalizeTimestampMs(timestamp);
   if (!Number.isFinite(ms)) return null;
@@ -22,6 +35,10 @@ export function getDayStartLocalMs(timestamp) {
   return date ? date.getTime() : null;
 }
 
+/**
+ * @param {unknown} timestamp - epoch seconds or ms
+ * @returns {number | null}
+ */
 export function getIsoWeekStartLocalMs(timestamp) {
   const ms = normalizeTimestampMs(timestamp);
   if (!Number.isFinite(ms)) return null;
@@ -32,6 +49,10 @@ export function getIsoWeekStartLocalMs(timestamp) {
   return date.getTime();
 }
 
+/**
+ * @param {unknown} timestamp - epoch seconds or ms
+ * @returns {number | null}
+ */
 export function getMonthStartLocalMs(timestamp) {
   const ms = normalizeTimestampMs(timestamp);
   if (!Number.isFinite(ms)) return null;
@@ -41,6 +62,10 @@ export function getMonthStartLocalMs(timestamp) {
   return date.getTime();
 }
 
+/**
+ * @param {unknown} timestamp - epoch seconds or ms
+ * @returns {number | null}
+ */
 export function getYearStartLocalMs(timestamp) {
   const ms = normalizeTimestampMs(timestamp);
   if (!Number.isFinite(ms)) return null;
@@ -50,6 +75,10 @@ export function getYearStartLocalMs(timestamp) {
   return date.getTime();
 }
 
+/**
+ * @param {unknown} timestamp
+ * @param {TrendGranularity} granularity
+ */
 function getBucketStartLocalMs(timestamp, granularity) {
   switch (granularity) {
     case 'day':
@@ -65,6 +94,10 @@ function getBucketStartLocalMs(timestamp, granularity) {
   }
 }
 
+/**
+ * @param {number} bucketStartMs
+ * @param {TrendGranularity} granularity
+ */
 function getNextBucketStartLocalMs(bucketStartMs, granularity) {
   const date = new Date(bucketStartMs);
   if (!Number.isFinite(date.getTime())) return null;
@@ -91,12 +124,18 @@ function getNextBucketStartLocalMs(bucketStartMs, granularity) {
   return date.getTime();
 }
 
+/**
+ * @param {number} bucketStartMs
+ * @param {TrendGranularity} granularity
+ * @returns {number | null}
+ */
 export function getBucketEndLocalMs(bucketStartMs, granularity) {
   const nextStart = getNextBucketStartLocalMs(bucketStartMs, granularity);
   if (!Number.isFinite(nextStart)) return null;
   return nextStart - 1;
 }
 
+/** @param {number[]} values */
 function averageOf(values) {
   if (!values.length) return null;
   let sum = 0;
@@ -104,9 +143,16 @@ function averageOf(values) {
   return sum / values.length;
 }
 
+/**
+ * @param {TrendEntry[]} trends
+ * @param {TrendMetricKey} metricKey
+ * @param {TrendGranularity} granularity
+ * @returns {TrendBucketPoint[]}
+ */
 export function aggregateTrendsByGranularity(trends, metricKey, granularity) {
   if (!Array.isArray(trends) || trends.length === 0) return [];
 
+  /** @type {Map<number, { bucketStartMs: number, shotCount: number, values: number[] }>} */
   const buckets = new Map();
   for (const entry of trends) {
     const bucketStartMs = getBucketStartLocalMs(entry?.timestamp, granularity);
@@ -126,12 +172,15 @@ export function aggregateTrendsByGranularity(trends, metricKey, granularity) {
 
     // Count-based metrics use bucket.shotCount directly; other metrics aggregate by average.
     if (metricKey !== 'shotCount') {
-      const value = Number(entry?.[metricKey]);
+      const value = Number(
+        entry?.[/** @type {Exclude<TrendMetricKey, 'shotCount'>} */ (metricKey)],
+      );
       if (Number.isFinite(value)) bucket.values.push(value);
     }
   }
 
   const sortedBucketStarts = [...buckets.keys()].sort((a, b) => a - b);
+  /** @type {TrendBucketPoint[]} */
   const points = [];
   for (const bucketStartMs of sortedBucketStarts) {
     const bucket = buckets.get(bucketStartMs);
@@ -165,6 +214,10 @@ export function aggregateTrendsByGranularity(trends, metricKey, granularity) {
   return points;
 }
 
+/**
+ * @param {number | null | undefined} ms
+ * @param {Intl.DateTimeFormatOptions} [options]
+ */
 export function formatDateLocal(ms, options) {
   if (!Number.isFinite(ms)) return '';
   try {
@@ -174,6 +227,11 @@ export function formatDateLocal(ms, options) {
   }
 }
 
+/**
+ * @param {number} xMs
+ * @param {TrendGranularity} granularity
+ * @param {{ containerWidth?: number }} [options]
+ */
 export function formatTrendBucketTickLabel(xMs, granularity, options = {}) {
   const width = Number(options.containerWidth) || 0;
   const compact = width > 0 && width < 420;
@@ -203,6 +261,10 @@ export function formatTrendBucketTickLabel(xMs, granularity, options = {}) {
   }
 }
 
+/**
+ * @param {Partial<TrendBucketPoint> | null | undefined} pointMeta
+ * @param {TrendGranularity} granularity
+ */
 export function formatTrendBucketTooltipTitle(pointMeta, granularity) {
   const bucketStartMs = Number(pointMeta?.bucketStartMs ?? pointMeta?.x);
   const bucketEndMs = Number(pointMeta?.bucketEndMs);
