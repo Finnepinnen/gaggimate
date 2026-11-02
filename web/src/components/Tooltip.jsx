@@ -28,10 +28,14 @@ export function Tooltip({ content, children, placement = 'top', disabled = false
   }, [disabled, isVisible]);
 
   useEffect(() => {
-    if (!isVisible || !triggerRef.current || !tooltipRef.current || disabled) return;
+    const trigger = triggerRef.current;
+    const floating = tooltipRef.current;
+    if (!isVisible || !trigger || !floating || disabled) return;
 
-    const cleanup = autoUpdate(triggerRef.current, tooltipRef.current, () => {
-      computePosition(triggerRef.current, tooltipRef.current, {
+    // Use the captured elements: a queued ResizeObserver callback can still fire
+    // after unmount, when the refs are already null.
+    const cleanup = autoUpdate(trigger, floating, () => {
+      computePosition(trigger, floating, {
         placement,
         strategy: 'fixed',
         middleware: [
