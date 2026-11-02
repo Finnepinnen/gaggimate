@@ -12,10 +12,8 @@ import { faThumbtack } from '@fortawesome/free-solid-svg-icons/faThumbtack';
 import { faTrashCan } from '@fortawesome/free-solid-svg-icons/faTrashCan';
 import { faCircleNotch } from '@fortawesome/free-solid-svg-icons/faCircleNotch';
 import { getShotIdentityKey } from '../../utils/analyzerUtils';
-import {
-  getAnalyzerIconButtonClasses,
-  getAnalyzerSurfaceTriggerClasses,
-} from '../analyzerControlStyles';
+import { AnalyzerControl } from '../AnalyzerControl.jsx';
+import { cx } from '../../../../utils/cx.js';
 import { SourceMarker } from '../SourceMarker';
 import './LibrarySection.css';
 
@@ -291,28 +289,25 @@ export function LibrarySection({
                 <div
                   className={`library-row-grid ${isShot ? 'library-row-grid--shot' : 'library-row-grid--profile'} library-row-grid--header min-h-9 px-3`}
                 >
-                  <button
+                  <AnalyzerControl
                     type='button'
-                    className={getAnalyzerSurfaceTriggerClasses({
-                      className:
-                        'library-row-grid__name flex h-full w-full min-w-0 cursor-pointer items-center gap-1 p-0 text-left text-xs font-medium tracking-normal',
-                    })}
+                    variant='surface'
+                    className='library-row-grid__name flex h-full w-full min-w-0 cursor-pointer items-center gap-1 p-0 text-left text-xs font-medium tracking-normal'
                     onClick={() => onSortChange('name')}
                   >
                     <span className='truncate'>
                       <Trans>Name</Trans>
                     </span>
                     {getSortIcon('name')}
-                  </button>
+                  </AnalyzerControl>
                   {onPinnedFirstToggle ? (
-                    <button
+                    <AnalyzerControl
                       type='button'
-                      className={getAnalyzerIconButtonClasses({
-                        tone: pinnedFirstEnabled ? 'primary' : 'subtle',
-                        className: `library-row-grid__pin h-full min-h-full w-5 shrink-0 justify-self-end rounded-none bg-transparent p-0 text-xs ${
-                          pinnedFirstEnabled ? 'text-primary hover:text-primary' : ''
-                        }`,
-                      })}
+                      tone={pinnedFirstEnabled ? 'primary' : 'subtle'}
+                      className={cx(
+                        'library-row-grid__pin h-full min-h-full w-5 shrink-0 justify-self-end rounded-none bg-transparent p-0 text-xs',
+                        pinnedFirstEnabled && 'text-primary hover:text-primary',
+                      )}
                       onClick={event => {
                         event.stopPropagation();
                         // Header pinning is a view-level promotion toggle; it
@@ -323,16 +318,15 @@ export function LibrarySection({
                       title={pinnedFirstLabel}
                     >
                       <FontAwesomeIcon icon={faThumbtack} />
-                    </button>
+                    </AnalyzerControl>
                   ) : (
                     <span className='library-row-grid__pin' aria-hidden='true' />
                   )}
                   <details className='library-row-grid__source dropdown block h-full w-full'>
-                    <summary
-                      className={getAnalyzerSurfaceTriggerClasses({
-                        className:
-                          'flex h-full w-full cursor-pointer list-none items-center justify-center gap-1 px-1 py-2 text-xs font-medium outline-none [&::-webkit-details-marker]:hidden',
-                      })}
+                    <AnalyzerControl
+                      as='summary'
+                      variant='surface'
+                      className='flex h-full w-full cursor-pointer list-none items-center justify-center gap-1 px-1 py-2 text-xs font-medium outline-none [&::-webkit-details-marker]:hidden'
                       aria-label={t`Filter library source`}
                       title={t`Filter library source`}
                     >
@@ -341,46 +335,44 @@ export function LibrarySection({
                         icon={faChevronDown}
                         className='library-source-filter-chevron text-[10px] opacity-60'
                       />
-                    </summary>
+                    </AnalyzerControl>
 
                     <div className='dropdown-content app-card-surface z-[65] mt-2 w-28 rounded-xl p-1.5'>
                       <div className='grid gap-1'>
                         {SOURCE_FILTER_OPTIONS.map(option => (
-                          <button
+                          <AnalyzerControl
                             key={option.value}
                             type='button'
-                            className={getAnalyzerSurfaceTriggerClasses({
-                              className: `flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-[10px] font-bold ${
-                                sourceFilter === option.value
-                                  ? 'bg-base-content/6 text-base-content'
-                                  : 'text-base-content/70'
-                              }`,
-                            })}
+                            variant='surface'
+                            className={cx(
+                              'flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-[10px] font-bold',
+                              sourceFilter === option.value
+                                ? 'bg-base-content/6 text-base-content'
+                                : 'text-base-content/70',
+                            )}
                             onClick={event => {
                               onSourceFilterChange(option.value);
                               closeParentDetails(event.currentTarget);
                             }}
                           >
                             {renderLibrarySourceOptionContent(option.value)}
-                          </button>
+                          </AnalyzerControl>
                         ))}
                       </div>
                     </div>
                   </details>
                   {isShot ? (
-                    <button
+                    <AnalyzerControl
                       type='button'
-                      className={getAnalyzerSurfaceTriggerClasses({
-                        className:
-                          'library-row-grid__date flex h-full w-full cursor-pointer items-center gap-1 p-0 text-left text-xs font-medium tracking-normal',
-                      })}
+                      variant='surface'
+                      className='library-row-grid__date flex h-full w-full cursor-pointer items-center gap-1 p-0 text-left text-xs font-medium tracking-normal'
                       onClick={() => onSortChange('shotDate')}
                     >
                       <span>
                         <Trans>Date</Trans>
                       </span>
                       {getSortIcon('shotDate')}
-                    </button>
+                    </AnalyzerControl>
                   ) : null}
                   {isShot ? (
                     <span className='library-row-grid__profile text-base-content/70 text-left text-xs font-medium tracking-normal'>

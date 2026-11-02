@@ -13,7 +13,8 @@ import { faTrashCan } from '@fortawesome/free-solid-svg-icons/faTrashCan';
 import { cleanName, formatTimestamp, getProfileDisplayLabel } from '../../utils/analyzerUtils';
 import { buildStatisticsProfileHref } from '../../../Statistics/utils/statisticsRoute';
 import { SourceMarker } from '../SourceMarker';
-import { getAnalyzerIconButtonClasses } from '../analyzerControlStyles';
+import { AnalyzerControl } from '../AnalyzerControl.jsx';
+import { cx } from '../../../../utils/cx.js';
 import { LibraryActionsMenu } from './LibraryActionsMenu';
 
 const ACTIVE_ROW_CLASSES = 'bg-primary/18';
@@ -107,8 +108,14 @@ function LibraryPinButton({ item, isPinned, pinDisabledReason, onPinToggle, disp
   else pinTitle = isPinned ? t`Unpin profile` : t`Pin profile`;
 
   return (
-    <button
+    <AnalyzerControl
       type='button'
+      tone={isPinned ? 'primary' : 'subtle'}
+      className={cx(
+        'library-row-grid__pin-button h-5 w-5 shrink-0 bg-transparent p-0 text-xs',
+        isPinned && 'text-primary hover:text-primary',
+        !isPinned && pinDisabledReason && 'cursor-not-allowed opacity-35',
+      )}
       aria-label={pinAriaLabel}
       aria-disabled={!isPinned && !!pinDisabledReason}
       title={pinDisabledReason || pinTitle}
@@ -117,15 +124,9 @@ function LibraryPinButton({ item, isPinned, pinDisabledReason, onPinToggle, disp
         if (!isPinned && pinDisabledReason) return;
         onPinToggle(item);
       }}
-      className={getAnalyzerIconButtonClasses({
-        tone: isPinned ? 'primary' : 'subtle',
-        className: `library-row-grid__pin-button h-5 w-5 shrink-0 bg-transparent p-0 text-xs ${
-          isPinned ? 'text-primary hover:text-primary' : ''
-        } ${!isPinned && pinDisabledReason ? 'cursor-not-allowed opacity-35' : ''}`,
-      })}
     >
       <FontAwesomeIcon icon={faThumbtack} />
-    </button>
+    </AnalyzerControl>
   );
 }
 

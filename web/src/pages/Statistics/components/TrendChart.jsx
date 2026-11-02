@@ -7,10 +7,7 @@ import {
   formatTrendBucketTickLabel,
   formatTrendBucketTooltipTitle,
 } from '../utils/trendBuckets';
-import {
-  ANALYZER_COMPACT_CONTROL_HEIGHT_CLASS,
-  getAnalyzerSurfaceTriggerClasses,
-} from '../../ShotAnalyzer/components/analyzerControlStyles';
+import { AnalyzerControl } from '../../ShotAnalyzer/components/AnalyzerControl.jsx';
 import { CardTitle } from '../../../components/CardTitle';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react/macro';
@@ -276,13 +273,12 @@ export function TrendChart({ trends }) {
           <Trans>Trend Chart</Trans>
         </CardTitle>
         <div className='ml-auto flex items-center gap-1.5'>
-          <div
-            className={`relative flex shrink-0 ${ANALYZER_COMPACT_CONTROL_HEIGHT_CLASS} items-center`}
-          >
-            <select
-              className={getAnalyzerSurfaceTriggerClasses({
-                className: `${ANALYZER_COMPACT_CONTROL_HEIGHT_CLASS} w-[8.75rem] max-w-[8.75rem] appearance-none rounded-md border-0 bg-transparent px-2.5 pr-6 text-xs font-medium shadow-none outline-none`,
-              })}
+          <div className='relative flex h-5 min-h-0 shrink-0 items-center'>
+            <AnalyzerControl
+              as='select'
+              variant='surface'
+              size='compact'
+              className='w-[8.75rem] max-w-[8.75rem] appearance-none rounded-md border-0 bg-transparent px-2.5 pr-6 text-xs font-medium shadow-none outline-none'
               value={selectedMetric}
               onChange={e => setSelectedMetric(e.currentTarget.value)}
               aria-label={t`Trend metric`}
@@ -293,18 +289,17 @@ export function TrendChart({ trends }) {
                   {i18n._(m.label)}
                 </option>
               ))}
-            </select>
+            </AnalyzerControl>
             <span className='text-base-content/60 pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[10px]'>
               <FontAwesomeIcon icon={faChevronDown} />
             </span>
           </div>
-          <div
-            className={`relative flex shrink-0 ${ANALYZER_COMPACT_CONTROL_HEIGHT_CLASS} items-center`}
-          >
-            <select
-              className={getAnalyzerSurfaceTriggerClasses({
-                className: `${ANALYZER_COMPACT_CONTROL_HEIGHT_CLASS} w-[5rem] max-w-[5rem] appearance-none rounded-md border-0 bg-transparent px-2.5 pr-6 text-xs font-medium shadow-none outline-none`,
-              })}
+          <div className='relative flex h-5 min-h-0 shrink-0 items-center'>
+            <AnalyzerControl
+              as='select'
+              variant='surface'
+              size='compact'
+              className='w-[5rem] max-w-[5rem] appearance-none rounded-md border-0 bg-transparent px-2.5 pr-6 text-xs font-medium shadow-none outline-none'
               value={selectedGranularity}
               onChange={e => setSelectedGranularity(e.currentTarget.value)}
               aria-label={t`Trend bucket size`}
@@ -315,7 +310,7 @@ export function TrendChart({ trends }) {
                   {i18n._(option.label)}
                 </option>
               ))}
-            </select>
+            </AnalyzerControl>
             <span className='text-base-content/60 pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[10px]'>
               <FontAwesomeIcon icon={faChevronDown} />
             </span>

@@ -10,6 +10,7 @@ import { faEye } from '@fortawesome/free-solid-svg-icons/faEye';
 import { faFileImport } from '@fortawesome/free-solid-svg-icons/faFileImport';
 import { faLaptopFile } from '@fortawesome/free-solid-svg-icons/faLaptopFile';
 import { analyzerUiColors } from '../../utils/analyzerUtils';
+import { ActionBarButton } from './ActionBarButtons.jsx';
 
 const MOBILE_STATUS_ACTIONS_MENU_WIDTH = 224;
 
@@ -93,7 +94,6 @@ function MobileStatusActionsMenuPortal({
 }
 
 export function MobileStatusActionsMenu({
-  buttonClasses,
   handleImportClick,
   handleModeToggle,
   importMode,
@@ -152,10 +152,10 @@ export function MobileStatusActionsMenu({
 
   return (
     <div className='ml-auto sm:hidden'>
-      <button
-        ref={buttonRef}
+      <ActionBarButton
+        controlRef={buttonRef}
         type='button'
-        className={buttonClasses}
+        className='px-2.5 sm:hidden'
         onClick={toggleMenu}
         aria-label={t`Open status actions menu`}
         aria-expanded={isOpen}
@@ -163,7 +163,7 @@ export function MobileStatusActionsMenu({
         title={t`More actions`}
       >
         <FontAwesomeIcon icon={faEllipsisVertical} className='text-sm' />
-      </button>
+      </ActionBarButton>
 
       {isOpen ? (
         <MobileStatusActionsMenuPortal

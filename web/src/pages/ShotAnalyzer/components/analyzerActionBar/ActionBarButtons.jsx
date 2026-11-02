@@ -10,9 +10,38 @@ import { faEquals } from '@fortawesome/free-solid-svg-icons/faEquals';
 import { faFileImport } from '@fortawesome/free-solid-svg-icons/faFileImport';
 import { faLaptopFile } from '@fortawesome/free-solid-svg-icons/faLaptopFile';
 import { analyzerUiColors } from '../../utils/analyzerUtils';
+import { AnalyzerControl } from '../AnalyzerControl.jsx';
+import { cx } from '../../../../utils/cx.js';
+
+/**
+ * Labelled button (or link, via `as`) in the analyzer action bar. Extra props
+ * are passed to the AnalyzerControl.
+ *
+ * @param {{ className?: string } & Record<string, any>} props
+ */
+export function ActionBarButton({ className, ...props }) {
+  return (
+    <AnalyzerControl
+      {...props}
+      className={cx(
+        'btn btn-sm btn-ghost h-8 min-h-0 shrink-0 gap-1.5 rounded-lg px-2.5 text-sm font-medium hover:opacity-100',
+        className,
+      )}
+    />
+  );
+}
+
+/** Square previous/next button in the analyzer action bar. */
+function ActionBarNavButton(props) {
+  return (
+    <AnalyzerControl
+      {...props}
+      className='btn btn-sm btn-ghost h-8 min-h-0 w-8 shrink-0 rounded-lg p-0 text-sm'
+    />
+  );
+}
 
 export function ActionBarNavigationButtons({
-  navButtonClasses,
   canGoPrev,
   canGoNext,
   currentIndex,
@@ -21,40 +50,33 @@ export function ActionBarNavigationButtons({
   const { t } = useLingui();
   return (
     <div className='flex shrink-0 items-center gap-1'>
-      <button
+      <ActionBarNavButton
         type='button'
-        className={navButtonClasses}
         disabled={!canGoPrev}
         onClick={() => canGoPrev && onNavigateToIndex(currentIndex - 1, -1)}
         title={t`Previous shot`}
       >
         <FontAwesomeIcon icon={faChevronLeft} />
-      </button>
+      </ActionBarNavButton>
 
-      <button
+      <ActionBarNavButton
         type='button'
-        className={navButtonClasses}
         disabled={!canGoNext}
         onClick={() => canGoNext && onNavigateToIndex(currentIndex + 1, 1)}
         title={t`Next shot`}
       >
         <FontAwesomeIcon icon={faChevronRight} />
-      </button>
+      </ActionBarNavButton>
     </div>
   );
 }
 
-export function ActionBarCompareButton({
-  actionButtonClasses,
-  compareAvailable,
-  compareMode,
-  onCompareModeToggle,
-}) {
+export function ActionBarCompareButton({ compareAvailable, compareMode, onCompareModeToggle }) {
   const { t } = useLingui();
   return (
-    <button
+    <ActionBarButton
       type='button'
-      className={`${actionButtonClasses} ${compareMode ? 'text-primary opacity-100' : ''}`}
+      className={compareMode ? 'text-primary opacity-100' : undefined}
       disabled={!compareAvailable}
       onClick={event => {
         event.preventDefault();
@@ -67,12 +89,11 @@ export function ActionBarCompareButton({
       <span>
         <Trans context='compare mode'>Compare</Trans>
       </span>
-    </button>
+    </ActionBarButton>
   );
 }
 
 export function ActionBarStatisticsAction({
-  actionButtonClasses,
   compareMode,
   statisticsAvailable,
   statsHref,
@@ -89,9 +110,9 @@ export function ActionBarStatisticsAction({
 
   if (statisticsAvailable) {
     return (
-      <a
+      <ActionBarButton
+        as='a'
         href={statsHref || '/statistics'}
-        className={actionButtonClasses}
         onClick={event => {
           event.stopPropagation();
           onShowStats?.();
@@ -99,36 +120,26 @@ export function ActionBarStatisticsAction({
         title={t`Open statistics`}
       >
         {content}
-      </a>
+      </ActionBarButton>
     );
   }
 
   return (
-    <button
-      type='button'
-      className={actionButtonClasses}
-      disabled
-      title={t`Load a profile to open statistics`}
-    >
+    <ActionBarButton type='button' disabled title={t`Load a profile to open statistics`}>
       {content}
-    </button>
+    </ActionBarButton>
   );
 }
 
-function ActionBarImportModeToggle({
-  actionButtonClasses,
-  importMode,
-  modeButtonRef,
-  handleModeToggle,
-}) {
+function ActionBarImportModeToggle({ importMode, modeButtonRef, handleModeToggle }) {
   const { t } = useLingui();
   const isBrowserImportMode = importMode === 'browser';
 
   return (
-    <button
-      ref={modeButtonRef}
+    <ActionBarButton
+      controlRef={modeButtonRef}
       type='button'
-      className={`${actionButtonClasses} ${isBrowserImportMode ? 'opacity-100' : ''}`}
+      className={isBrowserImportMode ? 'opacity-100' : undefined}
       style={isBrowserImportMode ? { color: analyzerUiColors.sourceBadgeWebText } : undefined}
       onClick={handleModeToggle}
       title={
@@ -150,12 +161,11 @@ function ActionBarImportModeToggle({
           <Trans context='import mode'>View</Trans>
         )}
       </span>
-    </button>
+    </ActionBarButton>
   );
 }
 
 export function ActionBarImportActions({
-  actionButtonClasses,
   handleImportClick,
   handleModeToggle,
   importMode,
@@ -166,9 +176,8 @@ export function ActionBarImportActions({
   const { t } = useLingui();
   return (
     <div className='hidden shrink-0 items-center gap-1 sm:ml-auto sm:flex'>
-      <button
+      <ActionBarButton
         type='button'
-        className={actionButtonClasses}
         onClick={handleImportClick}
         disabled={isImporting}
         title={t`Import shot or profile`}
@@ -182,11 +191,10 @@ export function ActionBarImportActions({
         <span>
           <Trans>Import</Trans>
         </span>
-      </button>
+      </ActionBarButton>
 
       {showImportModeToggle ? (
         <ActionBarImportModeToggle
-          actionButtonClasses={actionButtonClasses}
           importMode={importMode}
           modeButtonRef={modeButtonRef}
           handleModeToggle={handleModeToggle}

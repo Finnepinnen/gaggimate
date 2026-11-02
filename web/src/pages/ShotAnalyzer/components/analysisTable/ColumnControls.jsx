@@ -22,28 +22,37 @@ import {
   loadFromStorage,
 } from '../../utils/analyzerUtils';
 import { getAnalyzerGroupCardVisuals } from './analyzerGroupVisuals';
-import {
-  ANALYZER_ACTION_GROUP_CLASSES,
-  ANALYZER_ACTION_ICON_BUTTON_CLASS,
-  ANALYZER_ACTION_ICON_CLASS,
-  ANALYZER_ACTION_ICON_STYLE,
-  getAnalyzerIconButtonClasses,
-  getAnalyzerSurfaceTriggerClasses,
-  getAnalyzerTextButtonClasses,
-} from '../analyzerControlStyles';
+import { AnalyzerActionGroup, AnalyzerActionIcon, AnalyzerControl } from '../AnalyzerControl.jsx';
+import { cx } from '../../../../utils/cx.js';
 
 const BUILT_IN_PRESET_IDS = {
   ALL_METRICS: 'ALL_METRICS',
   SYSTEM_INFO: 'SYSTEM_INFO',
 };
 
-const TABLE_TOOLBAR_TEXT_BUTTON_CLASS =
-  'h-8 min-h-0 px-3 text-sm font-normal tracking-normal normal-case !text-base-content/75 hover:!text-primary';
-const TABLE_TOOLBAR_SELECT_CLASS =
-  'h-8 min-h-0 w-[7rem] max-w-[7rem] appearance-none border-0 bg-transparent px-3 pr-7 text-sm font-normal tracking-normal normal-case shadow-none outline-none !text-base-content/75 hover:!text-primary';
 const COLUMN_GROUP_HEADER_CLASS =
   'border-base-content/10 text-base-content col-span-2 mb-1.5 border-b pb-1 text-xs leading-tight font-medium tracking-normal normal-case';
 const COLUMN_OPTION_TEXT_CLASS = 'text-base-content/90 leading-tight font-medium tracking-normal';
+
+/**
+ * Text button in the column-controls toolbar. Extra props go to the button.
+ *
+ * @param {{ className?: string, children?: import('preact').ComponentChildren } & Record<string, any>} props
+ */
+function TableToolbarTextButton({ className, children, ...props }) {
+  return (
+    <AnalyzerControl
+      {...props}
+      variant='text'
+      className={cx(
+        '!text-base-content/75 hover:!text-primary h-8 min-h-0 px-3 text-sm font-normal tracking-normal normal-case',
+        className,
+      )}
+    >
+      {children}
+    </AnalyzerControl>
+  );
+}
 
 export function ColumnControls({
   activeColumns,
@@ -169,38 +178,33 @@ export function ColumnControls({
         <div className='pointer-events-none relative z-10 flex min-w-0 flex-1 items-center gap-2 sm:gap-4'>
           {/* Header Actions & Preset Selector */}
           <div className='pointer-events-auto flex items-center gap-2'>
-            <div className={ANALYZER_ACTION_GROUP_CLASSES}>
-              <button
+            <AnalyzerActionGroup>
+              <AnalyzerControl
                 type='button'
+                size='action'
                 onClick={e => {
                   e.stopPropagation();
                   handleHeaderToggle();
                 }}
-                className={getAnalyzerIconButtonClasses({
-                  className: ANALYZER_ACTION_ICON_BUTTON_CLASS,
-                })}
                 title={expanded ? t`Collapse column settings` : t`Expand column settings`}
                 aria-label={expanded ? t`Collapse column settings` : t`Expand column settings`}
               >
-                <FontAwesomeIcon
-                  icon={expanded ? faMinus : faPlus}
-                  className={ANALYZER_ACTION_ICON_CLASS}
-                  style={ANALYZER_ACTION_ICON_STYLE}
-                />
-              </button>
+                <AnalyzerActionIcon icon={expanded ? faMinus : faPlus} />
+              </AnalyzerControl>
 
-              <button
+              <TableToolbarTextButton
                 type='button'
                 onClick={applyStandard}
-                className={getAnalyzerTextButtonClasses({
-                  className: `hidden sm:inline-flex ${TABLE_TOOLBAR_TEXT_BUTTON_CLASS}`,
-                })}
+                className='hidden sm:inline-flex'
               >
                 <Trans context='column preset'>Standard</Trans>
-              </button>
+              </TableToolbarTextButton>
 
               <div className='relative flex h-8 min-h-0 items-center'>
-                <select
+                <AnalyzerControl
+                  as='select'
+                  variant='surface'
+                  className='!text-base-content/75 hover:!text-primary h-8 min-h-0 w-[7rem] max-w-[7rem] appearance-none border-0 bg-transparent px-3 pr-7 text-sm font-normal tracking-normal normal-case shadow-none outline-none'
                   value={selectedPresetId}
                   onChange={e => {
                     const val = e.currentTarget.value;
@@ -217,9 +221,6 @@ export function ColumnControls({
                     }
                   }}
                   onClick={e => e.stopPropagation()}
-                  className={getAnalyzerSurfaceTriggerClasses({
-                    className: TABLE_TOOLBAR_SELECT_CLASS,
-                  })}
                 >
                   <option value='' disabled>
                     {t`Presets...`}
@@ -232,7 +233,7 @@ export function ColumnControls({
                       {p.name}
                     </option>
                   ))}
-                </select>
+                </AnalyzerControl>
                 <span className='text-base-content/75 pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 text-sm'>
                   <FontAwesomeIcon icon={faChevronDown} />
                 </span>
@@ -240,24 +241,18 @@ export function ColumnControls({
 
               {selectedPresetId &&
                 !Object.values(BUILT_IN_PRESET_IDS).includes(selectedPresetId) && (
-                  <button
+                  <AnalyzerControl
                     type='button'
+                    tone='error'
+                    size='action'
                     onClick={deletePreset}
-                    className={getAnalyzerIconButtonClasses({
-                      tone: 'error',
-                      className: ANALYZER_ACTION_ICON_BUTTON_CLASS,
-                    })}
                     title={t`Delete preset`}
                     aria-label={t`Delete preset`}
                   >
-                    <FontAwesomeIcon
-                      icon={faTrashCan}
-                      className={ANALYZER_ACTION_ICON_CLASS}
-                      style={ANALYZER_ACTION_ICON_STYLE}
-                    />
-                  </button>
+                    <AnalyzerActionIcon icon={faTrashCan} />
+                  </AnalyzerControl>
                 )}
-            </div>
+            </AnalyzerActionGroup>
           </div>
         </div>
 
@@ -283,12 +278,11 @@ export function ColumnControls({
                     <div className='min-w-0'>
                       <div className='space-y-1'>
                         {cols.map(col => (
-                          <label
+                          <AnalyzerControl
                             key={col.id}
-                            className={getAnalyzerSurfaceTriggerClasses({
-                              className:
-                                'group !text-base-content flex cursor-pointer items-center gap-1.5 px-1 py-0.5 text-xs',
-                            })}
+                            as='label'
+                            variant='surface'
+                            className='group !text-base-content flex cursor-pointer items-center gap-1.5 px-1 py-0.5 text-xs'
                           >
                             <input
                               type='checkbox'
@@ -299,7 +293,7 @@ export function ColumnControls({
                             <span className={COLUMN_OPTION_TEXT_CLASS}>
                               {getDetailedLabel(col)}
                             </span>
-                          </label>
+                          </AnalyzerControl>
                         ))}
                       </div>
                     </div>
@@ -340,52 +334,41 @@ export function ColumnControls({
             />
             {/* Left Actions: Reset - Wrapped to stop propagation */}
             <div className='relative z-10 flex items-center gap-2'>
-              <button
+              <AnalyzerControl
                 type='button'
+                variant='text'
+                tone='error'
                 onClick={applyFactoryReset}
-                className={getAnalyzerTextButtonClasses({
-                  tone: 'error',
-                  className:
-                    '!text-base-content/75 hover:!text-error h-8 min-h-0 gap-1.5 px-3 text-sm font-normal tracking-normal normal-case',
-                })}
+                className='!text-base-content/75 hover:!text-error h-8 min-h-0 gap-1.5 px-3 text-sm font-normal tracking-normal normal-case'
               >
                 <FontAwesomeIcon icon={faUndo} /> <Trans>Reset Defaults</Trans>
-              </button>
+              </AnalyzerControl>
             </div>
 
             {/* Center Action: Close Indicator */}
-            <button
+            <AnalyzerControl
               type='button'
+              size='action'
               onClick={collapseControls}
-              className={getAnalyzerIconButtonClasses({
-                className: `relative z-10 ${ANALYZER_ACTION_ICON_BUTTON_CLASS}`,
-              })}
+              className='relative z-10'
               title={t`Collapse column settings`}
               aria-label={t`Collapse column settings`}
             >
               <FontAwesomeIcon icon={faMinus} />
-            </button>
+            </AnalyzerControl>
 
             {/* Right Actions: Save - Wrapped to stop propagation */}
             <div className='relative z-10 flex items-center gap-2'>
-              <button
-                type='button'
-                onClick={saveAsStandard}
-                className={getAnalyzerTextButtonClasses({
-                  className: TABLE_TOOLBAR_TEXT_BUTTON_CLASS,
-                })}
-              >
+              <TableToolbarTextButton type='button' onClick={saveAsStandard}>
                 <Trans>Save as Standard</Trans>
-              </button>
-              <button
+              </TableToolbarTextButton>
+              <TableToolbarTextButton
                 type='button'
                 onClick={saveAsPreset}
-                className={getAnalyzerTextButtonClasses({
-                  className: `border-base-content/10 bg-transparent shadow-none ${TABLE_TOOLBAR_TEXT_BUTTON_CLASS}`,
-                })}
+                className='border-base-content/10 bg-transparent shadow-none'
               >
                 <Trans>Save as New Preset</Trans>
-              </button>
+              </TableToolbarTextButton>
             </div>
           </div>
         </div>

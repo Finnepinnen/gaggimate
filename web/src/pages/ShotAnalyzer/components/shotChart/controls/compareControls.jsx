@@ -4,12 +4,8 @@ import { Trans, useLingui } from '@lingui/react/macro';
 import { faArrowRightArrowLeft } from '@fortawesome/free-solid-svg-icons/faArrowRightArrowLeft';
 import { faChevronDown } from '@fortawesome/free-solid-svg-icons/faChevronDown';
 import { COMPARE_TARGET_DISPLAY_MODES } from '../../../utils/analyzerUtils';
-import {
-  ANALYZER_COMPACT_CONTROL_HEIGHT_CLASS,
-  getAnalyzerIconButtonClasses,
-  getAnalyzerSurfaceTriggerClasses,
-  getAnalyzerTextButtonClasses,
-} from '../../analyzerControlStyles';
+import { AnalyzerControl } from '../../AnalyzerControl.jsx';
+import { cx } from '../../../../../utils/cx.js';
 
 function CompareShotLegend({ compareShotLegendItems, onCompareSwap }) {
   const { t } = useLingui();
@@ -35,17 +31,15 @@ function CompareShotLegend({ compareShotLegendItems, onCompareSwap }) {
               <span className='truncate'>{item.label}</span>
             </div>
             {index === 0 && compareShotLegendItems.length > 1 && onCompareSwap ? (
-              <button
+              <AnalyzerControl
                 type='button'
                 onClick={onCompareSwap}
-                className={getAnalyzerIconButtonClasses({
-                  className: 'h-7 min-h-0 w-7 rounded-lg p-0 text-sm',
-                })}
+                className='h-7 min-h-0 w-7 rounded-lg p-0 text-sm'
                 title={t`Swap shot 1 and shot 2`}
                 aria-label={t`Swap shot 1 and shot 2`}
               >
                 <FontAwesomeIcon icon={faArrowRightArrowLeft} className='text-sm' />
-              </button>
+              </AnalyzerControl>
             ) : null}
           </Fragment>
         );
@@ -62,23 +56,23 @@ function CompareAnnotationToggle({
   const { t } = useLingui();
   if (showCompareAnnotationToggle && onCompareAnnotationsToggle) {
     return (
-      <button
+      <AnalyzerControl
         type='button'
+        variant='text'
         onClick={onCompareAnnotationsToggle}
-        className={getAnalyzerTextButtonClasses({
-          className: `h-6 min-h-0 px-2 text-xs font-medium ${
-            compareAnnotationsEnabled
-              ? 'bg-base-content/8 text-base-content/80'
-              : 'text-base-content/55'
-          }`,
-        })}
+        className={cx(
+          'h-6 min-h-0 px-2 text-xs font-medium',
+          compareAnnotationsEnabled
+            ? 'bg-base-content/8 text-base-content/80'
+            : 'text-base-content/55',
+        )}
         aria-pressed={compareAnnotationsEnabled}
         title={
           compareAnnotationsEnabled ? t`Hide compare annotations` : t`Show compare annotations`
         }
       >
         <Trans>Annotations</Trans>
-      </button>
+      </AnalyzerControl>
     );
   }
 
@@ -88,13 +82,17 @@ function CompareAnnotationToggle({
 export function CompareSelect({ onChange, options, title, value, widthClass }) {
   if (onChange && options.length > 0) {
     return (
-      <div className={`relative flex ${ANALYZER_COMPACT_CONTROL_HEIGHT_CLASS} items-center`}>
-        <select
+      <div className='relative flex h-5 min-h-0 items-center'>
+        <AnalyzerControl
+          as='select'
+          variant='surface'
+          size='compact'
           value={value}
           onChange={event => onChange(event.currentTarget.value)}
-          className={getAnalyzerSurfaceTriggerClasses({
-            className: `${ANALYZER_COMPACT_CONTROL_HEIGHT_CLASS} ${widthClass} appearance-none rounded-md border-0 bg-transparent px-2.5 pr-6 text-xs font-medium shadow-none outline-none`,
-          })}
+          className={cx(
+            'appearance-none rounded-md border-0 bg-transparent px-2.5 pr-6 text-xs font-medium shadow-none outline-none',
+            widthClass,
+          )}
           title={title}
         >
           {options.map(option => (
@@ -102,7 +100,7 @@ export function CompareSelect({ onChange, options, title, value, widthClass }) {
               {option.label}
             </option>
           ))}
-        </select>
+        </AnalyzerControl>
         <span className='text-base-content/60 pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-xs'>
           <FontAwesomeIcon icon={faChevronDown} />
         </span>

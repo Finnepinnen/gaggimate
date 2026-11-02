@@ -1,7 +1,6 @@
 /** Coordinates analyzer navigation, import actions, status hints, and loading state. */
 
 import { useCallback, useEffect, useRef } from 'preact/hooks';
-import { getAnalyzerIconButtonClasses } from '../analyzerControlStyles';
 import { getShotNotesKey } from '../useShotNotesState';
 import {
   ActionBarCompareButton,
@@ -114,14 +113,6 @@ export function AnalyzerActionBar({
 
   const borderClasses = 'border-base-content/5 border-t';
 
-  const navButtonClasses = getAnalyzerIconButtonClasses({
-    className: 'btn btn-sm btn-ghost h-8 min-h-0 w-8 flex-shrink-0 rounded-lg p-0 text-sm',
-  });
-  const actionButtonClasses = getAnalyzerIconButtonClasses({
-    className:
-      'btn btn-sm btn-ghost h-8 min-h-0 flex-shrink-0 gap-1.5 rounded-lg px-2.5 text-sm font-medium hover:opacity-100',
-  });
-
   const handleImportClick = event => {
     event.preventDefault();
     event.stopPropagation();
@@ -145,7 +136,6 @@ export function AnalyzerActionBar({
       <div className={`overflow-hidden transition-all duration-200 ${borderClasses}`}>
         <div className='shot-analyzer-action-scroll shot-analyzer-status-actions flex w-full items-center gap-1.5 overflow-x-auto overflow-y-hidden px-1.5 py-1 sm:px-2'>
           <ActionBarNavigationButtons
-            navButtonClasses={navButtonClasses}
             canGoPrev={canGoPrev}
             canGoNext={canGoNext}
             currentIndex={currentIndex}
@@ -154,7 +144,6 @@ export function AnalyzerActionBar({
 
           {showCompareButton ? (
             <ActionBarCompareButton
-              actionButtonClasses={actionButtonClasses}
               compareAvailable={compareAvailable}
               compareMode={compareMode}
               onCompareModeToggle={onCompareModeToggle}
@@ -162,7 +151,6 @@ export function AnalyzerActionBar({
           ) : null}
 
           <ActionBarStatisticsAction
-            actionButtonClasses={actionButtonClasses}
             compareMode={compareMode}
             statisticsAvailable={statisticsAvailable}
             statsHref={statsHref}
@@ -170,7 +158,6 @@ export function AnalyzerActionBar({
           />
 
           <MobileStatusActionsMenu
-            buttonClasses={`${actionButtonClasses} px-2.5 sm:hidden`}
             handleImportClick={handleImportClick}
             handleModeToggle={handleModeToggle}
             importMode={importMode}
@@ -179,7 +166,6 @@ export function AnalyzerActionBar({
           />
 
           <ActionBarImportActions
-            actionButtonClasses={actionButtonClasses}
             handleImportClick={handleImportClick}
             handleModeToggle={handleModeToggle}
             importMode={importMode}

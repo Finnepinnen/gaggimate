@@ -2,10 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronDown } from '@fortawesome/free-solid-svg-icons/faChevronDown';
 import { faThumbtack } from '@fortawesome/free-solid-svg-icons/faThumbtack';
-import {
-  getAnalyzerIconButtonClasses,
-  getAnalyzerSurfaceTriggerClasses,
-} from '../../ShotAnalyzer/components/analyzerControlStyles';
+import { AnalyzerControl } from '../../ShotAnalyzer/components/AnalyzerControl.jsx';
+import { cx } from '../../../utils/cx.js';
 import { DropdownPanel } from './statisticsSurfaces.jsx';
 import { Trans, useLingui } from '@lingui/react/macro';
 
@@ -124,20 +122,20 @@ function StatisticsMultiSelectRow({
       </button>
 
       {onTogglePin ? (
-        <button
+        <AnalyzerControl
           type='button'
+          tone={item.isPinned ? 'primary' : 'subtle'}
+          className={cx(
+            'h-5 w-5 shrink-0 bg-transparent p-0 text-[11px]',
+            item.isPinned && 'text-primary hover:text-primary',
+            !item.isPinned && item.pinDisabledReason && 'cursor-not-allowed opacity-35',
+          )}
           aria-label={item.isPinned ? t`Unpin ${itemName}` : t`Pin ${itemName}`}
           aria-disabled={!item.isPinned && !!item.pinDisabledReason}
           title={
             item.pinDisabledReason ||
             (item.isPinned ? t`Unpin ${singularLabel}` : t`Pin ${singularLabel}`)
           }
-          className={getAnalyzerIconButtonClasses({
-            tone: item.isPinned ? 'primary' : 'subtle',
-            className: `h-5 w-5 shrink-0 bg-transparent p-0 text-[11px] ${
-              item.isPinned ? 'text-primary hover:text-primary' : ''
-            } ${!item.isPinned && item.pinDisabledReason ? 'cursor-not-allowed opacity-35' : ''}`,
-          })}
           onClick={event => {
             event.stopPropagation();
             if (!item.isPinned && item.pinDisabledReason) return;
@@ -145,7 +143,7 @@ function StatisticsMultiSelectRow({
           }}
         >
           <FontAwesomeIcon icon={faThumbtack} />
-        </button>
+        </AnalyzerControl>
       ) : null}
     </div>
   );
@@ -437,17 +435,20 @@ export function StatisticsMultiSelectDropdown({
 
   return (
     <div ref={rootRef} className={`relative ${rootClassName}`.trim()}>
-      <button
-        ref={triggerRef}
+      <AnalyzerControl
+        controlRef={triggerRef}
         type='button'
+        variant='surface'
         data-statistics-multiselect-trigger
         disabled={disabled}
         aria-expanded={open}
         aria-haspopup='menu'
         onClick={() => setOpen(v => !v)}
-        className={getAnalyzerSurfaceTriggerClasses({
-          className: `inline-flex ${triggerClassName} max-w-[15rem] min-w-[8.5rem] items-center justify-between gap-1 rounded-lg px-2 text-xs font-semibold ${getAccentTriggerClasses(accentTone, selectedCount > 0)} disabled:cursor-not-allowed disabled:opacity-40`,
-        })}
+        className={cx(
+          'inline-flex max-w-[15rem] min-w-[8.5rem] items-center justify-between gap-1 rounded-lg px-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-40',
+          triggerClassName,
+          getAccentTriggerClasses(accentTone, selectedCount > 0),
+        )}
       >
         <span className='truncate text-left'>{triggerText}</span>
         <span className='text-[10px] opacity-65'>
@@ -456,7 +457,7 @@ export function StatisticsMultiSelectDropdown({
             className={open ? 'rotate-180 transition-transform' : 'transition-transform'}
           />
         </span>
-      </button>
+      </AnalyzerControl>
 
       {open && (
         <DropdownPanel
@@ -473,20 +474,19 @@ export function StatisticsMultiSelectDropdown({
                 className='input input-sm border-base-content/10 bg-base-100/70 h-8 min-h-0 w-full flex-1 text-xs'
               />
               {onTogglePin ? (
-                <button
+                <AnalyzerControl
                   type='button'
+                  tone={showPinnedOnly ? 'primary' : 'subtle'}
+                  className={cx(
+                    'h-8 w-8 shrink-0 bg-transparent text-xs',
+                    showPinnedOnly && 'text-primary hover:text-primary',
+                  )}
                   aria-label={pinnedToggleLabel}
                   title={pinnedToggleLabel}
                   onClick={() => setShowPinnedOnly(value => !value)}
-                  className={getAnalyzerIconButtonClasses({
-                    tone: showPinnedOnly ? 'primary' : 'subtle',
-                    className: `h-8 w-8 shrink-0 bg-transparent text-xs ${
-                      showPinnedOnly ? 'text-primary hover:text-primary' : ''
-                    }`,
-                  })}
                 >
                   <FontAwesomeIcon icon={faThumbtack} />
-                </button>
+                </AnalyzerControl>
               ) : null}
             </div>
           </div>

@@ -4,10 +4,6 @@ import { useEffect, useState } from 'preact/hooks';
 import { Trans } from '@lingui/react/macro';
 import { LEGEND_ORDER } from '../constants';
 import { COMPARE_TARGET_DISPLAY_MODES } from '../../../utils/analyzerUtils';
-import {
-  ANALYZER_ACTION_ICON_BUTTON_CLASS,
-  getAnalyzerIconButtonClasses,
-} from '../../analyzerControlStyles';
 import { ChartLegendArea } from './chartLegendControls';
 import { CompareControlsRow } from './compareControls';
 import { ChartActionGroup, ReplayExportStatus } from './chartReplayControls';
@@ -158,9 +154,6 @@ export function ShotChartControls({
   visibility,
 }) {
   const isMobile = useIsMobileControls();
-  const chartActionButtonClasses = getAnalyzerIconButtonClasses({
-    className: `${ANALYZER_ACTION_ICON_BUTTON_CLASS} border-0 bg-transparent shadow-none`,
-  });
   const shouldShowCompareControls =
     isCompareMode &&
     (compareShotLegendItems.length > 0 ||
@@ -194,7 +187,6 @@ export function ShotChartControls({
 
         <div className='flex shrink-0 flex-wrap items-center justify-end gap-2'>
           <ChartActionGroup
-            chartActionButtonClasses={chartActionButtonClasses}
             exportMenuRef={exportMenuRef}
             exportMenuState={exportMenuState}
             hasVideoExportSupport={hasVideoExportSupport}

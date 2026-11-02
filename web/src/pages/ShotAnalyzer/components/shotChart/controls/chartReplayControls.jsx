@@ -8,20 +8,32 @@ import { faPlay } from '@fortawesome/free-solid-svg-icons/faPlay';
 import { faStop } from '@fortawesome/free-solid-svg-icons/faStop';
 import { faUpRightAndDownLeftFromCenter } from '@fortawesome/free-solid-svg-icons/faUpRightAndDownLeftFromCenter';
 import {
-  ANALYZER_ACTION_GROUP_CLASSES,
-  ANALYZER_ACTION_ICON_BUTTON_CLASS,
-  ANALYZER_ACTION_ICON_CLASS,
-  ANALYZER_ACTION_ICON_STYLE,
-  getAnalyzerIconButtonClasses,
-  getAnalyzerSurfaceTriggerClasses,
-  getAnalyzerTextButtonClasses,
-} from '../../analyzerControlStyles';
+  AnalyzerActionGroup,
+  AnalyzerActionIcon,
+  AnalyzerControl,
+} from '../../AnalyzerControl.jsx';
+import { cx } from '../../../../../utils/cx.js';
 
 function useReplayActionLabel({ isReplaying, isReplayPaused }) {
   const { t } = useLingui();
   if (isReplaying) return t`Pause replay`;
   if (isReplayPaused) return t`Resume replay`;
   return t`Replay chart`;
+}
+
+/**
+ * Borderless square icon button in the chart action bar. Extra props go to the button.
+ *
+ * @param {{ className?: string } & Record<string, any>} props
+ */
+function ChartActionButton({ className, ...props }) {
+  return (
+    <AnalyzerControl
+      {...props}
+      size='action'
+      className={cx('border-0 bg-transparent shadow-none', className)}
+    />
+  );
 }
 
 function ChartActionDivider() {
@@ -43,9 +55,6 @@ function ShotMediaExportMenu({
   onIncludeLegendChange,
   shouldLockWebmToggle,
   shouldShowWebmToggle,
-  buttonClassName,
-  buttonIconClassName = ANALYZER_ACTION_ICON_CLASS,
-  buttonIconStyle = ANALYZER_ACTION_ICON_STYLE,
   menuClassName = 'absolute top-full right-0 z-[70] mt-2',
 }) {
   const { t } = useLingui();
@@ -62,21 +71,17 @@ function ShotMediaExportMenu({
 
   return (
     <div ref={exportMenuRef} className='relative flex'>
-      <button
+      <ChartActionButton
         type='button'
         onClick={onExportMenuToggle}
-        className={`${buttonClassName} ${exportMenuState.open ? 'text-base-content/90' : ''}`}
+        className={exportMenuState.open ? 'text-base-content/90' : undefined}
         disabled={isControlsLocked}
         aria-label={t`Share`}
         aria-expanded={exportMenuState.open}
         title={t`Share`}
       >
-        <FontAwesomeIcon
-          icon={faArrowUpRightFromSquare}
-          className={buttonIconClassName}
-          style={buttonIconStyle}
-        />
-      </button>
+        <AnalyzerActionIcon icon={faArrowUpRightFromSquare} />
+      </ChartActionButton>
       {exportMenuState.open ? (
         <div
           className={`bg-base-100/95 border-base-content/10 w-[min(92vw,15rem)] rounded-xl border p-3 text-[12px] shadow-xl backdrop-blur-md ${menuClassName}`}
@@ -92,33 +97,40 @@ function ShotMediaExportMenu({
                 disabled: !hasVideoExportSupport,
               },
               { value: 'image', label: t`Image` },
-            ].map(option => (
-              <label
-                key={option.value}
-                className={`${
-                  option.disabled
-                    ? 'cursor-not-allowed opacity-50'
-                    : getAnalyzerSurfaceTriggerClasses({
-                        className: 'flex cursor-pointer items-center gap-2 px-2 py-1.5',
-                      })
-                }`}
-              >
-                <input
-                  type='radio'
-                  name='shot-chart-export-type'
-                  className='radio radio-xs'
-                  checked={exportMenuState.exportType === option.value}
-                  disabled={option.disabled}
-                  onChange={() => onExportTypeChange(option.value)}
-                />
-                <span className='text-sm'>{option.label}</span>
-              </label>
-            ))}
-          </div>
-          <label
-            className={getAnalyzerSurfaceTriggerClasses({
-              className: 'mt-2 flex cursor-pointer items-center gap-2 px-2 py-1.5',
+            ].map(option => {
+              const content = (
+                <>
+                  <input
+                    type='radio'
+                    name='shot-chart-export-type'
+                    className='radio radio-xs'
+                    checked={exportMenuState.exportType === option.value}
+                    disabled={option.disabled}
+                    onChange={() => onExportTypeChange(option.value)}
+                  />
+                  <span className='text-sm'>{option.label}</span>
+                </>
+              );
+              return option.disabled ? (
+                <label key={option.value} className='cursor-not-allowed opacity-50'>
+                  {content}
+                </label>
+              ) : (
+                <AnalyzerControl
+                  key={option.value}
+                  as='label'
+                  variant='surface'
+                  className='flex cursor-pointer items-center gap-2 px-2 py-1.5'
+                >
+                  {content}
+                </AnalyzerControl>
+              );
             })}
+          </div>
+          <AnalyzerControl
+            as='label'
+            variant='surface'
+            className='mt-2 flex cursor-pointer items-center gap-2 px-2 py-1.5'
           >
             <input
               type='checkbox'
@@ -129,7 +141,7 @@ function ShotMediaExportMenu({
             <span className='text-sm'>
               <Trans>Include legend</Trans>
             </span>
-          </label>
+          </AnalyzerControl>
           <div className='mt-3 mb-2 text-xs font-medium opacity-60'>
             <Trans>Export File</Trans>
           </div>
@@ -145,13 +157,14 @@ function ShotMediaExportMenu({
               disabled: !profileExportAvailable,
             },
           ].map(option => (
-            <label
+            <AnalyzerControl
               key={option.value}
-              className={getAnalyzerSurfaceTriggerClasses({
-                className: `flex w-full items-center gap-2 px-2 py-1.5 ${
-                  option.disabled ? 'cursor-not-allowed opacity-30' : 'cursor-pointer'
-                }`,
-              })}
+              as='label'
+              variant='surface'
+              className={cx(
+                'flex w-full items-center gap-2 px-2 py-1.5',
+                option.disabled ? 'cursor-not-allowed opacity-30' : 'cursor-pointer',
+              )}
             >
               <input
                 type='checkbox'
@@ -161,14 +174,10 @@ function ShotMediaExportMenu({
                 onChange={() => handleFileExportTypeToggle(option.value)}
               />
               <span className='text-sm'>{option.label}</span>
-            </label>
+            </AnalyzerControl>
           ))}
           {exportMenuState.exportType === 'video' && shouldShowWebmToggle ? (
-            <div
-              className={getAnalyzerSurfaceTriggerClasses({
-                className: 'mt-1 px-2 py-1.5',
-              })}
-            >
+            <AnalyzerControl as='div' variant='surface' className='mt-1 px-2 py-1.5'>
               <div className='flex items-center gap-2'>
                 <label className='flex min-w-0 flex-1 cursor-pointer items-center gap-2'>
                   <input
@@ -184,18 +193,16 @@ function ShotMediaExportMenu({
                     <Trans>Export as WebM</Trans>
                   </span>
                 </label>
-                <button
+                <AnalyzerControl
                   type='button'
                   onClick={onExportFormatInfoToggle}
-                  className={getAnalyzerIconButtonClasses({
-                    className: 'h-6 min-h-0 w-6 p-0',
-                  })}
+                  className='h-6 min-h-0 w-6 p-0'
                   aria-label={t`Explain WebM export`}
                   aria-expanded={exportMenuState.showFormatInfo}
                   title={t`Explain WebM export`}
                 >
                   <FontAwesomeIcon icon={faCircleInfo} className='text-xs opacity-70' />
-                </button>
+                </AnalyzerControl>
               </div>
               {exportMenuState.showFormatInfo ? (
                 <p className='text-base-content/70 mt-2 pr-1 text-xs leading-relaxed'>
@@ -204,18 +211,17 @@ function ShotMediaExportMenu({
                     : t`WebM is the recommended replay video format in browsers with native WebM recording support.`}
                 </p>
               ) : null}
-            </div>
+            </AnalyzerControl>
           ) : null}
           <div className='mt-3 flex items-center justify-end gap-2'>
-            <button
+            <AnalyzerControl
               type='button'
+              variant='text'
               onClick={onCloseExportMenu}
-              className={getAnalyzerTextButtonClasses({
-                className: 'h-7 min-h-0 px-2.5 text-xs font-medium',
-              })}
+              className='h-7 min-h-0 px-2.5 text-xs font-medium'
             >
               <Trans>Cancel</Trans>
-            </button>
+            </AnalyzerControl>
             <button
               type='button'
               onClick={onExportAction}
@@ -230,64 +236,42 @@ function ShotMediaExportMenu({
   );
 }
 
-function ReplayActionButton({
-  chartActionButtonClasses,
-  isControlsLocked,
-  isReplayPaused,
-  isReplaying,
-  onReplayToggle,
-}) {
+function ReplayActionButton({ isControlsLocked, isReplayPaused, isReplaying, onReplayToggle }) {
   const replayActionLabel = useReplayActionLabel({ isReplaying, isReplayPaused });
 
   return (
-    <button
+    <ChartActionButton
       type='button'
       onClick={onReplayToggle}
-      className={chartActionButtonClasses}
       disabled={isControlsLocked}
       aria-label={replayActionLabel}
       title={replayActionLabel}
     >
-      <FontAwesomeIcon
-        icon={isReplaying ? faPause : faPlay}
-        className={ANALYZER_ACTION_ICON_CLASS}
-        style={ANALYZER_ACTION_ICON_STYLE}
-      />
-    </button>
+      <AnalyzerActionIcon icon={isReplaying ? faPause : faPlay} />
+    </ChartActionButton>
   );
 }
 
-function StopReplayButton({
-  chartActionButtonClasses,
-  isReplayExporting,
-  isVideoExportActive,
-  onStop,
-}) {
+function StopReplayButton({ isReplayExporting, isVideoExportActive, onStop }) {
   const { t } = useLingui();
   const stopLabel = isVideoExportActive
     ? t`Cancel replay export`
     : t`Stop replay and restore chart`;
 
   return (
-    <button
+    <ChartActionButton
       type='button'
       onClick={onStop}
-      className={chartActionButtonClasses}
       disabled={isReplayExporting && !isVideoExportActive}
       aria-label={stopLabel}
       title={stopLabel}
     >
-      <FontAwesomeIcon
-        icon={faStop}
-        className={ANALYZER_ACTION_ICON_CLASS}
-        style={ANALYZER_ACTION_ICON_STYLE}
-      />
-    </button>
+      <AnalyzerActionIcon icon={faStop} />
+    </ChartActionButton>
   );
 }
 
 function ReplayAndExportActions({
-  chartActionButtonClasses,
   exportMenuRef,
   exportMenuState,
   hasVideoExportSupport,
@@ -318,7 +302,6 @@ function ReplayAndExportActions({
     <>
       {showReplayButton ? (
         <ReplayActionButton
-          chartActionButtonClasses={chartActionButtonClasses}
           isControlsLocked={isControlsLocked}
           isReplayPaused={isReplayPaused}
           isReplaying={isReplaying}
@@ -327,7 +310,6 @@ function ReplayAndExportActions({
       ) : null}
       {showStopButton ? (
         <StopReplayButton
-          chartActionButtonClasses={chartActionButtonClasses}
           isReplayExporting={isReplayExporting}
           isVideoExportActive={isVideoExportActive}
           onStop={onStop}
@@ -351,7 +333,6 @@ function ReplayAndExportActions({
             onIncludeLegendChange={onIncludeLegendChange}
             shouldLockWebmToggle={shouldLockWebmToggle}
             shouldShowWebmToggle={shouldShowWebmToggle}
-            buttonClassName={chartActionButtonClasses}
           />
           <ChartActionDivider />
         </>
@@ -385,22 +366,16 @@ export function ShotChartMobileReplayActions({
   shouldLockWebmToggle,
   shouldShowWebmToggle,
 }) {
-  const chartActionButtonClasses = getAnalyzerIconButtonClasses({
-    className: `${ANALYZER_ACTION_ICON_BUTTON_CLASS} border-0 bg-transparent shadow-none`,
-  });
-
   return (
     <div className='shot-chart-mobile-actions'>
       <div className='shot-chart-mobile-actions__group'>
         <ReplayActionButton
-          chartActionButtonClasses={chartActionButtonClasses}
           isControlsLocked={isControlsLocked}
           isReplayPaused={isReplayPaused}
           isReplaying={isReplaying}
           onReplayToggle={onReplayToggle}
         />
         <StopReplayButton
-          chartActionButtonClasses={chartActionButtonClasses}
           isReplayExporting={isReplayExporting}
           isVideoExportActive={isVideoExportActive}
           onStop={onStop}
@@ -423,7 +398,6 @@ export function ShotChartMobileReplayActions({
           onIncludeLegendChange={onIncludeLegendChange}
           shouldLockWebmToggle={shouldLockWebmToggle}
           shouldShowWebmToggle={shouldShowWebmToggle}
-          buttonClassName={chartActionButtonClasses}
           menuClassName='absolute right-0 bottom-full z-[70] mb-2'
         />
       </div>
@@ -439,34 +413,25 @@ export function ShotChartMobileReplayActions({
   );
 }
 
-function FullDisplayButton({
-  chartActionButtonClasses,
-  isControlsLocked,
-  isFullDisplay,
-  onFullDisplayToggle,
-}) {
+function FullDisplayButton({ isControlsLocked, isFullDisplay, onFullDisplayToggle }) {
   const { t } = useLingui();
   const fullDisplayLabel = isFullDisplay ? t`Close full display` : t`Open full display`;
   return (
-    <button
+    <ChartActionButton
       type='button'
       onClick={onFullDisplayToggle}
-      className={chartActionButtonClasses}
       disabled={isControlsLocked}
       aria-label={fullDisplayLabel}
       title={fullDisplayLabel}
     >
-      <FontAwesomeIcon
+      <AnalyzerActionIcon
         icon={isFullDisplay ? faDownLeftAndUpRightToCenter : faUpRightAndDownLeftFromCenter}
-        className={ANALYZER_ACTION_ICON_CLASS}
-        style={ANALYZER_ACTION_ICON_STYLE}
       />
-    </button>
+    </ChartActionButton>
   );
 }
 
 export function ChartActionGroup({
-  chartActionButtonClasses,
   exportMenuRef,
   exportMenuState,
   hasVideoExportSupport,
@@ -499,10 +464,9 @@ export function ChartActionGroup({
   const shouldShowFullDisplayButton = showFullDisplayButton && !isMobile;
 
   return (
-    <div className={ANALYZER_ACTION_GROUP_CLASSES}>
+    <AnalyzerActionGroup>
       {isCompareMode ? null : (
         <ReplayAndExportActions
-          chartActionButtonClasses={chartActionButtonClasses}
           exportMenuRef={exportMenuRef}
           exportMenuState={exportMenuState}
           hasVideoExportSupport={hasVideoExportSupport}
@@ -530,13 +494,12 @@ export function ChartActionGroup({
       )}
       {shouldShowFullDisplayButton ? (
         <FullDisplayButton
-          chartActionButtonClasses={chartActionButtonClasses}
           isControlsLocked={isControlsLocked}
           isFullDisplay={isFullDisplay}
           onFullDisplayToggle={onFullDisplayToggle}
         />
       ) : null}
-    </div>
+    </AnalyzerActionGroup>
   );
 }
 

@@ -2,7 +2,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleQuestion } from '@fortawesome/free-solid-svg-icons/faCircleQuestion';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { createPortal } from 'preact/compat';
-import { getAnalyzerIconButtonClasses } from '../../ShotAnalyzer/components/analyzerControlStyles';
+import { AnalyzerControl } from '../../ShotAnalyzer/components/AnalyzerControl.jsx';
 import { DropdownPanel } from './statisticsSurfaces.jsx';
 import './StatisticsSearchHelp.css';
 import { Trans, useLingui } from '@lingui/react/macro';
@@ -139,16 +139,14 @@ export function StatisticsSearchHelp() {
 
   return (
     <details ref={detailsRef} className='statistics-search-help dropdown dropdown-end'>
-      <summary
-        className={`${getAnalyzerIconButtonClasses({
-          className:
-            'text-base-content/60 hover:text-base-content flex h-9 min-h-0 w-9 list-none items-center justify-center bg-transparent px-0',
-        })} [&::-webkit-details-marker]:hidden`}
+      <AnalyzerControl
+        as='summary'
+        className='text-base-content/60 hover:text-base-content flex h-9 min-h-0 w-9 list-none items-center justify-center bg-transparent px-0 [&::-webkit-details-marker]:hidden'
         aria-label={t`Search help`}
         title={t`Search help`}
       >
         <FontAwesomeIcon icon={faCircleQuestion} className='text-sm' />
-      </summary>
+      </AnalyzerControl>
       <DropdownPanel className='dropdown-content mt-2 w-[min(92vw,34rem)] p-3' style={panelStyle}>
         <StatisticsSearchHelpContent />
       </DropdownPanel>

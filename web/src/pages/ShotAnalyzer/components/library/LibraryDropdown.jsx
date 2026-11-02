@@ -8,7 +8,7 @@ import {
   isProfilePinned,
   isShotPinned,
 } from '../../utils/analyzerUtils';
-import { getAnalyzerTextButtonClasses } from '../analyzerControlStyles';
+import { AnalyzerControl } from '../AnalyzerControl.jsx';
 import { LibrarySection } from './LibrarySection';
 import { doesProfileLabelMatchShot, doesProfileMatchProfile } from './libraryData';
 import {
@@ -28,33 +28,46 @@ function getLibrarySectionVisibilityClass(activeSection, section) {
   return activeSection === section ? 'block lg:block' : 'hidden lg:block';
 }
 
-function LibraryMobileSectionTabs({ activeSection, onSectionChange }) {
-  const getTabClassName = section =>
-    `flex-1 rounded-md px-3 py-1.5 text-xs font-semibold transition-all ${
-      activeSection === section
-        ? 'bg-base-100 text-base-content shadow-sm'
-        : getAnalyzerTextButtonClasses({
-            className: 'justify-center',
-          })
-    }`;
+function LibraryMobileSectionTab({ active, onClick, children }) {
+  if (active) {
+    return (
+      <button
+        type='button'
+        className='bg-base-100 text-base-content flex-1 rounded-md px-3 py-1.5 text-xs font-semibold shadow-sm transition-all'
+        onClick={onClick}
+      >
+        {children}
+      </button>
+    );
+  }
+  return (
+    <AnalyzerControl
+      type='button'
+      variant='text'
+      className='flex-1 justify-center rounded-md px-3 py-1.5 text-xs font-semibold transition-all'
+      onClick={onClick}
+    >
+      {children}
+    </AnalyzerControl>
+  );
+}
 
+function LibraryMobileSectionTabs({ activeSection, onSectionChange }) {
   return (
     <div className='px-4 pt-4 lg:hidden'>
       <div className='bg-base-200/60 flex items-center gap-1 rounded-lg p-1'>
-        <button
-          type='button'
-          className={getTabClassName('shots')}
+        <LibraryMobileSectionTab
+          active={activeSection === 'shots'}
           onClick={() => onSectionChange('shots')}
         >
           <Trans>Shots</Trans>
-        </button>
-        <button
-          type='button'
-          className={getTabClassName('profiles')}
+        </LibraryMobileSectionTab>
+        <LibraryMobileSectionTab
+          active={activeSection === 'profiles'}
           onClick={() => onSectionChange('profiles')}
         >
           <Trans>Profiles</Trans>
-        </button>
+        </LibraryMobileSectionTab>
       </div>
     </div>
   );

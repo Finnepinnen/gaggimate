@@ -3,10 +3,8 @@ import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useLingui } from '@lingui/react/macro';
 import { faEllipsisVertical } from '@fortawesome/free-solid-svg-icons/faEllipsisVertical';
-import {
-  getAnalyzerIconButtonClasses,
-  getAnalyzerTextButtonClasses,
-} from '../analyzerControlStyles';
+import { AnalyzerControl } from '../AnalyzerControl.jsx';
+import { cx } from '../../../../utils/cx.js';
 
 const MENU_WIDTH = 176;
 const MENU_GAP = 8;
@@ -112,31 +110,33 @@ export function LibraryActionsMenu({ actions, ariaLabel, buttonClassName, placem
               <span>{action.label}</span>
             </>
           );
-          const className = getAnalyzerTextButtonClasses({
-            tone: action.tone,
-            className: 'w-full gap-2 px-2.5 py-2 text-left text-xs font-medium',
-          });
+          const className = 'w-full gap-2 px-2.5 py-2 text-left text-xs font-medium';
 
           return action.href ? (
-            <a
+            <AnalyzerControl
               key={action.label}
+              as='a'
+              variant='text'
+              tone={action.tone}
+              className={className}
               href={action.href}
               role='menuitem'
-              className={className}
               onClick={event => handleAction(event, action.onSelect)}
             >
               {content}
-            </a>
+            </AnalyzerControl>
           ) : (
-            <button
+            <AnalyzerControl
               key={action.label}
               type='button'
-              role='menuitem'
+              variant='text'
+              tone={action.tone}
               className={className}
+              role='menuitem'
               onClick={event => handleAction(event, action.onSelect)}
             >
               {content}
-            </button>
+            </AnalyzerControl>
           );
         })}
       </div>
@@ -152,17 +152,19 @@ export function LibraryActionsMenu({ actions, ariaLabel, buttonClassName, placem
         setIsOpen(open);
       }}
     >
-      <summary
+      <AnalyzerControl
+        as='summary'
+        tone='subtle'
+        className={cx(
+          'cursor-pointer list-none [&::-webkit-details-marker]:hidden',
+          buttonClassName,
+        )}
         onClick={event => event.stopPropagation()}
-        className={getAnalyzerIconButtonClasses({
-          tone: 'subtle',
-          className: `cursor-pointer list-none ${buttonClassName} [&::-webkit-details-marker]:hidden`,
-        })}
         aria-label={ariaLabel}
         title={t`More actions`}
       >
         <FontAwesomeIcon icon={faEllipsisVertical} size='sm' />
-      </summary>
+      </AnalyzerControl>
 
       {isOpen ? createPortal(menu, document.body) : null}
     </details>

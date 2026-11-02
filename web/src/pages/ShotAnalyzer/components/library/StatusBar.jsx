@@ -12,7 +12,8 @@ import { faChevronDown } from '@fortawesome/free-solid-svg-icons/faChevronDown';
 import { faCircleNotch } from '@fortawesome/free-solid-svg-icons/faCircleNotch';
 import { faFileExport } from '@fortawesome/free-solid-svg-icons/faFileExport';
 import { faRotateRight } from '@fortawesome/free-solid-svg-icons/faRotateRight';
-import { getAnalyzerIconButtonClasses } from '../analyzerControlStyles';
+import { AnalyzerControl } from '../AnalyzerControl.jsx';
+import { cx } from '../../../../utils/cx.js';
 import { getLoadedNameLabel } from './libraryDisplay';
 
 function getProfileBadgeClasses({ isMismatch, currentProfile, badgeBaseClass, loadedShadowClass }) {
@@ -73,16 +74,26 @@ function getMismatchProfileBadgeStyle({ isMismatch, ghosted }) {
   };
 }
 
-function getStatusBarIconButtonClassSet({ compact, ghosted }) {
-  return {
-    activeBadgeIconButtonClasses: getAnalyzerIconButtonClasses({
-      className: `${compact ? 'h-5 w-5' : 'h-6 w-6'} flex-shrink-0 rounded-full text-current ${
+/**
+ * Round icon button inside a status bar badge. Extra props go to the button.
+ *
+ * @param {{ compact?: boolean, ghosted?: boolean, children?: import('preact').ComponentChildren } & Record<string, any>} props
+ */
+function BadgeIconButton({ compact, ghosted, children, ...props }) {
+  return (
+    <AnalyzerControl
+      {...props}
+      className={cx(
+        'shrink-0 rounded-full text-current',
+        compact ? 'h-5 w-5' : 'h-6 w-6',
         ghosted
-          ? 'opacity-90 hover:bg-primary/12 hover:text-current hover:opacity-100'
-          : 'opacity-75 hover:bg-black/10 hover:text-current hover:opacity-100'
-      }`,
-    }),
-  };
+          ? 'hover:bg-primary/12 opacity-90 hover:text-current hover:opacity-100'
+          : 'opacity-75 hover:bg-black/10 hover:text-current hover:opacity-100',
+      )}
+    >
+      {children}
+    </AnalyzerControl>
+  );
 }
 
 function getStatusBarViewModel({
@@ -117,16 +128,10 @@ function getStatusBarViewModel({
           loadedShadowClass: '',
         });
 
-  const { activeBadgeIconButtonClasses } = getStatusBarIconButtonClassSet({
-    compact,
-    ghosted,
-  });
-
   return {
     shotBadgeClasses,
     mismatchProfileBadgeStyle,
     profileBadgeClasses,
-    activeBadgeIconButtonClasses,
     compareBadgeClasses: getCompareSlotBadgeClasses({ currentShot, ghosted }),
     showShotChevron: true,
     showProfileChevron: Boolean(currentProfile) || !isSearchingProfile,
@@ -141,7 +146,8 @@ function ProfileTrailingControl({
   canRetryProfileSearch,
   onRetryProfileSearch,
   onUnloadProfile,
-  activeBadgeIconButtonClasses,
+  compact,
+  ghosted,
 }) {
   const retryTitle = t`Retry automatic profile search`;
   const hasDismissibleProfileState =
@@ -153,31 +159,33 @@ function ProfileTrailingControl({
     return (
       <div className='flex items-center gap-1'>
         {showRetry ? (
-          <button
+          <BadgeIconButton
+            compact={compact}
+            ghosted={ghosted}
             type='button'
             onClick={event => {
               event.stopPropagation();
               onRetryProfileSearch();
             }}
-            className={activeBadgeIconButtonClasses}
             title={retryTitle}
             aria-label={retryTitle}
             disabled={isSearchingProfile}
           >
             <FontAwesomeIcon icon={faRotateRight} className='text-xs' />
-          </button>
+          </BadgeIconButton>
         ) : null}
 
-        <button
+        <BadgeIconButton
+          compact={compact}
+          ghosted={ghosted}
           type='button'
           onClick={event => {
             event.stopPropagation();
             onUnloadProfile();
           }}
-          className={activeBadgeIconButtonClasses}
         >
           <FontAwesomeIcon icon={faTimes} />
-        </button>
+        </BadgeIconButton>
       </div>
     );
   }
@@ -185,70 +193,74 @@ function ProfileTrailingControl({
   return (
     <div className='flex items-center gap-1'>
       {canRetryProfileSearch && onRetryProfileSearch ? (
-        <button
+        <BadgeIconButton
+          compact={compact}
+          ghosted={ghosted}
           type='button'
           onClick={event => {
             event.stopPropagation();
             onRetryProfileSearch();
           }}
-          className={activeBadgeIconButtonClasses}
           title={retryTitle}
           aria-label={retryTitle}
           disabled={isSearchingProfile}
         >
           <FontAwesomeIcon icon={faRotateRight} className='text-xs' />
-        </button>
+        </BadgeIconButton>
       ) : null}
 
       {hasDismissibleProfileState ? (
-        <button
+        <BadgeIconButton
+          compact={compact}
+          ghosted={ghosted}
           type='button'
           onClick={event => {
             event.stopPropagation();
             onUnloadProfile();
           }}
-          className={activeBadgeIconButtonClasses}
         >
           <FontAwesomeIcon icon={faTimes} />
-        </button>
+        </BadgeIconButton>
       ) : null}
     </div>
   );
 }
 
-function BadgeExportControl({ available, activeBadgeIconButtonClasses, onExport, label }) {
+function BadgeExportControl({ available, compact, ghosted, onExport, label }) {
   if (!available || !onExport) return null;
 
   return (
-    <button
+    <BadgeIconButton
+      compact={compact}
+      ghosted={ghosted}
       type='button'
       onClick={event => {
         event.stopPropagation();
         onExport();
       }}
-      className={activeBadgeIconButtonClasses}
       title={label}
       aria-label={label}
     >
       <FontAwesomeIcon icon={faFileExport} />
-    </button>
+    </BadgeIconButton>
   );
 }
 
-function ShotTrailingControl({ currentShot, activeBadgeIconButtonClasses, onUnloadShot }) {
+function ShotTrailingControl({ currentShot, compact, ghosted, onUnloadShot }) {
   return (
     <div className='flex items-center gap-1'>
       {currentShot ? (
-        <button
+        <BadgeIconButton
+          compact={compact}
+          ghosted={ghosted}
           type='button'
           onClick={event => {
             event.stopPropagation();
             onUnloadShot();
           }}
-          className={activeBadgeIconButtonClasses}
         >
           <FontAwesomeIcon icon={faTimes} />
-        </button>
+        </BadgeIconButton>
       ) : null}
     </div>
   );
@@ -262,7 +274,7 @@ function ShotBadge({
   shotBadgeClasses,
   showShotChevron,
   handleShotPanelToggle,
-  activeBadgeIconButtonClasses,
+  ghosted,
   onUnloadShot,
   onExportShot,
 }) {
@@ -274,7 +286,8 @@ function ShotBadge({
     >
       <BadgeExportControl
         available={Boolean(currentShot)}
-        activeBadgeIconButtonClasses={activeBadgeIconButtonClasses}
+        compact={compact}
+        ghosted={ghosted}
         onExport={onExportShot}
         label={t`Export current shot`}
       />
@@ -298,7 +311,8 @@ function ShotBadge({
       </button>
       <ShotTrailingControl
         currentShot={currentShot}
-        activeBadgeIconButtonClasses={activeBadgeIconButtonClasses}
+        compact={compact}
+        ghosted={ghosted}
         onUnloadShot={onUnloadShot}
       />
     </div>
@@ -314,7 +328,7 @@ function ProfileBadge({
   isMismatch,
   showProfileChevron,
   handleProfilePanelToggle,
-  activeBadgeIconButtonClasses,
+  ghosted,
   isSearchingProfile,
   canRetryProfileSearch,
   onRetryProfileSearch,
@@ -330,7 +344,8 @@ function ProfileBadge({
     >
       <BadgeExportControl
         available={Boolean(currentProfile)}
-        activeBadgeIconButtonClasses={activeBadgeIconButtonClasses}
+        compact={compact}
+        ghosted={ghosted}
         onExport={onExportProfile}
         label={t`Export current profile`}
       />
@@ -366,7 +381,8 @@ function ProfileBadge({
         canRetryProfileSearch={canRetryProfileSearch}
         onRetryProfileSearch={onRetryProfileSearch}
         onUnloadProfile={onUnloadProfile}
-        activeBadgeIconButtonClasses={activeBadgeIconButtonClasses}
+        compact={compact}
+        ghosted={ghosted}
       />
     </div>
   );
@@ -401,7 +417,6 @@ export function StatusBar({
     shotBadgeClasses,
     mismatchProfileBadgeStyle,
     profileBadgeClasses,
-    activeBadgeIconButtonClasses,
     compareBadgeClasses,
     showShotChevron,
     showProfileChevron,
@@ -441,7 +456,7 @@ export function StatusBar({
             shotBadgeClasses={shotBadgeClasses}
             showShotChevron={showShotChevron}
             handleShotPanelToggle={handleShotPanelToggle}
-            activeBadgeIconButtonClasses={activeBadgeIconButtonClasses}
+            ghosted={ghosted}
             onUnloadShot={onUnloadShot}
             onExportShot={onExportShot}
           />
@@ -456,7 +471,7 @@ export function StatusBar({
             isMismatch={isMismatch}
             showProfileChevron={showProfileChevron}
             handleProfilePanelToggle={handleProfilePanelToggle}
-            activeBadgeIconButtonClasses={activeBadgeIconButtonClasses}
+            ghosted={ghosted}
             isSearchingProfile={isSearchingProfile}
             canRetryProfileSearch={canRetryProfileSearch}
             onRetryProfileSearch={onRetryProfileSearch}

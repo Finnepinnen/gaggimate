@@ -14,18 +14,12 @@ import {
   faCircleInfo,
 } from '@fortawesome/free-solid-svg-icons';
 import { getAnalyzerColumnVisual } from './analyzerGroupVisuals';
-import {
-  ANALYZER_ACTION_GROUP_CLASSES,
-  ANALYZER_ACTION_ICON_BUTTON_CLASS,
-  ANALYZER_ACTION_ICON_CLASS,
-  ANALYZER_ACTION_ICON_STYLE,
-  getAnalyzerIconButtonClasses,
-} from '../analyzerControlStyles';
+import { AnalyzerActionGroup, AnalyzerActionIcon, AnalyzerControl } from '../AnalyzerControl.jsx';
 import { getAnalysisHeaderLabel } from './analysisTableModel';
 
 export function AnalysisTableToolbarActions({ onScrollTable, onScrollToBound }) {
   return (
-    <div className={`${ANALYZER_ACTION_GROUP_CLASSES} hidden sm:flex`}>
+    <AnalyzerActionGroup className='hidden sm:flex'>
       <ScrollBtn icon={faArrowLeft} onClick={() => onScrollToBound('start')} />
       <ScrollBtn icon={faAngleDoubleLeft} onClick={() => onScrollTable(-300)} />
       <ScrollBtn
@@ -40,7 +34,7 @@ export function AnalysisTableToolbarActions({ onScrollTable, onScrollToBound }) 
       />
       <ScrollBtn icon={faAngleDoubleRight} onClick={() => onScrollTable(300)} />
       <ScrollBtn icon={faArrowRight} onClick={() => onScrollToBound('end')} />
-    </div>
+    </AnalyzerActionGroup>
   );
 }
 
@@ -221,17 +215,7 @@ export function StatusBadge({ label, colorClass = '', style = {}, details }) {
  * @param {string} [props.title]
  */
 const ScrollBtn = ({ icon, onClick, className = '', title }) => (
-  <button
-    onClick={onClick}
-    title={title}
-    className={getAnalyzerIconButtonClasses({
-      className: `${ANALYZER_ACTION_ICON_BUTTON_CLASS} ${className}`,
-    })}
-  >
-    <FontAwesomeIcon
-      icon={icon}
-      className={ANALYZER_ACTION_ICON_CLASS}
-      style={ANALYZER_ACTION_ICON_STYLE}
-    />
-  </button>
+  <AnalyzerControl size='action' onClick={onClick} title={title} className={className}>
+    <AnalyzerActionIcon icon={icon} />
+  </AnalyzerControl>
 );

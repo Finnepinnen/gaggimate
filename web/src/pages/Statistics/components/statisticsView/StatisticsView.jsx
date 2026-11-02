@@ -15,7 +15,7 @@ import {
   toggleProfilePin,
   toggleShotPin,
 } from '../../../ShotAnalyzer/utils/analyzerUtils';
-import { StatisticsToolbar, STATISTICS_RUN_BUTTON_TONE_CLASS } from '../StatisticsToolbar';
+import { StatisticsToolbar, RunButtonBadge } from '../StatisticsToolbar';
 import { SummaryCards } from '../SummaryCards';
 import { normalizeStatisticsSourceSelection } from '../../utils/statisticsRoute';
 import { StatisticsPanel } from '../statisticsSurfaces.jsx';
@@ -447,11 +447,9 @@ export function StatisticsView({ initialContext }) {
               <p className='text-base-content text-sm opacity-70'>
                 <Trans>
                   Press{' '}
-                  <span
-                    className={`inline-flex h-5 w-5 items-center justify-center rounded-md ${STATISTICS_RUN_BUTTON_TONE_CLASS}`}
-                  >
+                  <RunButtonBadge>
                     <FontAwesomeIcon icon={faPlay} className='text-[10px]' />
-                  </span>{' '}
+                  </RunButtonBadge>{' '}
                   to build a statistic.
                 </Trans>
               </p>
