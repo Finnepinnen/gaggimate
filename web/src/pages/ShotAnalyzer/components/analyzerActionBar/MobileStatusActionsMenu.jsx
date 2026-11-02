@@ -1,3 +1,4 @@
+// @ts-check
 /* global globalThis */
 
 /** Owns the viewport-positioned mobile import and mode actions menu. */

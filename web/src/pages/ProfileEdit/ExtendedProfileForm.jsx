@@ -1,3 +1,4 @@
+// @ts-check
 import Card from '../../components/Card.jsx';
 import { Spinner } from '../../components/Spinner.jsx';
 import { ExtendedProfileChart } from '../../components/ExtendedProfileChart.jsx';

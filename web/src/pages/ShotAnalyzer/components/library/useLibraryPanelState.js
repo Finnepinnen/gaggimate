@@ -1,3 +1,4 @@
+// @ts-check
 /* global globalThis */
 
 /** Owns asynchronous library loading, persisted filters, hotkeys, and sticky layout state. */

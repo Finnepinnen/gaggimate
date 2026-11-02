@@ -1,3 +1,4 @@
+// @ts-check
 /** Coordinates analyzer navigation, import actions, status hints, and loading state. */
 
 /* global globalThis */

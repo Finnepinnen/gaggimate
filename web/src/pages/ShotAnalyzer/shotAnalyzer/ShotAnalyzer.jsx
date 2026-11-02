@@ -1,3 +1,4 @@
+// @ts-check
 /** Coordinates analyzer state, loading, matching, and compare workflows. */
 
 /* global globalThis */
@@ -1022,6 +1023,7 @@ export function ShotAnalyzer() {
             onCompareSwap={handleSwapCompareSlots}
             onRetryProfileSearch={handleRetryProfileSearch}
             onRetryCompareProfileSearch={handleRetryCompareProfileSearch}
+            // @ts-expect-error the library panel does not accept isMatchingProfile; the prop is ignored
             isMatchingProfile={isMatchingProfile}
             isSearchingProfile={isSearchingProfile}
             compareIsSearchingProfile={compareIsSearchingProfile}

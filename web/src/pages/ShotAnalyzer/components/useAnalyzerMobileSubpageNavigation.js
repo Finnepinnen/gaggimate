@@ -1,3 +1,4 @@
+// @ts-check
 /* global globalThis */
 
 import { useCallback, useEffect, useState } from 'preact/hooks';

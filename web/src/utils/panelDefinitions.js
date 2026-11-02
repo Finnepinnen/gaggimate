@@ -1,3 +1,4 @@
+// @ts-check
 import { ModeCard } from '../pages/Home/cards/ModeCard.jsx';
 import { ProfileCard } from '../pages/Home/cards/ProfileCard.jsx';
 import { FavoriteProfilesCard } from '../pages/Home/cards/FavoriteProfilesCard.jsx';

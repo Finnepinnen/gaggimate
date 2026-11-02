@@ -1,3 +1,4 @@
+// @ts-check
 /* global globalThis */
 
 // Custom hooks for StatisticsToolbar: keyboard shortcut registration

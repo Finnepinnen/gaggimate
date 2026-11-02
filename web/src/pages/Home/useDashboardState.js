@@ -1,3 +1,4 @@
+// @ts-check
 import { computed } from '@preact/signals';
 import { useContext, useEffect, useState } from 'preact/hooks';
 import { useQuery } from 'preact-fetching';

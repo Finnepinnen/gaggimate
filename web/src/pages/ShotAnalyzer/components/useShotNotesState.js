@@ -1,3 +1,4 @@
+// @ts-check
 import { t } from '@lingui/core/macro';
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { notesService } from '../services/NotesService';

@@ -1,3 +1,4 @@
+// @ts-check
 import { Trans, useLingui } from '@lingui/react/macro';
 import Section from '../../../components/Card.jsx';
 import { machine } from '../../../services/ApiService.js';

@@ -1,3 +1,4 @@
+// @ts-check
 /** Renders the responsive chart, details, and analysis-table composition. */
 
 /* global globalThis */
