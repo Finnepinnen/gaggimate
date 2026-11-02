@@ -174,13 +174,13 @@ function Phase({ phase, index, onChange, onRemove, pressureAvailable }) {
       aria-label={t`Phase ${phaseNumber} configuration`}
     >
       <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-        <div className='form-control'>
+        <div>
           <label htmlFor={`phase-${index}-type`} className='mb-2 block text-sm font-medium'>
             <Trans>Phase Type</Trans>
           </label>
           <select
             id={`phase-${index}-type`}
-            className='select select-bordered w-full'
+            className='select w-full'
             onChange={e => onFieldChange('phase', e.currentTarget.value)}
             value={phase.phase}
             aria-label={t`Select the type of brew phase`}
@@ -193,14 +193,14 @@ function Phase({ phase, index, onChange, onRemove, pressureAvailable }) {
             </option>
           </select>
         </div>
-        <div className='form-control'>
+        <div>
           <label htmlFor={`phase-${index}-name`} className='mb-2 block text-sm font-medium'>
             <Trans>Phase Name</Trans>
           </label>
           <div className='flex gap-2'>
             <input
               id={`phase-${index}-name`}
-              className='input input-bordered flex-1'
+              className='input flex-1'
               placeholder={t`Name...`}
               value={phase.name}
               onChange={e => onFieldChange('name', e.currentTarget.value)}
@@ -221,11 +221,11 @@ function Phase({ phase, index, onChange, onRemove, pressureAvailable }) {
       </div>
 
       <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-        <div className='form-control'>
+        <div>
           <label htmlFor={`phase-${index}-duration`} className='mb-2 block text-sm font-medium'>
             <Trans>Duration</Trans>
           </label>
-          <div className='input-group'>
+          <div>
             <label htmlFor={`phase-${index}-duration`} className='input w-full'>
               <input
                 id={`phase-${index}-duration`}
@@ -240,11 +240,11 @@ function Phase({ phase, index, onChange, onRemove, pressureAvailable }) {
             </label>
           </div>
         </div>
-        <div className='form-control'>
+        <div>
           <label htmlFor={`phase-${index}-target`} className='mb-2 block text-sm font-medium'>
             <Trans>Volumetric Target</Trans>
           </label>
-          <div className='input-group'>
+          <div>
             <label htmlFor={`phase-${index}-target`} className='input w-full'>
               <input
                 id={`phase-${index}-target`}
@@ -262,7 +262,7 @@ function Phase({ phase, index, onChange, onRemove, pressureAvailable }) {
         </div>
       </div>
 
-      <div className='form-control'>
+      <div>
         <fieldset>
           <legend className='mb-2 block text-sm font-medium'>
             <Trans>Valve</Trans>
@@ -290,7 +290,7 @@ function Phase({ phase, index, onChange, onRemove, pressureAvailable }) {
         </fieldset>
       </div>
 
-      <div className='form-control'>
+      <div>
         <fieldset>
           <legend className='mb-2 block text-sm font-medium'>
             <Trans>Pump Mode</Trans>
@@ -355,11 +355,11 @@ function Phase({ phase, index, onChange, onRemove, pressureAvailable }) {
       </div>
 
       {mode === 'power' && (
-        <div className='form-control'>
+        <div>
           <label htmlFor={`phase-${index}-power`} className='mb-2 block text-sm font-medium'>
             <Trans>Pump Power</Trans>
           </label>
-          <div className='input-group'>
+          <div>
             <label htmlFor={`phase-${index}-power`} className='input w-full'>
               <input
                 id={`phase-${index}-power`}
@@ -380,11 +380,11 @@ function Phase({ phase, index, onChange, onRemove, pressureAvailable }) {
 
       {(mode === 'pressure' || mode === 'flow') && (
         <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-          <div className='form-control'>
+          <div>
             <label htmlFor={`phase-${index}-pressure`} className='mb-2 block text-sm font-medium'>
               {mode === 'pressure' ? t`Pressure Target` : t`Pressure Limit`}
             </label>
-            <div className='input-group'>
+            <div>
               <label htmlFor={`phase-${index}-pressure`} className='input w-full'>
                 <input
                   id={`phase-${index}-pressure`}
@@ -405,11 +405,11 @@ function Phase({ phase, index, onChange, onRemove, pressureAvailable }) {
               </label>
             </div>
           </div>
-          <div className='form-control'>
+          <div>
             <label htmlFor={`phase-${index}-flow`} className='mb-2 block text-sm font-medium'>
               {mode === 'flow' ? t`Flow Target` : t`Flow Limit`}
             </label>
-            <div className='input-group'>
+            <div>
               <label htmlFor={`phase-${index}-flow`} className='input w-full'>
                 <input
                   id={`phase-${index}-flow`}

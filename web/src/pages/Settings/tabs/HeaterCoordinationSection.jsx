@@ -41,7 +41,7 @@ export function HeaterCoordinationSection({ formData, onChange }) {
           min='20'
           max='5000'
           required
-          className='input input-bordered w-full'
+          className='input w-full'
           value={formData.heaterHandoverMs}
           onChange={onChange('heaterHandoverMs')}
         />

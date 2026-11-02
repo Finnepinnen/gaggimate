@@ -37,7 +37,7 @@ function MahlkonigRecipeProfiles({ formData, onChange }) {
   };
 
   return (
-    <div className='form-control'>
+    <div>
       <span className='mb-2 block text-sm font-medium'>
         <Trans>Profile per grinder recipe</Trans>
       </span>
@@ -52,7 +52,7 @@ function MahlkonigRecipeProfiles({ formData, onChange }) {
               </label>
               <select
                 id={`mahlkonigRecipe${recipe}`}
-                className='select select-bordered w-full'
+                className='select w-full'
                 value={value}
                 onChange={e => setProfile(recipe, e.currentTarget.value)}
               >
@@ -129,7 +129,7 @@ export function PluginCard({
             <p className='text-sm opacity-70'>
               <Trans>Automatically switch to brew mode at specified time(s) of day.</Trans>
             </p>
-            <div className='form-control'>
+            <div>
               <label className='mb-2 block text-sm font-medium'>
                 <Trans>Auto Wakeup Schedule</Trans>
               </label>
@@ -143,7 +143,7 @@ export function PluginCard({
                     <div className='grow-1 text-center sm:text-start'>
                       <input
                         type='time'
-                        className='input input-bordered input-sm md:input-md w-auto min-w-0 pr-6 text-center'
+                        className='input input-sm md:input-md w-auto min-w-0 pr-6 text-center'
                         value={schedule.time}
                         onChange={e => updateAutoWakeupTime(scheduleIndex, e.currentTarget.value)}
                         disabled={!formData.autowakeupEnabled}
@@ -160,7 +160,7 @@ export function PluginCard({
                         <button
                           key={dayIndex}
                           type='button'
-                          className={`join-item btn btn-sm md:btn-md flex-grow ${schedule.days[dayIndex] ? 'btn-primary' : 'btn-neutral text-neutral-content/20'}`}
+                          className={`join-item btn btn-sm md:btn-md grow ${schedule.days[dayIndex] ? 'btn-primary' : 'btn-neutral text-neutral-content/20'}`}
                           onClick={() =>
                             updateAutoWakeupDay(scheduleIndex, dayIndex, !schedule.days[dayIndex])
                           }
@@ -255,7 +255,7 @@ export function PluginCard({
         </div>
         {formData.boilerFillActive && (
           <div className='border-base-300 mt-4 grid grid-cols-2 gap-4 border-t pt-4'>
-            <div className='form-control'>
+            <div>
               <label htmlFor='startupFillTime' className='mb-2 block text-sm font-medium'>
                 <Trans>On startup (s)</Trans>
               </label>
@@ -263,13 +263,13 @@ export function PluginCard({
                 id='startupFillTime'
                 name='startupFillTime'
                 type='number'
-                className='input input-bordered w-full'
+                className='input w-full'
                 placeholder='0'
                 value={formData.startupFillTime}
                 onChange={onChange('startupFillTime')}
               />
             </div>
-            <div className='form-control'>
+            <div>
               <label htmlFor='steamFillTime' className='mb-2 block text-sm font-medium'>
                 <Trans>On steam deactivate (s)</Trans>
               </label>
@@ -277,7 +277,7 @@ export function PluginCard({
                 id='steamFillTime'
                 name='steamFillTime'
                 type='number'
-                className='input input-bordered w-full'
+                className='input w-full'
                 placeholder='0'
                 value={formData.steamFillTime}
                 onChange={onChange('steamFillTime')}
@@ -311,7 +311,7 @@ export function PluginCard({
                 been reached.
               </Trans>
             </p>
-            <div className='form-control'>
+            <div>
               <label htmlFor='smartGrindIp' className='mb-2 block text-sm font-medium'>
                 <Trans>Tasmota IP</Trans>
               </label>
@@ -319,20 +319,20 @@ export function PluginCard({
                 id='smartGrindIp'
                 name='smartGrindIp'
                 type='text'
-                className='input input-bordered w-full'
+                className='input w-full'
                 placeholder='0'
                 value={formData.smartGrindIp}
                 onChange={onChange('smartGrindIp')}
               />
             </div>
-            <div className='form-control'>
+            <div>
               <label htmlFor='smartGrindMode' className='mb-2 block text-sm font-medium'>
                 <Trans context='smart grind mode'>Mode</Trans>
               </label>
               <select
                 id='smartGrindMode'
                 name='smartGrindMode'
-                className='select select-bordered w-full'
+                className='select w-full'
                 onChange={onChange('smartGrindMode')}
               >
                 <option value='0' selected={formData.smartGrindMode?.toString() === '0'}>
@@ -373,11 +373,11 @@ export function PluginCard({
                 target weight overrides that profile's weight target. Save and restart to apply.
               </Trans>
             </p>
-            <div className='form-control'>
+            <div>
               <span className='mb-2 block text-sm font-medium'>
                 <Trans>Machine address for the grinder</Trans>
               </span>
-              <code className='bg-base-300 rounded px-2 py-1 text-lg'>
+              <code className='bg-base-300 rounded-sm px-2 py-1 text-lg'>
                 {formData.deviceIp || t`Not connected to Wi-Fi`}
               </code>
               <div className='mt-2 text-sm opacity-70'>
@@ -449,7 +449,7 @@ export function PluginCard({
                 for a more up-to-date solution.
               </Trans>
             </p>
-            <div className='form-control'>
+            <div>
               <label htmlFor='haIP' className='mb-2 block text-sm font-medium'>
                 <Trans>MQTT IP</Trans>
               </label>
@@ -457,14 +457,14 @@ export function PluginCard({
                 id='haIP'
                 name='haIP'
                 type='text'
-                className='input input-bordered w-full'
+                className='input w-full'
                 placeholder='0'
                 value={formData.haIP}
                 onChange={onChange('haIP')}
               />
             </div>
 
-            <div className='form-control'>
+            <div>
               <label htmlFor='haPort' className='mb-2 block text-sm font-medium'>
                 <Trans>MQTT Port</Trans>
               </label>
@@ -472,14 +472,14 @@ export function PluginCard({
                 id='haPort'
                 name='haPort'
                 type='number'
-                className='input input-bordered w-full'
+                className='input w-full'
                 placeholder='0'
                 value={formData.haPort}
                 onChange={onChange('haPort')}
               />
             </div>
 
-            <div className='form-control'>
+            <div>
               <label htmlFor='haUser' className='mb-2 block text-sm font-medium'>
                 <Trans>MQTT User</Trans>
               </label>
@@ -487,14 +487,14 @@ export function PluginCard({
                 id='haUser'
                 name='haUser'
                 type='text'
-                className='input input-bordered w-full'
+                className='input w-full'
                 placeholder={t`user`}
                 value={formData.haUser}
                 onChange={onChange('haUser')}
               />
             </div>
 
-            <div className='form-control'>
+            <div>
               <label htmlFor='haPassword' className='mb-2 block text-sm font-medium'>
                 <Trans>MQTT Password</Trans>
               </label>
@@ -502,13 +502,13 @@ export function PluginCard({
                 id='haPassword'
                 name='haPassword'
                 type='password'
-                className='input input-bordered w-full'
+                className='input w-full'
                 placeholder={t`password`}
                 value={formData.haPassword}
                 onChange={onChange('haPassword')}
               />
             </div>
-            <div className='form-control'>
+            <div>
               <label htmlFor='haTopic' className='mb-2 block text-sm font-medium'>
                 <Trans>Home Assistant Discovery Topic</Trans>
               </label>
@@ -516,7 +516,7 @@ export function PluginCard({
                 id='haTopic'
                 name='haTopic'
                 type='text'
-                className='input input-bordered w-full'
+                className='input w-full'
                 value={formData.haTopic}
                 onChange={onChange('haTopic')}
               />
@@ -540,7 +540,7 @@ export function PluginCard({
               </Trans>
             </p>
 
-            <div className='form-control'>
+            <div>
               <label htmlFor='commutationGain' className='mb-2 block text-sm font-medium'>
                 <Trans>Commutation Gain</Trans>
               </label>
@@ -548,7 +548,7 @@ export function PluginCard({
                 id='commutationGain'
                 name='commutationGain'
                 type='number'
-                className='input input-bordered w-full'
+                className='input w-full'
                 placeholder='0'
                 min='0'
                 max='100'
@@ -558,7 +558,7 @@ export function PluginCard({
               />
             </div>
 
-            <div className='form-control'>
+            <div>
               <label htmlFor='convergenceGain' className='mb-2 block text-sm font-medium'>
                 <Trans>Convergence Gain</Trans>
               </label>
@@ -566,7 +566,7 @@ export function PluginCard({
                 id='convergenceGain'
                 name='convergenceGain'
                 type='number'
-                className='input input-bordered w-full'
+                className='input w-full'
                 placeholder='0'
                 min='0'
                 max='100'
@@ -576,7 +576,7 @@ export function PluginCard({
               />
             </div>
 
-            <div className='form-control'>
+            <div>
               <label htmlFor='integralGain' className='mb-2 block text-sm font-medium'>
                 <Trans>Integral Gain</Trans>
               </label>
@@ -584,7 +584,7 @@ export function PluginCard({
                 id='integralGain'
                 name='integralGain'
                 type='number'
-                className='input input-bordered w-full'
+                className='input w-full'
                 placeholder='0'
                 min='0'
                 max='100'
@@ -593,7 +593,7 @@ export function PluginCard({
                 onChange={onChange('integralGain')}
               />
             </div>
-            <div className='form-control'>
+            <div>
               <label htmlFor='maxPumpPower' className='mb-2 block text-sm font-medium'>
                 <Trans>Maximum Pump Power (0 - 1)</Trans>
               </label>
@@ -605,12 +605,12 @@ export function PluginCard({
                 min='0'
                 max='1'
                 step='any'
-                className='input input-bordered w-full'
+                className='input w-full'
                 value={formData.maxPumpPower?.toString()}
                 onChange={onChange('maxPumpPower')}
               />
             </div>
-            <div className='form-control'>
+            <div>
               <label htmlFor='pumpSlipCoeffs' className='mb-2 block text-sm font-medium'>
                 <Trans>Pump Slip Coefficients</Trans>
               </label>
@@ -618,7 +618,7 @@ export function PluginCard({
                 id='pumpSlipCoeffs'
                 name='pumpSlipCoeffs'
                 type='text'
-                className='input input-bordered w-full'
+                className='input w-full'
                 placeholder='0,0,0,0'
                 value={formData.pumpSlipCoeffs}
                 onChange={onChange('pumpSlipCoeffs')}

@@ -104,7 +104,7 @@ export function DashboardSettings() {
   return (
     <>
       <div className='mb-4 flex flex-row items-center gap-2'>
-        <h2 className='flex-grow text-2xl font-bold sm:text-3xl'>
+        <h2 className='grow text-2xl font-bold sm:text-3xl'>
           <Trans>Dashboard Settings</Trans>
         </h2>
       </div>
@@ -119,7 +119,7 @@ export function DashboardSettings() {
           <SettingsFormField label={t`Dashboard Layout`} htmlFor='dashboardLayout'>
             <select
               id='dashboardLayout'
-              className='select select-bordered w-full'
+              className='select w-full'
               value={dashboardLayout}
               onChange={e => {
                 setDashboardLayoutState(e.currentTarget.value);
@@ -138,7 +138,7 @@ export function DashboardSettings() {
           >
             <select
               id='dashboardCardMode'
-              className='select select-bordered w-full'
+              className='select w-full'
               value={dashboardCardMode}
               onChange={e => {
                 setDashboardCardModeState(e.currentTarget.value);
@@ -193,7 +193,7 @@ export function DashboardSettings() {
                       <div key={i} className='flex flex-1 flex-col gap-1'>
                         <span className='text-base-content/60 text-xs'>{t`Slot ${slotNumber}`}</span>
                         <select
-                          className='select select-bordered select-sm w-full'
+                          className='select select-sm w-full'
                           value={shotMetricSlots[i]}
                           onChange={e => {
                             const next = [...shotMetricSlots];
@@ -248,7 +248,7 @@ export function DashboardSettings() {
           >
             <select
               id='columnSpacing'
-              className='select select-bordered w-full'
+              className='select w-full'
               value={columnSpacing}
               onChange={e => {
                 setColumnSpacingState(e.currentTarget.value);
@@ -361,7 +361,7 @@ export function DashboardSettings() {
           >
             <select
               id='metricsLastRowFill'
-              className='select select-bordered w-full'
+              className='select w-full'
               value={metricsLastRowFill}
               onChange={e => {
                 setMetricsLastRowFillState(e.currentTarget.value);
