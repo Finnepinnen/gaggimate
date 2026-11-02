@@ -640,8 +640,8 @@ export function MachineTab({ formData, onChange, setField }) {
               name='sunriseExtBrightness'
               type='range'
               className='range w-full'
-              min={0}
-              max={255}
+              min='0'
+              max='255'
               step={1}
               value={formData.sunriseExtBrightness}
               onChange={onChange('sunriseExtBrightness')}
