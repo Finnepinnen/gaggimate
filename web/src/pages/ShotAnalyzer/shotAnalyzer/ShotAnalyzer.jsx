@@ -1,4 +1,3 @@
-// @ts-check
 /** Coordinates analyzer state, loading, matching, and compare workflows. */
 
 /* global globalThis */

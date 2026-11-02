@@ -1,4 +1,3 @@
-// @ts-check
 /* global globalThis */
 
 /** Composes responsive legend, replay/export, and compare controls for shot charts. */

@@ -1,4 +1,3 @@
-// @ts-check
 /* global globalThis */
 
 /** Provides the table header, toolbar actions, and warning popover UI. */

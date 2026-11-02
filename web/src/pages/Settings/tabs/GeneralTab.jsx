@@ -265,8 +265,8 @@ export function GeneralTab({
               name='flushDuration'
               type='range'
               className='range w-full'
-              min={0}
-              max={20}
+              min='0'
+              max='20'
               step={5}
               value={flushDuration}
               onChange={onChange('flushDuration')}
@@ -457,7 +457,7 @@ export function GeneralTab({
                 className='select select-bordered w-full'
                 value={currentTheme}
                 onChange={e => {
-                  setCurrentTheme(e.target.value);
+                  setCurrentTheme(e.currentTarget.value);
                   handleThemeChange(e);
                 }}
               >

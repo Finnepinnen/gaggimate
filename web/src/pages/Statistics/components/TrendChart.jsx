@@ -130,9 +130,9 @@ function formatUniqueTrendMetricTick(value, index, ticks, metricKey) {
 }
 
 const CHART_FONT_FAMILY = 'Montserrat, sans-serif';
-const CHART_TICK_FONT = { family: CHART_FONT_FAMILY, size: 10, weight: '400' };
-const CHART_TOOLTIP_TITLE_FONT = { family: CHART_FONT_FAMILY, size: 11, weight: '700' };
-const CHART_TOOLTIP_BODY_FONT = { family: CHART_FONT_FAMILY, size: 10, weight: '400' };
+const CHART_TICK_FONT = { family: CHART_FONT_FAMILY, size: 10, weight: 400 };
+const CHART_TOOLTIP_TITLE_FONT = { family: CHART_FONT_FAMILY, size: 11, weight: 700 };
+const CHART_TOOLTIP_BODY_FONT = { family: CHART_FONT_FAMILY, size: 10, weight: 400 };
 
 export function TrendChart({ trends }) {
   const { t, i18n } = useLingui();
@@ -286,7 +286,7 @@ export function TrendChart({ trends }) {
                 className: `${ANALYZER_COMPACT_CONTROL_HEIGHT_CLASS} w-[8.75rem] max-w-[8.75rem] appearance-none rounded-md border-0 bg-transparent px-2.5 pr-6 text-xs font-medium shadow-none outline-none`,
               })}
               value={selectedMetric}
-              onChange={e => setSelectedMetric(e.target.value)}
+              onChange={e => setSelectedMetric(e.currentTarget.value)}
               aria-label={t`Trend metric`}
               title={t`Trend metric`}
             >
@@ -308,7 +308,7 @@ export function TrendChart({ trends }) {
                 className: `${ANALYZER_COMPACT_CONTROL_HEIGHT_CLASS} w-[5rem] max-w-[5rem] appearance-none rounded-md border-0 bg-transparent px-2.5 pr-6 text-xs font-medium shadow-none outline-none`,
               })}
               value={selectedGranularity}
-              onChange={e => setSelectedGranularity(e.target.value)}
+              onChange={e => setSelectedGranularity(e.currentTarget.value)}
               aria-label={t`Trend bucket size`}
               title={t`Trend bucket size`}
             >

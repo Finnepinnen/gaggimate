@@ -1,4 +1,3 @@
-// @ts-check
 import { computed } from '@preact/signals';
 import { machine } from '../../services/ApiService.js';
 import { PHASE } from './constants.js';
@@ -10,7 +9,7 @@ import { usePumpFlowCalibration } from './usePumpFlowCalibration.js';
 
 const connected = computed(() => machine.value.connected);
 
-export default function PumpFlowCalibration({ isOpen, onClose, currentCoeffs, onApplied }) {
+export default function PumpFlowCalibration({ currentCoeffs, onApplied }) {
   const { phase, logs, results, saving, saved, busy, start, apply, reset } = usePumpFlowCalibration(
     { currentCoeffs, onApplied },
   );

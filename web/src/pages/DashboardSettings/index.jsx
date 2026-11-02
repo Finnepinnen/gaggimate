@@ -122,8 +122,8 @@ export function DashboardSettings() {
               className='select select-bordered w-full'
               value={dashboardLayout}
               onChange={e => {
-                setDashboardLayoutState(e.target.value);
-                setDashboardLayout(e.target.value);
+                setDashboardLayoutState(e.currentTarget.value);
+                setDashboardLayout(e.currentTarget.value);
               }}
             >
               <option value={DASHBOARD_LAYOUTS.ORDER_FIRST}>{t`Process Controls First`}</option>
@@ -141,8 +141,8 @@ export function DashboardSettings() {
               className='select select-bordered w-full'
               value={dashboardCardMode}
               onChange={e => {
-                setDashboardCardModeState(e.target.value);
-                setDashboardCardMode(e.target.value);
+                setDashboardCardModeState(e.currentTarget.value);
+                setDashboardCardMode(e.currentTarget.value);
               }}
             >
               <option value={DASHBOARD_CARD_MODES.MULTI}>{t`Multiple Cards`}</option>
@@ -158,8 +158,8 @@ export function DashboardSettings() {
             htmlFor='showRecentShots'
             checked={showRecentShots}
             onChange={e => {
-              setShowRecentShotsState(e.target.checked);
-              setShowRecentShots(e.target.checked);
+              setShowRecentShotsState(e.currentTarget.checked);
+              setShowRecentShots(e.currentTarget.checked);
             }}
           />
           {showRecentShots && (
@@ -175,7 +175,7 @@ export function DashboardSettings() {
                     className='range range-primary range-sm flex-1'
                     value={recentShotCount}
                     onChange={e => {
-                      const n = Number(e.target.value);
+                      const n = Number(e.currentTarget.value);
                       setRecentShotCountState(n);
                       setRecentShotCount(n);
                     }}
@@ -197,7 +197,7 @@ export function DashboardSettings() {
                           value={shotMetricSlots[i]}
                           onChange={e => {
                             const next = [...shotMetricSlots];
-                            next[i] = e.target.value;
+                            next[i] = e.currentTarget.value;
                             setShotMetricSlotsState(next);
                             setShotMetricSlots(next);
                           }}
@@ -224,8 +224,8 @@ export function DashboardSettings() {
             htmlFor='stickyTop'
             checked={stickyTop}
             onChange={e => {
-              setStickyTopState(e.target.checked);
-              setStickyTop(e.target.checked);
+              setStickyTopState(e.currentTarget.checked);
+              setStickyTop(e.currentTarget.checked);
             }}
           />
           <ToggleField
@@ -233,8 +233,8 @@ export function DashboardSettings() {
             htmlFor='stickyBottom'
             checked={stickyBottom}
             onChange={e => {
-              setStickyBottomState(e.target.checked);
-              setStickyBottom(e.target.checked);
+              setStickyBottomState(e.currentTarget.checked);
+              setStickyBottom(e.currentTarget.checked);
             }}
           />
           <SettingsFormField
@@ -251,8 +251,8 @@ export function DashboardSettings() {
               className='select select-bordered w-full'
               value={columnSpacing}
               onChange={e => {
-                setColumnSpacingState(e.target.value);
-                setColumnSpacing(e.target.value);
+                setColumnSpacingState(e.currentTarget.value);
+                setColumnSpacing(e.currentTarget.value);
               }}
             >
               <option value={COLUMN_SPACINGS.START}>{t`Pack to top`}</option>
@@ -316,7 +316,7 @@ export function DashboardSettings() {
                   className='range range-primary range-sm flex-1'
                   value={profileChartHeight}
                   onChange={e => {
-                    const n = Number(e.target.value);
+                    const n = Number(e.currentTarget.value);
                     setProfileChartHeightState(n);
                     setProfileChartHeight(n);
                   }}
@@ -344,7 +344,7 @@ export function DashboardSettings() {
                 className='range range-primary range-sm flex-1'
                 value={metricsColumns}
                 onChange={e => {
-                  const n = Number(e.target.value);
+                  const n = Number(e.currentTarget.value);
                   setMetricsColumnsState(n);
                   setMetricsColumns(n);
                 }}
@@ -364,8 +364,8 @@ export function DashboardSettings() {
               className='select select-bordered w-full'
               value={metricsLastRowFill}
               onChange={e => {
-                setMetricsLastRowFillState(e.target.value);
-                setMetricsLastRowFill(e.target.value);
+                setMetricsLastRowFillState(e.currentTarget.value);
+                setMetricsLastRowFill(e.currentTarget.value);
               }}
             >
               <option value={METRICS_LAST_ROW_FILLS.EVEN}>{t`Even fill`}</option>

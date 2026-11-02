@@ -1,4 +1,3 @@
-// @ts-check
 /** Normalizes shot selections and loads shots with their preferred profiles. */
 
 /* global globalThis */

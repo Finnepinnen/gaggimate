@@ -1,4 +1,3 @@
-// @ts-check
 /* global globalThis */
 
 import { createPortal } from 'preact/compat';
