@@ -12,12 +12,21 @@ import { ProfileMainInformation } from './ProfileMainInformation.jsx';
 import { getProfilePhases, removePhaseAt, updatePhaseAt } from './profilePhases.js';
 import { Trans, useLingui } from '@lingui/react/macro';
 
+/** @typedef {import('./types').EditorProfile} EditorProfile */
+/** @typedef {import('./types').EditorPhase} EditorPhase */
+/** @typedef {import('./types').FieldEvent} FieldEvent */
+
+/** @param {import('./types').ProfileFormProps} props */
 export function ExtendedProfileForm(props) {
   const { t } = useLingui();
   const { data, onChange, onSave, saving = true, pressureAvailable = false } = props;
   const phases = getProfilePhases(data);
   const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
 
+  /**
+   * @param {keyof EditorProfile} field
+   * @param {unknown} value
+   */
   const onFieldChange = (field, value) => {
     onChange({
       ...data,
@@ -25,6 +34,10 @@ export function ExtendedProfileForm(props) {
     });
   };
 
+  /**
+   * @param {number} index
+   * @param {EditorPhase} value
+   */
   const onPhaseChange = (index, value) => {
     onChange({
       ...data,
@@ -56,6 +69,7 @@ export function ExtendedProfileForm(props) {
     setCurrentPhaseIndex(phases.length);
   };
 
+  /** @param {number} index */
   const onPhaseRemove = index => {
     onChange({
       ...data,
@@ -76,11 +90,17 @@ export function ExtendedProfileForm(props) {
       <div className='grid grid-cols-1 gap-4 lg:grid-cols-10'>
         <ProfileMainInformation
           data={data}
-          onChangeLabel={e => onFieldChange('label', e.target.value)}
-          onChangeDescription={e => onFieldChange('description', e.target.value)}
-          onChangeTemperature={e => onFieldChange('temperature', e.target.value)}
-          onChangeDose={e => onFieldChange('dose', e.target.value)}
-          onChangeUtility={e => onFieldChange('utility', !!e.target.checked)}
+          onChangeLabel={(/** @type {FieldEvent} */ e) => onFieldChange('label', e.target.value)}
+          onChangeDescription={(
+            /** @type {import('./types').FieldEvent<HTMLTextAreaElement>} */ e,
+          ) => onFieldChange('description', e.target.value)}
+          onChangeTemperature={(/** @type {FieldEvent} */ e) =>
+            onFieldChange('temperature', e.target.value)
+          }
+          onChangeDose={(/** @type {FieldEvent} */ e) => onFieldChange('dose', e.target.value)}
+          onChangeUtility={(/** @type {FieldEvent} */ e) =>
+            onFieldChange('utility', !!e.target.checked)
+          }
         />
         <Card sm={10}>
           <ExtendedProfileChart
@@ -143,7 +163,9 @@ export function ExtendedProfileForm(props) {
               <ExtendedPhase
                 phase={currentPhase}
                 index={currentPhaseIndex}
-                onChange={phase => onPhaseChange(currentPhaseIndex, phase)}
+                onChange={(/** @type {EditorPhase} */ phase) =>
+                  onPhaseChange(currentPhaseIndex, phase)
+                }
                 pressureAvailable={pressureAvailable}
               />
             ) : (

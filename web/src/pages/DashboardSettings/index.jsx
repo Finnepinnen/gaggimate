@@ -98,6 +98,7 @@ export function DashboardSettings() {
     ...(panelOrder.includes(SPACER_ID) ? [] : [SPACER_DEFINITION]),
   ];
 
+  /** @param {string} id Panel id. */
   const handleToggleCompact = id => {
     toggleCompactPanel(id);
     setCompactPanelsState(getCompactPanels());

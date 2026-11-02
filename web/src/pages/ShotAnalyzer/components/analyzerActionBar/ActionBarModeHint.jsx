@@ -4,12 +4,22 @@ import { t } from '@lingui/core/macro';
 import { Trans } from '@lingui/react/macro';
 import { analyzerUiColors } from '../../utils/analyzerUtils';
 
+/** @typedef {import('../types').ImportMode} ImportMode */
+
+/** @param {ImportMode} nextMode */
 function getModeHintCopy(nextMode) {
   return nextMode === 'browser'
     ? t`Save to Browser. Imported shots and profiles will now be saved to the browser library.`
     : t`View temporarily. Imported shots and profiles will now open temporarily in the analyzer.`;
 }
 
+/**
+ * @param {object} props
+ * @param {string} props.modeHint
+ * @param {import('preact').JSX.CSSProperties | undefined} props.modeHintBadgeStyle
+ * @param {{ top: number, left: number }} props.modeHintPosition
+ * @param {ImportMode} props.modeHintVariant
+ */
 export function ModeHintPortal({
   modeHint,
   modeHintBadgeStyle,
@@ -45,15 +55,25 @@ export function ModeHintPortal({
   );
 }
 
+/**
+ * @param {object} options
+ * @param {ImportMode} options.importMode
+ * @param {(mode: ImportMode) => void} [options.onImportModeChange]
+ */
 export function useAnalyzerActionBarModeHint({ importMode, onImportModeChange }) {
+  /** @type {import('preact').RefObject<HTMLElement>} */
   const modeButtonRef = useRef(null);
+  /** @type {import('preact/hooks').MutableRef<HTMLElement | null>} */
   const modeHintAnchorRef = useRef(null);
+  /** @type {import('preact/hooks').MutableRef<DOMRect | null>} */
   const modeHintAnchorRectRef = useRef(null);
+  /** @type {import('preact/hooks').MutableRef<ReturnType<typeof setTimeout> | null>} */
   const modeHintTimerRef = useRef(null);
+  /** @type {import('preact/hooks').MutableRef<ReturnType<typeof setTimeout> | null>} */
   const modeHintDismissArmTimerRef = useRef(null);
   const modeHintDismissReadyRef = useRef(false);
   const [modeHint, setModeHint] = useState('');
-  const [modeHintVariant, setModeHintVariant] = useState('temp');
+  const [modeHintVariant, setModeHintVariant] = useState(/** @type {ImportMode} */ ('temp'));
   const [modeHintPosition, setModeHintPosition] = useState({ top: 0, left: 12 });
 
   const clearModeHintTimers = useCallback(() => {
@@ -83,6 +103,7 @@ export function useAnalyzerActionBarModeHint({ importMode, onImportModeChange })
   }, []);
 
   const showModeHint = useCallback(
+    /** @param {ImportMode} nextMode */
     nextMode => {
       const browserMode = nextMode === 'browser';
       setModeHintVariant(browserMode ? 'browser' : 'temp');
@@ -101,12 +122,14 @@ export function useAnalyzerActionBarModeHint({ importMode, onImportModeChange })
   );
 
   const handleModeToggle = useCallback(
+    /** @param {import('preact').JSX.TargetedMouseEvent<HTMLElement>} event */
     event => {
       event.preventDefault();
       event.stopPropagation();
       if (!onImportModeChange) return;
       modeHintAnchorRef.current = event.currentTarget;
       modeHintAnchorRectRef.current = event.currentTarget.getBoundingClientRect();
+      /** @type {ImportMode} */
       const nextMode = importMode === 'browser' ? 'temp' : 'browser';
       onImportModeChange(nextMode);
       showModeHint(nextMode);

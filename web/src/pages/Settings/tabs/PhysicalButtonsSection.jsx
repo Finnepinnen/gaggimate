@@ -2,6 +2,17 @@ import { Trans, useLingui } from '@lingui/react/macro';
 import Section from '../../../components/Card.jsx';
 import { SettingsFormField, ToggleField } from '../../../components/SettingsFormField.jsx';
 
+/** @typedef {import('../../../types').Profile & { id: string }} ListedProfile */
+
+/**
+ * @param {{
+ *   id: string,
+ *   label: string,
+ *   value: string | undefined,
+ *   onChange: import('../types').FieldChangeHandler,
+ *   profiles: ListedProfile[],
+ * }} props
+ */
 function ButtonBehaviorSelect({ id, label, value, onChange, profiles }) {
   const { t } = useLingui();
   return (
@@ -26,12 +37,20 @@ function ButtonBehaviorSelect({ id, label, value, onChange, profiles }) {
   );
 }
 
+/** @param {{ profile: ListedProfile }} props */
 function ProfileOption({ profile }) {
   const { t } = useLingui();
   const profileLabel = profile.label;
   return <option value={profile.id}>{t`Profile: ${profileLabel}`}</option>;
 }
 
+/**
+ * @param {{
+ *   formData: import('../types').SettingsFormData,
+ *   onChange: import('../types').FormChange,
+ *   profiles?: ListedProfile[],
+ * }} props
+ */
 export function PhysicalButtonsSection({ formData, onChange, profiles = [] }) {
   const { t } = useLingui();
   return (

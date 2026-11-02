@@ -4,6 +4,15 @@
  * and notes controls feel like one system instead of drifting apart over time.
  */
 
+/** @typedef {'neutral' | 'subtle' | 'primary' | 'success' | 'error'} AnalyzerControlTone */
+
+/**
+ * @typedef {object} AnalyzerControlClassOptions
+ * @property {AnalyzerControlTone} [tone]
+ * @property {string} [className]
+ */
+
+/** @param {...(string | false | null | undefined)} classes */
 const joinClasses = (...classes) => classes.filter(Boolean).join(' ');
 
 const baseInteractiveClasses =
@@ -16,6 +25,7 @@ export const ANALYZER_ACTION_ICON_STYLE = { width: '14px', height: '14px' };
 export const ANALYZER_ACTION_ICON_BUTTON_CLASS = 'h-8 w-8 p-0';
 export const ANALYZER_ACTION_GROUP_CLASSES = 'flex items-center gap-1';
 
+/** @type {Record<AnalyzerControlTone, string>} */
 const iconToneClasses = {
   neutral: 'text-base-content/55 hover:text-primary',
   subtle: 'text-base-content/35 hover:text-primary',
@@ -24,6 +34,7 @@ const iconToneClasses = {
   error: 'text-base-content/35 hover:text-error',
 };
 
+/** @type {Partial<Record<AnalyzerControlTone, string>>} */
 const textToneClasses = {
   neutral: 'text-base-content/70 hover:text-primary',
   primary: 'text-primary hover:text-primary',
@@ -31,8 +42,10 @@ const textToneClasses = {
   error: 'text-base-content/55 hover:text-error',
 };
 
+/** @param {...(string | false | null | undefined)} classes */
 export const joinAnalyzerClasses = (...classes) => joinClasses(...classes);
 
+/** @param {AnalyzerControlClassOptions} [options] */
 export function getAnalyzerIconButtonClasses({ tone = 'neutral', className = '' } = {}) {
   return joinClasses(
     'inline-flex items-center justify-center rounded-md',
@@ -43,6 +56,7 @@ export function getAnalyzerIconButtonClasses({ tone = 'neutral', className = '' 
   );
 }
 
+/** @param {AnalyzerControlClassOptions} [options] */
 export function getAnalyzerTextButtonClasses({ tone = 'neutral', className = '' } = {}) {
   return joinClasses(
     'inline-flex items-center rounded-md',
@@ -53,6 +67,7 @@ export function getAnalyzerTextButtonClasses({ tone = 'neutral', className = '' 
   );
 }
 
+/** @param {AnalyzerControlClassOptions} [options] */
 export function getAnalyzerSurfaceTriggerClasses({ tone = 'neutral', className = '' } = {}) {
   return joinClasses(
     'cursor-pointer rounded-md transition-colors duration-150',

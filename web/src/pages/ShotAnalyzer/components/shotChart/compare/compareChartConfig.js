@@ -26,19 +26,48 @@ import { buildDetailChartDatasets } from './compareDatasets';
 import { getDetailChartUnitLabel } from './CompareMetricContent';
 import { getCompareFullDisplayViewportHeight, prefixCompareAnnotations } from './compareModel';
 
+/** @typedef {import('../model/types').ChartVisibility} ChartVisibility */
+/** @typedef {import('../model/types').PhaseAnnotationMap} PhaseAnnotationMap */
+/** @typedef {import('../model/types').ShotChartColors} ShotChartColors */
+/** @typedef {import('../tooltip/tooltipTypes').ExternalTooltipState} ExternalTooltipState */
+/** @typedef {import('./types').AxisRange} AxisRange */
+/** @typedef {import('./types').AxisUnitLabel} AxisUnitLabel */
+/** @typedef {import('./types').CompareChartConfig} CompareChartConfig */
+/** @typedef {import('./types').CompareDataset} CompareDataset */
+/** @typedef {import('./types').CompareLegendItem} CompareLegendItem */
+/** @typedef {import('./types').CompareModelEntry} CompareModelEntry */
+/** @typedef {import('./types').ComparePhaseTooltipGroup} ComparePhaseTooltipGroup */
+/** @typedef {import('./types').CompareTooltipMode} CompareTooltipMode */
+/** @typedef {import('./types').ShotStylePreset} ShotStylePreset */
+/** @typedef {{ top: number, right: number, bottom: number, left: number }} ChartPadding */
+/** @typedef {'absolute' | 'datasetPercentile'} AxisMaxStrategy */
+/**
+ * @typedef {import('preact/hooks').Dispatch<import('preact/hooks').StateUpdater<ExternalTooltipState>>} SetExternalTooltipState
+ */
+
 const RIGHT_AXIS_UNIT_ROW_GAP = 14;
 
+/**
+ * @param {{
+ *   showWeightAxis: boolean,
+ *   showPuckResistanceAxis: boolean,
+ *   showLiquidResistanceAxis: boolean,
+ * }} params
+ * @returns {AxisUnitLabel[]}
+ */
 export function getMainAxisUnitLabels({
   showWeightAxis,
   showPuckResistanceAxis,
   showLiquidResistanceAxis,
 }) {
+  /** @type {AxisUnitLabel[]} */
   const labels = [
     {
       scaleId: 'yMain',
       label: `${UNIT_BY_LABEL.Pressure} / ${UNIT_BY_LABEL['Pump Flow']}`,
     },
   ];
+  /** @type {AxisUnitLabel[]} */
   const rightAxisUnitLabels = [];
   if (showWeightAxis) {
     rightAxisUnitLabels.push({
@@ -67,6 +96,9 @@ export function getMainAxisUnitLabels({
   return labels;
 }
 
+/**
+ * @param {{ mainAxisUnitLabels: AxisUnitLabel[], reserveMarkerSpace: boolean }} params
+ */
 export function getMainAxisUnitPadding({ mainAxisUnitLabels, reserveMarkerSpace }) {
   const padding = getAxisUnitReservedPadding({
     yLabels: mainAxisUnitLabels,
@@ -84,6 +116,16 @@ export function getMainAxisUnitPadding({ mainAxisUnitLabels, reserveMarkerSpace 
   };
 }
 
+/**
+ * @param {{
+ *   compareModels: CompareModelEntry[],
+ *   enableDualMainChartAnnotations: boolean,
+ *   showBrewModeAnnotation: boolean,
+ *   showPhaseAnnotations: boolean,
+ *   showStopAnnotations: boolean,
+ *   visibility: ChartVisibility,
+ * }} params
+ */
 export function getCompareAnnotations({
   compareModels,
   enableDualMainChartAnnotations,
@@ -112,6 +154,11 @@ export function getCompareAnnotations({
   };
 }
 
+/**
+ * @param {CompareModelEntry[]} compareModels
+ * @param {CompareLegendItem[]} [compareShotLegendItems]
+ * @returns {ComparePhaseTooltipGroup[]}
+ */
 function getComparePhaseTooltipGroups(compareModels, compareShotLegendItems = []) {
   return compareModels.map(({ entry, model }, index) => {
     const shotNumber = index + 1;
@@ -124,6 +171,27 @@ function getComparePhaseTooltipGroups(compareModels, compareShotLegendItems = []
   });
 }
 
+/**
+ * @param {{
+ *   compareModels: CompareModelEntry[],
+ *   compareShotLegendItems: CompareLegendItem[],
+ *   mainAnnotations: PhaseAnnotationMap,
+ *   mainAxisRange: AxisRange,
+ *   mainAxisUnitLabels: AxisUnitLabel[],
+ *   mainAxisUnitPadding: ChartPadding,
+ *   mainDatasets: CompareDataset[],
+ *   neutralAxisTickColor: string,
+ *   puckResistanceAxisRange: AxisRange,
+ *   liquidResistanceAxisRange: AxisRange,
+ *   showStopAnnotations: boolean,
+ *   showWeightAxis: boolean,
+ *   showPuckResistanceAxis: boolean,
+ *   showLiquidResistanceAxis: boolean,
+ *   weightAxisRange: AxisRange,
+ *   xRange: AxisRange,
+ * }} params
+ * @returns {CompareChartConfig}
+ */
 export function getCompareMainChartConfig({
   compareModels,
   compareShotLegendItems,
@@ -184,7 +252,7 @@ export function getCompareMainChartConfig({
         },
         axisUnitLabels: {
           yLabels: mainAxisUnitLabels,
-          chartLabels: [],
+          chartLabels: /** @type {import('../helpers/axisPlugins').AxisUnitChartLabel[]} */ ([]),
           xLabel: 's',
         },
         phaseLabelOverlay: {
@@ -288,6 +356,19 @@ export function getCompareMainChartConfig({
   };
 }
 
+/**
+ * @param {{
+ *   axisRange: AxisRange,
+ *   axisUnitLabel: string,
+ *   compareModels: CompareModelEntry[],
+ *   datasets: CompareDataset[],
+ *   detailAxisUnitPadding: ChartPadding,
+ *   detailPhaseAnnotations: PhaseAnnotationMap,
+ *   neutralAxisTickColor: string,
+ *   xRange: AxisRange,
+ * }} params
+ * @returns {CompareChartConfig}
+ */
 function getCompareDetailChartConfig({
   axisRange,
   axisUnitLabel,
@@ -368,6 +449,21 @@ function getCompareDetailChartConfig({
   };
 }
 
+/**
+ * @param {{
+ *   colors: ShotChartColors,
+ *   compareModels: CompareModelEntry[],
+ *   compareTargetDisplayMode: string,
+ *   detailPhaseAnnotations: PhaseAnnotationMap,
+ *   includePumpFlowWaterTooltip?: boolean,
+ *   neutralAxisTickColor: string,
+ *   resolvedCompareStyle: import('./types').CompareStyle,
+ *   shotStylePreset: ShotStylePreset,
+ *   visibility: ChartVisibility,
+ *   xRange: AxisRange,
+ * }} params
+ * @returns {import('./types').CompareDetailChart[]}
+ */
 export function buildCompareDetailCharts({
   colors,
   compareModels,
@@ -422,12 +518,17 @@ export function buildCompareDetailCharts({
   }).filter(Boolean);
 }
 
+/** @param {CompareDataset[]} datasets */
 function collectVisibleYValues(datasets) {
   return datasets.flatMap(dataset =>
     (dataset.data || []).map(point => Number(point?.y)).filter(value => Number.isFinite(value)),
   );
 }
 
+/**
+ * @param {number} datasetCount
+ * @param {'weight' | 'weightFlow'} axisScaleMode
+ */
 function getStatisticsAxisPercentile(datasetCount, axisScaleMode) {
   if (axisScaleMode === 'weightFlow') {
     if (datasetCount >= 20) return 0.68;
@@ -442,6 +543,15 @@ function getStatisticsAxisPercentile(datasetCount, axisScaleMode) {
   return 0.88;
 }
 
+/**
+ * @param {{ shotStylePreset: ShotStylePreset, chartId: string, compareModelCount: number }} params
+ * @returns {{
+ *   paddingRatio: number,
+ *   minimumPadding: number,
+ *   maxStrategy: AxisMaxStrategy,
+ *   maxPercentile: number,
+ * }}
+ */
 function getDetailChartRangeOptions({ shotStylePreset, chartId, compareModelCount }) {
   if (shotStylePreset !== 'statistics') {
     return {
@@ -478,6 +588,10 @@ function getDetailChartRangeOptions({ shotStylePreset, chartId, compareModelCoun
   };
 }
 
+/**
+ * @param {boolean} isFullDisplay
+ * @returns {number}
+ */
 export function getDetailChartHeight(isFullDisplay) {
   if (isFullDisplay) {
     const viewportHeight = getCompareFullDisplayViewportHeight();
@@ -488,6 +602,17 @@ export function getDetailChartHeight(isFullDisplay) {
   return DETAIL_CHART_HEIGHT_SMALL;
 }
 
+/**
+ * @param {{
+ *   enableHoverInfo: boolean,
+ *   compareTooltipMode: CompareTooltipMode,
+ *   hideExternalTooltip: () => void,
+ *   setExternalTooltipState: SetExternalTooltipState,
+ *   phaseTooltipGroups?: ComparePhaseTooltipGroup[],
+ *   showPhaseNames?: boolean,
+ *   showStops?: boolean,
+ * }} params
+ */
 function getCompareTooltipPlugin({
   enableHoverInfo,
   compareTooltipMode,
@@ -509,6 +634,12 @@ function getCompareTooltipPlugin({
 
   return {
     ...baseTooltipConfig,
+    /**
+     * @param {{
+     *   chart: import('../tooltip/tooltipTypes').ShotChartInstance,
+     *   tooltip: import('../tooltip/tooltipTypes').ShotChartTooltipModel,
+     * }} context
+     */
     external: ({ chart, tooltip }) => {
       const nextState = buildExternalTooltipState({
         chart,
@@ -529,6 +660,10 @@ function getCompareTooltipPlugin({
   };
 }
 
+/**
+ * @param {CompareDataset} dataset
+ * @returns {number | null}
+ */
 function getDatasetScaleMax(dataset) {
   const values = (dataset?.data || [])
     .map(point => Number(point?.y))
@@ -545,6 +680,15 @@ function getDatasetScaleMax(dataset) {
   return Math.max(...values);
 }
 
+/**
+ * @param {{
+ *   datasets: CompareDataset[],
+ *   fallbackMax?: number,
+ *   maxStrategy?: AxisMaxStrategy,
+ *   maxPercentile?: number,
+ * }} params
+ * @returns {number}
+ */
 function getAxisScaleMax({
   datasets,
   fallbackMax = 1,
@@ -567,6 +711,19 @@ function getAxisScaleMax({
   return Number.isFinite(max) ? max : Math.max(...datasetScaleMaxima);
 }
 
+/**
+ * @param {{
+ *   datasets: CompareDataset[],
+ *   beginAtZero?: boolean,
+ *   fallbackMin?: number,
+ *   fallbackMax?: number,
+ *   paddingRatio?: number,
+ *   minimumPadding?: number,
+ *   maxStrategy?: AxisMaxStrategy,
+ *   maxPercentile?: number,
+ * }} params
+ * @returns {AxisRange}
+ */
 export function getAxisRange({
   datasets,
   beginAtZero = true,
@@ -610,6 +767,15 @@ export function getAxisRange({
   };
 }
 
+/**
+ * @param {{
+ *   weightDatasets: CompareDataset[],
+ *   mainDatasets: CompareDataset[],
+ *   mainAxisRange: AxisRange,
+ *   weightMaxPercentile: number,
+ * }} params
+ * @returns {AxisRange}
+ */
 function getStatisticsMainChartWeightAxisRange({
   weightDatasets,
   mainDatasets,
@@ -649,6 +815,16 @@ function getStatisticsMainChartWeightAxisRange({
   };
 }
 
+/**
+ * @param {CompareChartConfig} config
+ * @param {{
+ *   enableHoverInfo: boolean,
+ *   compareTooltipMode: CompareTooltipMode,
+ *   hideExternalTooltip: () => void,
+ *   setExternalTooltipState: SetExternalTooltipState,
+ * }} options
+ * @returns {import('chart.js').ChartConfiguration<'line', import('../model/types').ChartPoint[]>} Cast: the options carry the custom shot-chart plugin options.
+ */
 export function createCompareChartConfig(
   config,
   { enableHoverInfo, compareTooltipMode, hideExternalTooltip, setExternalTooltipState },
@@ -656,27 +832,39 @@ export function createCompareChartConfig(
   const { phaseTooltipGroups, showPhaseTooltipNames, showPhaseTooltipStops, ...chartConfig } =
     config;
 
-  return {
-    ...chartConfig,
-    options: {
-      ...chartConfig.options,
-      events: [],
-      plugins: {
-        ...chartConfig.options?.plugins,
-        tooltip: getCompareTooltipPlugin({
-          enableHoverInfo,
-          compareTooltipMode,
-          hideExternalTooltip,
-          setExternalTooltipState,
-          phaseTooltipGroups,
-          showPhaseNames: showPhaseTooltipNames,
-          showStops: showPhaseTooltipStops,
-        }),
+  return /** @type {import('chart.js').ChartConfiguration<'line', import('../model/types').ChartPoint[]>} */ (
+    /** @type {unknown} */ ({
+      ...chartConfig,
+      options: {
+        ...chartConfig.options,
+        events: /** @type {(keyof HTMLElementEventMap)[]} */ ([]),
+        plugins: {
+          ...chartConfig.options?.plugins,
+          tooltip: getCompareTooltipPlugin({
+            enableHoverInfo,
+            compareTooltipMode,
+            hideExternalTooltip,
+            setExternalTooltipState,
+            phaseTooltipGroups,
+            showPhaseNames: showPhaseTooltipNames,
+            showStops: showPhaseTooltipStops,
+          }),
+        },
       },
-    },
-  };
+    })
+  );
 }
 
+/**
+ * @param {{
+ *   shotStylePreset: ShotStylePreset,
+ *   weightDatasets: CompareDataset[],
+ *   mainDatasets: CompareDataset[],
+ *   mainAxisRange: AxisRange,
+ *   compareModelCount: number,
+ * }} params
+ * @returns {AxisRange}
+ */
 export function getCompareWeightAxisRange({
   shotStylePreset,
   weightDatasets,
@@ -703,6 +891,15 @@ export function getCompareWeightAxisRange({
   });
 }
 
+/**
+ * @param {{
+ *   chart: import('./types').DetailChartDef,
+ *   compareModels: CompareModelEntry[],
+ *   datasets: CompareDataset[],
+ *   shotStylePreset: ShotStylePreset,
+ * }} params
+ * @returns {AxisRange}
+ */
 function getCompareDetailAxisRange({ chart, compareModels, datasets, shotStylePreset }) {
   if (chart.id === 'temperature') {
     return {
@@ -729,6 +926,16 @@ function getCompareDetailAxisRange({ chart, compareModels, datasets, shotStylePr
   });
 }
 
+/**
+ * @param {PhaseAnnotationMap | null | undefined} annotations
+ * @param {{
+ *   annotationsEnabled?: boolean,
+ *   showPhaseAnnotations: boolean,
+ *   showStopAnnotations: boolean,
+ *   showBrewModeAnnotation: boolean,
+ * }} options
+ * @returns {PhaseAnnotationMap}
+ */
 function filterCompareAnnotations(
   annotations,
   { annotationsEnabled = true, showPhaseAnnotations, showStopAnnotations, showBrewModeAnnotation },
@@ -752,6 +959,17 @@ function filterCompareAnnotations(
   );
 }
 
+/**
+ * @param {{
+ *   compareModels: CompareModelEntry[],
+ *   annotationsEnabled: boolean,
+ *   showPhaseAnnotations: boolean,
+ *   showStopAnnotations: boolean,
+ *   showBrewModeAnnotation: boolean,
+ *   enableDualMainChartAnnotations: boolean,
+ * }} params
+ * @returns {PhaseAnnotationMap}
+ */
 function buildCompareMainAnnotations({
   compareModels,
   annotationsEnabled,

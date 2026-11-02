@@ -10,6 +10,17 @@ import {
 } from '../constants';
 import { getShotChartDisplayLabel, getShotChartLabelIcon } from '../labelVisuals';
 
+/**
+ * @typedef {object} LegendToggleBaseProps
+ * @property {string[]} [hiddenLegendLabels]
+ * @property {boolean} [hasWeightData]
+ * @property {boolean} [hasWeightFlowData]
+ * @property {boolean} [isControlsLocked]
+ * @property {Record<string, string>} legendColorByLabel
+ * @property {(label: string) => void} onLegendToggle
+ * @property {import('../types').ShotChartVisibility} visibility
+ */
+
 const LEGEND_BUTTON_BASE_CLASS =
   'text-base-content inline-flex h-7 shrink-0 cursor-pointer items-center gap-1.5 rounded px-1.5 text-xs leading-tight font-normal tracking-normal normal-case transition disabled:cursor-not-allowed disabled:opacity-35';
 const LEGEND_ICON_CLASS = 'text-xs';
@@ -18,6 +29,13 @@ export const SHOT_CHART_SERIES_LEGEND_LABELS = LEGEND_ORDER.filter(
   label => !SHOT_CHART_PRIMARY_LEGEND_LABELS.includes(label),
 );
 
+/**
+ * @param {object} options
+ * @param {string} options.label
+ * @param {import('@fortawesome/fontawesome-svg-core').IconDefinition | null | undefined} options.labelIcon
+ * @param {string} options.swatchColor
+ * @param {number} options.swatchLineWidth
+ */
 function renderLegendMarker({ label, labelIcon, swatchColor, swatchLineWidth }) {
   if (LEGEND_BLOCK_LABELS.has(label)) {
     const markerColor = label === 'Phases' ? 'var(--color-base-content)' : swatchColor;
@@ -43,6 +61,14 @@ function renderLegendMarker({ label, labelIcon, swatchColor, swatchLineWidth }) 
   );
 }
 
+/**
+ * @param {object} options
+ * @param {string[]} options.labels
+ * @param {string[]} options.hiddenLegendLabels
+ * @param {boolean} [options.hasWeightData]
+ * @param {boolean} [options.hasWeightFlowData]
+ * @returns {string[]}
+ */
 function getRenderableLegendLabels({
   labels,
   hiddenLegendLabels,
@@ -57,6 +83,9 @@ function getRenderableLegendLabels({
   });
 }
 
+/**
+ * @param {LegendToggleBaseProps & { labels?: string[], className?: string }} props
+ */
 export function ShotChartLegendToggles({
   labels = LEGEND_ORDER,
   hiddenLegendLabels = [],
@@ -111,6 +140,14 @@ export function ShotChartLegendToggles({
   );
 }
 
+/**
+ * @param {LegendToggleBaseProps & {
+ *   hiddenLegendLabels: string[],
+ *   hiddenMobileLegendLabels: string[],
+ *   showMobileLegend?: boolean,
+ *   visibleMobileLegendLabels: string[],
+ * }} props
+ */
 function MobileLegendArea({
   hiddenLegendLabels,
   hiddenMobileLegendLabels,
@@ -143,6 +180,9 @@ function MobileLegendArea({
   return <div className='min-w-0 flex-1' />;
 }
 
+/**
+ * @param {LegendToggleBaseProps & { visibleTopLegendLabels: string[] }} props
+ */
 function DesktopLegendArea({
   hiddenLegendLabels,
   hasWeightData,
@@ -168,6 +208,16 @@ function DesktopLegendArea({
   );
 }
 
+/**
+ * @param {LegendToggleBaseProps & {
+ *   hiddenLegendLabels: string[],
+ *   hiddenMobileLegendLabels: string[],
+ *   isMobile?: boolean,
+ *   showMobileLegend?: boolean,
+ *   visibleMobileLegendLabels: string[],
+ *   visibleTopLegendLabels: string[],
+ * }} props
+ */
 export function ChartLegendArea({
   hiddenLegendLabels,
   hiddenMobileLegendLabels,

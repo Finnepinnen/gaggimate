@@ -2,14 +2,24 @@
  * The exported name and returned state key are retained for existing callers.
  */
 
+/** @typedef {import('../../../../types').ShotSystemInfo} ShotSystemInfo */
+/** @typedef {{ systemInfo?: Pick<ShotSystemInfo, 'activeScaleConnected' | 'bluetoothScaleConnected'> }} ScaleFlagSample */
+
+/** @param {boolean | number | undefined} value */
 function isBluetoothScaleConnected(value) {
   return value === true || value === 1;
 }
 
+/** @param {boolean | number | undefined} value */
 function isBluetoothScaleDisconnected(value) {
   return value === false || value === 0;
 }
 
+/**
+ * @param {ScaleFlagSample[]} samples
+ * @param {boolean} [bluetoothScaleWasConnected]
+ * @returns {{ bluetoothScaleWasConnected: boolean, scaleLost: boolean }}
+ */
 export function getBluetoothScaleConnectionState(samples, bluetoothScaleWasConnected = false) {
   let wasConnected = bluetoothScaleWasConnected;
   let scaleLost = false;

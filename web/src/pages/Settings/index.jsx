@@ -69,6 +69,15 @@ import {
   splitPidString,
 } from './settingsForm.js';
 
+/** @typedef {import('../../types').Settings} ApiSettings */
+/** @typedef {import('./types').SettingsFormData} SettingsFormData */
+/** @typedef {import('./types').AutoWakeupSchedule} AutoWakeupSchedule */
+/** @typedef {import('./types').FieldChangeEvent} FieldChangeEvent */
+/**
+ * @typedef {{ error: false, name: string, count: number, ignored: string[], message?: undefined }
+ *   | { error: true, name: string, message: string, count?: undefined, ignored?: undefined }} ImportNotice
+ */
+
 // Device facts GET /api/settings reports for display only; never saved, exported or imported.
 const READ_ONLY_KEYS = [
   'deviceIp',
@@ -100,17 +109,26 @@ const DEFAULT_SCALE_FACTOR_2 = 2500.0;
 const DEFAULT_HARDWARE_SCALE_SAMPLE_RATE_SPS = 10;
 const DEFAULT_HARDWARE_SCALE_FILTER_ALPHA = 0.8;
 
+/**
+ * @param {string | undefined} buttonBehavior
+ * @returns {{ button0?: string, button1?: string, button2?: string }}
+ */
 function splitButtons(buttonBehavior) {
   if (!buttonBehavior) return {};
   const [button0, button1, button2] = buttonBehavior.split(',');
   return { button0, button1, button2 };
 }
 
+/**
+ * @param {(ApiSettings & { standbyDisplayEnabled?: boolean }) | null | undefined} fetchedSettings
+ * @returns {SettingsFormData}
+ */
 function transformFetchedSettings(fetchedSettings) {
   if (!fetchedSettings) return {};
   const buttonFields = fetchedSettings.buttonBehavior
     ? splitButtons(fetchedSettings.buttonBehavior)
     : {};
+  /** @type {SettingsFormData} */
   const settingsWithToggle = {
     ...fetchedSettings,
     ...buttonFields,
@@ -150,16 +168,23 @@ function transformFetchedSettings(fetchedSettings) {
   return settingsWithToggle;
 }
 
+/** @param {unknown} value */
 function isTruthySetting(value) {
   return value === true || value === 1 || value === '1' || value === 'true' || value === 'on';
 }
 
 // Maps a full or partial settings file onto form fields; keys the file lacks stay untouched.
+/**
+ * @param {unknown} data Parsed settings file.
+ * @param {Set<string>} knownKeys
+ */
 function normalizeImportedSettings(data, knownKeys) {
   if (!data || typeof data !== 'object' || Array.isArray(data)) {
     throw new Error(t`The file does not contain a settings object.`);
   }
+  /** @type {SettingsFormData} */
   const fields = {};
+  /** @type {string[]} */
   const ignored = [];
   for (const [key, value] of Object.entries(data)) {
     if (!knownKeys.has(key) || value === null || typeof value === 'object') {
@@ -186,6 +211,11 @@ function normalizeImportedSettings(data, knownKeys) {
   return { fields, schedules, ignored, count };
 }
 
+/**
+ * @param {SettingsFormData} formData
+ * @param {AutoWakeupSchedule[]} autowakeupSchedules
+ * @param {boolean} restart
+ */
 function buildSubmitFormData(formData, autowakeupSchedules, restart) {
   const formDataToSubmit = new FormData();
 
@@ -242,11 +272,13 @@ export function Settings() {
   const [currentTheme, setCurrentTheme] = useState('light');
   const [showWifiPassword, setShowWifiPassword] = useState(false);
   const [showApPassword, setShowApPassword] = useState(false);
-  const [autowakeupSchedules, setAutoWakeupSchedules] = useState([
-    { time: '07:00', days: [true, true, true, true, true, true, true] },
-  ]);
+  const [autowakeupSchedules, setAutoWakeupSchedules] = useState(
+    /** @type {AutoWakeupSchedule[]} */ ([
+      { time: '07:00', days: [true, true, true, true, true, true, true] },
+    ]),
+  );
 
-  const [importNotice, setImportNotice] = useState(null);
+  const [importNotice, setImportNotice] = useState(/** @type {ImportNotice | null} */ (null));
 
   const [fetchedSettings, setFetchedSettings] = useState(() => getCachedSettings());
   const [isLoading, setIsLoading] = useState(!fetchedSettings);
@@ -272,8 +304,12 @@ export function Settings() {
   useEffect(() => {
     if (!dropdownOpen) return;
 
+    /** @param {MouseEvent} event */
     const handleOutsideClick = event => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(/** @type {Node} */ (event.target))
+      ) {
         setDropdownOpen(false);
       }
     };
@@ -299,18 +335,20 @@ export function Settings() {
     setCurrentTheme(getStoredTheme());
   }, []);
 
+  /** @type {import('./types').FormChange} */
   const onChange = key => {
     return e => {
+      /** @type {string | boolean} */
       let value = e.currentTarget.value;
       if (CHECKBOX_KEYS.includes(key)) {
         value = !formData[key];
       }
       if (key === 'clock24hFormat') {
-        setClock24h(value);
+        setClock24h(/** @type {boolean} */ (value));
       }
       if (key === 'standbyDisplayEnabled') {
         value = !formData.standbyDisplayEnabled;
-        const newFormData = /** @type {Record<string, any>} */ ({
+        const newFormData = /** @type {SettingsFormData} */ ({
           ...formData,
           [key]: value,
         });
@@ -321,7 +359,7 @@ export function Settings() {
         return;
       }
       if (key === 'dashboardLayout') {
-        setDashboardLayout(value);
+        setDashboardLayout(/** @type {string} */ (value));
       }
       setFormData({
         ...formData,
@@ -330,14 +368,24 @@ export function Settings() {
     };
   };
 
-  const setField = useCallback((key, value) => {
-    setFormData(prev => ({ ...prev, [key]: value }));
-  }, []);
+  const setField = useCallback(
+    /** @type {import('./types').SetField} */ (
+      (key, value) => {
+        setFormData(prev => ({ ...prev, [key]: value }));
+      }
+    ),
+    [],
+  );
 
-  const onSmartDoseSaved = useCallback((key, value, settings) => {
-    updateSettingsCache(settings);
-    setFormData(prev => ({ ...prev, [key]: value }));
-  }, []);
+  const onSmartDoseSaved = useCallback(
+    /** @type {import('./types').SettingSavedHandler} */ (
+      (key, value, settings) => {
+        updateSettingsCache(/** @type {ApiSettings} */ (settings));
+        setFormData(prev => ({ ...prev, [key]: value }));
+      }
+    ),
+    [],
+  );
 
   const addAutoWakeupSchedule = () => {
     setAutoWakeupSchedules([
@@ -349,6 +397,7 @@ export function Settings() {
     ]);
   };
 
+  /** @param {number} index */
   const removeAutoWakeupSchedule = index => {
     if (autowakeupSchedules.length > 1) {
       const newSchedules = autowakeupSchedules.filter((_, i) => i !== index);
@@ -356,12 +405,21 @@ export function Settings() {
     }
   };
 
+  /**
+   * @param {number} index
+   * @param {string} value
+   */
   const updateAutoWakeupTime = (index, value) => {
     const newSchedules = [...autowakeupSchedules];
     newSchedules[index].time = value;
     setAutoWakeupSchedules(newSchedules);
   };
 
+  /**
+   * @param {number} scheduleIndex
+   * @param {number} dayIndex
+   * @param {boolean} enabled
+   */
   const updateAutoWakeupDay = (scheduleIndex, dayIndex, enabled) => {
     const newSchedules = [...autowakeupSchedules];
     newSchedules[scheduleIndex].days[dayIndex] = enabled;
@@ -369,6 +427,10 @@ export function Settings() {
   };
 
   const onSubmit = useCallback(
+    /**
+     * @param {Event} [e]
+     * @param {boolean} [restart]
+     */
     async (e, restart = false) => {
       if (e) e.preventDefault();
       // Save & Restart and imports skip native validation, and the tank fields are only mounted on the Machine tab.
@@ -408,7 +470,7 @@ export function Settings() {
             data.standbyBrightness > 0 ? formData.standbyDisplayEnabled : false,
         };
 
-        updateSettingsCache(data);
+        updateSettingsCache(/** @type {ApiSettings} */ (data));
         setFormData(updatedData);
         setImportNotice(null);
       } catch (error) {
@@ -423,13 +485,15 @@ export function Settings() {
 
   const onExport = useCallback(() => {
     const autowakeupSchedulesStr = serializeAutoWakeupSchedules(autowakeupSchedules);
+    /** @type {SettingsFormData} */
     const exported = { ...formData, autowakeupSchedules: autowakeupSchedulesStr };
     READ_ONLY_KEYS.forEach(key => delete exported[key]);
     downloadJson(exported, 'settings.json');
   }, [formData, autowakeupSchedules]);
 
+  /** @param {import('preact').JSX.TargetedEvent<HTMLInputElement, Event>} evt */
   const onUpload = async evt => {
-    const input = evt.target;
+    const input = /** @type {HTMLInputElement} */ (evt.target);
     const file = input.files?.[0];
     if (!file) return;
     try {

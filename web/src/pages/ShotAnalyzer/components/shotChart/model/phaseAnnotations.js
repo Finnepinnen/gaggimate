@@ -12,6 +12,23 @@ import { getDisplayStopReasonParts } from '../../../utils/analyzerUtils';
 import { getLastNonExtendedIndex } from '../../../services/analyzer/weightRate';
 import { isWeightType } from '../../../services/analyzer/exitReasons.js';
 
+/** @typedef {import('./types').AnalyzerPhase} AnalyzerPhase */
+/** @typedef {import('./types').AnalyzerResults} AnalyzerResults */
+/** @typedef {import('./types').ChartSample} ChartSample */
+/** @typedef {import('./types').ChartShotData} ChartShotData */
+/** @typedef {import('./types').ChartVisibility} ChartVisibility */
+/** @typedef {import('./types').PhaseAnnotation} PhaseAnnotation */
+/** @typedef {import('./types').PhaseAnnotationMap} PhaseAnnotationMap */
+/** @typedef {import('./types').PhaseBackgroundRange} PhaseBackgroundRange */
+/** @typedef {import('./types').PhaseLabelOverlay} PhaseLabelOverlay */
+/** @typedef {import('./types').PhaseNumberResolver} PhaseNumberResolver */
+/** @typedef {import('./types').PhaseOverviewRow} PhaseOverviewRow */
+/** @typedef {import('./types').ShotChartColors} ShotChartColors */
+/** @typedef {import('./types').StopIconOverlay} StopIconOverlay */
+/** @typedef {import('../../../../../types').ShotPhaseTransition} ShotPhaseTransition */
+/** @typedef {{ time: number, zeroBased: number }} PhaseStart */
+
+/** @param {AnalyzerPhase | null | undefined} phase */
 function getRecordedStopActualValue(phase) {
   if (phase?.exit?.source !== 'recorded') return null;
 
@@ -19,6 +36,11 @@ function getRecordedStopActualValue(phase) {
   return phase.exit.actualValue != null && Number.isFinite(value) ? value : null;
 }
 
+/**
+ * @param {AnalyzerPhase | null | undefined} phase
+ * @param {string} exitType
+ * @returns {number | null}
+ */
 function getStopActualValue(phase, exitType) {
   if (!phase || !exitType) return null;
 
@@ -50,6 +72,10 @@ function getStopActualValue(phase, exitType) {
   return null;
 }
 
+/**
+ * @param {AnalyzerPhase | null | undefined} phase
+ * @param {string} exitType
+ */
 function getStopTargetValue(phase, exitType) {
   if (!phase?.profilePhase || !exitType) return null;
   if (exitType === 'duration') return phase.profilePhase.duration;
@@ -62,6 +88,7 @@ function getStopTargetValue(phase, exitType) {
   return target?.value ?? null;
 }
 
+/** @param {string} exitType */
 function getStopUnit(exitType) {
   if (exitType === 'duration') return 's';
   if (isWeightType(exitType)) return 'g';
@@ -71,6 +98,10 @@ function getStopUnit(exitType) {
   return '';
 }
 
+/**
+ * @param {unknown} value
+ * @param {string} unit
+ */
 function formatStopValue(value, unit) {
   if (value == null) return '-';
   const numeric = Number(value);
@@ -79,12 +110,14 @@ function formatStopValue(value, unit) {
   return unit ? `${formattedValue} ${unit}` : formattedValue;
 }
 
+/** @param {AnalyzerPhase | null | undefined} phase */
 function getPhaseStopValue(phase) {
   const exitType = phase?.exit?.type;
   if (!exitType) return '-';
   return formatStopValue(getStopActualValue(phase, exitType), getStopUnit(exitType));
 }
 
+/** @param {AnalyzerPhase | null | undefined} phase */
 function getPhaseStopTargetValue(phase) {
   const exitType = phase?.exit?.type;
   if (!exitType) return null;
@@ -94,17 +127,26 @@ function getPhaseStopTargetValue(phase) {
   return formatStopValue(targetValue, getStopUnit(exitType));
 }
 
+/**
+ * @param {unknown} rawPhaseNumber
+ * @param {number} [fallbackIndex]
+ */
 function getZeroBasedPhaseNumber(rawPhaseNumber, fallbackIndex = 0) {
   const numericPhaseNumber = Number(rawPhaseNumber);
   return Number.isFinite(numericPhaseNumber) ? numericPhaseNumber : fallbackIndex;
 }
 
+/** @param {unknown} value */
 function normalizePhaseNameKey(value) {
   return String(value || '')
     .trim()
     .toLowerCase();
 }
 
+/**
+ * @param {AnalyzerResults | null | undefined} results
+ * @returns {PhaseNumberResolver}
+ */
 function buildPhaseNumberResolver(results) {
   const resultPhases = Array.isArray(results?.phases) ? results.phases : [];
   const isProfileOrdered = resultPhases.some(phase => phase?.profilePhase || phase?.skipped);
@@ -114,8 +156,11 @@ function buildPhaseNumberResolver(results) {
       getZeroBasedPhaseNumber(rawPhaseNumber, fallbackIndex);
   }
 
+  /** @type {Map<string, number>} */
   const byName = new Map();
+  /** @type {Map<number, number>} */
   const rawCounts = new Map();
+  /** @type {Map<number, number>} */
   const rawToProfileIndex = new Map();
 
   resultPhases.forEach((phase, profileIndex) => {
@@ -148,6 +193,7 @@ function buildPhaseNumberResolver(results) {
   };
 }
 
+/** @param {number} phaseNumber */
 function getStopBadgePadding(phaseNumber) {
   const digitCount = String(Math.max(0, Number(phaseNumber) || 0)).length;
   return {
@@ -159,6 +205,7 @@ function getStopBadgePadding(phaseNumber) {
 const STOP_BADGE_X_ADJUST = 18;
 const STOP_BADGE_Y_ADJUST = -30;
 
+/** @type {Record<string, import('@fortawesome/fontawesome-svg-core').IconDefinition | undefined>} */
 const STOP_ICON_BY_TYPE = {
   pressure: faGauge,
   flow: faFaucet,
@@ -172,6 +219,12 @@ const STOP_ICON_BY_TYPE = {
 const WEIGHT_STOP_LEFT_X_ADJUST = -STOP_BADGE_X_ADJUST;
 const WEIGHT_STOP_LEFT_Y_ADJUST = STOP_BADGE_Y_ADJUST;
 
+/**
+ * @param {import('./types').AnnotationScriptContext | undefined} context
+ * @param {string} scaleId
+ * @param {number} value
+ * @param {number} pixelOffset
+ */
 function getShiftedScaleValue(context, scaleId, value, pixelOffset) {
   const scale = context?.chart?.scales?.[scaleId];
   if (!scale || !Number.isFinite(Number(value))) return value;
@@ -182,7 +235,9 @@ function getShiftedScaleValue(context, scaleId, value, pixelOffset) {
   return scale.getValueForPixel(pixel + pixelOffset);
 }
 
+/** @param {ChartShotData | null | undefined} shotData */
 function buildPhaseNameCache(shotData) {
+  /** @type {Map<number, string>} */
   const phaseNameCache = new Map();
   if (!Array.isArray(shotData?.phaseTransitions)) return phaseNameCache;
 
@@ -196,6 +251,13 @@ function buildPhaseNameCache(shotData) {
   return phaseNameCache;
 }
 
+/**
+ * @param {{
+ *   transition: ShotPhaseTransition | undefined,
+ *   samples: ChartSample[],
+ *   sampleInterval: number | undefined,
+ * }} params
+ */
 function getTransitionTimeInSeconds({ transition, samples, sampleInterval }) {
   if (transition?.sampleIndex === undefined) return 0;
   const sample = samples[transition.sampleIndex];
@@ -203,6 +265,10 @@ function getTransitionTimeInSeconds({ transition, samples, sampleInterval }) {
   return (transition.sampleIndex * (sampleInterval || 250)) / 1000;
 }
 
+/**
+ * @param {{ value: number }} params
+ * @returns {PhaseAnnotation}
+ */
 function createPhaseSeparatorAnnotation({ value }) {
   return {
     type: 'line',
@@ -217,10 +283,15 @@ function createPhaseSeparatorAnnotation({ value }) {
   };
 }
 
+/** @param {AnalyzerPhase | null | undefined} phase */
 function getResultPhaseNameKeys(phase) {
   return [phase?.profilePhase?.name, phase?.displayName, phase?.name].map(normalizePhaseNameKey);
 }
 
+/**
+ * @param {AnalyzerResults | null | undefined} results
+ * @param {ShotPhaseTransition | undefined} transition
+ */
 function findResultPhaseForTransition(results, transition) {
   const transitionNameKey = normalizePhaseNameKey(transition?.phaseName);
   const resultPhases = Array.isArray(results?.phases) ? results.phases : [];
@@ -235,6 +306,7 @@ function findResultPhaseForTransition(results, transition) {
   return resultPhases.find(phase => String(phase.number) === String(transition?.phaseNumber));
 }
 
+/** @param {ChartSample[]} samples */
 function getMaxPressure(samples) {
   let maxCp = 0;
   for (const sample of samples) {
@@ -244,12 +316,19 @@ function getMaxPressure(samples) {
   return maxCp;
 }
 
+/** @type {Record<string, 'fl' | 'cp' | undefined>} */
 const MAIN_STOP_SAMPLE_KEY_BY_EXIT_TYPE = {
   flow: 'fl',
   pressure: 'cp',
   pumped: 'fl',
 };
 
+/**
+ * @param {string} exitType
+ * @param {ChartSample | null | undefined} refSample
+ * @param {ChartSample[]} samples
+ * @returns {number}
+ */
 function getMainStopYValue(exitType, refSample, samples) {
   const sampleKey = MAIN_STOP_SAMPLE_KEY_BY_EXIT_TYPE[exitType];
   if (sampleKey) return refSample?.[sampleKey] ?? 0;
@@ -259,6 +338,14 @@ function getMainStopYValue(exitType, refSample, samples) {
   return 0;
 }
 
+/**
+ * @param {{
+ *   exitType: string,
+ *   stopSample: ChartSample | null | undefined,
+ *   samples: ChartSample[],
+ * }} params
+ * @returns {{ yValue: number, yScaleID: string }}
+ */
 function getStopPosition({ exitType, stopSample, samples }) {
   const isWeightStop = isWeightType(exitType);
 
@@ -275,6 +362,22 @@ function getStopPosition({ exitType, stopSample, samples }) {
   };
 }
 
+/**
+ * @param {{
+ *   xValue: number,
+ *   yValue: number,
+ *   yScaleID: string,
+ *   displayNumber: number,
+ *   calloutDisplay: boolean,
+ *   calloutSide: number,
+ *   xAdjust: number,
+ *   yAdjust: number,
+ *   fontSize: number,
+ *   calloutBorderWidth: number,
+ *   color?: string,
+ * }} params
+ * @returns {PhaseAnnotation}
+ */
 function createStopLabelAnnotation({
   xValue,
   yValue,
@@ -316,6 +419,19 @@ function createStopLabelAnnotation({
   };
 }
 
+/**
+ * @param {{
+ *   stopIconOverlays: StopIconOverlay[],
+ *   exitType: string,
+ *   visible: boolean,
+ *   xValue: number,
+ *   yValue: number,
+ *   yScaleID: string,
+ *   xOffset: number,
+ *   yOffset: number,
+ *   color?: string,
+ * }} params
+ */
 function addStopIconOverlay({
   stopIconOverlays,
   exitType,
@@ -343,6 +459,21 @@ function addStopIconOverlay({
   });
 }
 
+/**
+ * @param {{
+ *   phaseAnnotations: PhaseAnnotationMap,
+ *   stopIconOverlays: StopIconOverlay[],
+ *   transition: ShotPhaseTransition,
+ *   previousTransition: ShotPhaseTransition,
+ *   index: number,
+ *   samples: ChartSample[],
+ *   results: AnalyzerResults | null | undefined,
+ *   visibility: ChartVisibility,
+ *   resolvePhaseNumber: PhaseNumberResolver,
+ *   timeInSeconds: number,
+ *   colors: ShotChartColors,
+ * }} params
+ */
 function addTransitionStopAnnotation({
   phaseAnnotations,
   stopIconOverlays,
@@ -397,6 +528,18 @@ function addTransitionStopAnnotation({
   });
 }
 
+/**
+ * @param {{
+ *   phaseAnnotations: PhaseAnnotationMap,
+ *   stopIconOverlays: StopIconOverlay[],
+ *   shotData: ChartShotData | null | undefined,
+ *   results: AnalyzerResults | null | undefined,
+ *   samples: ChartSample[],
+ *   colors: ShotChartColors,
+ *   visibility: ChartVisibility,
+ *   resolvePhaseNumber: PhaseNumberResolver,
+ * }} params
+ */
 function addPhaseSeparatorAndStops({
   phaseAnnotations,
   stopIconOverlays,
@@ -454,11 +597,21 @@ function addPhaseSeparatorAndStops({
   }
 }
 
+/**
+ * @param {{
+ *   shotData: ChartShotData | null | undefined,
+ *   samples: ChartSample[],
+ *   maxTime: number,
+ *   resolvePhaseNumber: PhaseNumberResolver,
+ * }} params
+ * @returns {PhaseStart[]}
+ */
 function buildPhaseStarts({ shotData, samples, maxTime, resolvePhaseNumber }) {
   const transitions = Array.isArray(shotData?.phaseTransitions) ? shotData.phaseTransitions : [];
   if (transitions.length === 0) return [];
 
-  const firstSample = samples[0] || {};
+  const firstSample = samples[0] || /** @type {Partial<ChartSample>} */ ({});
+  /** @type {Partial<ShotPhaseTransition>} */
   const firstTransition =
     transitions.find(transition => {
       const sampleIndex = Number(transition?.sampleIndex);
@@ -498,6 +651,16 @@ function buildPhaseStarts({ shotData, samples, maxTime, resolvePhaseNumber }) {
   });
 }
 
+/**
+ * @param {{
+ *   phaseLabelOverlays: PhaseLabelOverlay[],
+ *   phaseStarts: PhaseStart[],
+ *   maxTime: number,
+ *   getPhaseLabel: (zeroBasedNum: number) => string,
+ *   usePhaseNumbers: boolean,
+ *   visibility: ChartVisibility,
+ * }} params
+ */
 function addPhaseLabelOverlays({
   phaseLabelOverlays,
   phaseStarts,
@@ -518,6 +681,15 @@ function addPhaseLabelOverlays({
   });
 }
 
+/**
+ * @param {{
+ *   phaseBackgroundRanges: PhaseBackgroundRange[],
+ *   phaseStarts: PhaseStart[],
+ *   maxTime: number,
+ *   visibility: ChartVisibility,
+ *   extendedStartX?: number | null,
+ * }} params
+ */
 function addPhaseBackgroundRanges({
   phaseBackgroundRanges,
   phaseStarts,
@@ -550,6 +722,11 @@ function addPhaseBackgroundRanges({
   });
 }
 
+/**
+ * @param {ChartSample[]} samples
+ * @param {number} maxTime
+ * @returns {number | null}
+ */
 export function getExtendedRecordingStartX(samples, maxTime) {
   const firstExtendedSample = samples.find(sample => sample?.systemInfo?.extendedRecording);
   const startX = Number(firstExtendedSample?.t) / 1000;
@@ -562,6 +739,14 @@ export function getExtendedRecordingStartX(samples, maxTime) {
   return startX;
 }
 
+/**
+ * @param {{
+ *   phaseAnnotations: PhaseAnnotationMap,
+ *   stopTimeSec: number,
+ *   yScaleID: string,
+ *   yValue: number,
+ * }} params
+ */
 function addFinalWeightStopLines({ phaseAnnotations, stopTimeSec, yScaleID, yValue }) {
   phaseAnnotations.shot_end = {
     type: 'line',
@@ -586,11 +771,23 @@ function addFinalWeightStopLines({ phaseAnnotations, stopTimeSec, yScaleID, yVal
   };
 }
 
+/**
+ * @param {ChartSample[]} samples
+ * @returns {ChartSample | null}
+ */
 function getLastPhaseStopSample(samples) {
   const lastNonExtendedIndex = getLastNonExtendedIndex(samples);
   return lastNonExtendedIndex >= 0 ? samples[lastNonExtendedIndex] : samples.at(-1) || null;
 }
 
+/**
+ * @param {{
+ *   maxTime: number,
+ *   resolvePhaseNumber: PhaseNumberResolver,
+ *   results: AnalyzerResults | null | undefined,
+ *   samples: ChartSample[],
+ * }} params
+ */
 function resolveFinalStopAnnotationContext({ maxTime, resolvePhaseNumber, results, samples }) {
   const resultPhases = Array.isArray(results?.phases) ? results.phases : [];
   if (resultPhases.length === 0) return null;
@@ -624,6 +821,18 @@ function resolveFinalStopAnnotationContext({ maxTime, resolvePhaseNumber, result
   };
 }
 
+/**
+ * @param {{
+ *   phaseAnnotations: PhaseAnnotationMap,
+ *   stopIconOverlays: StopIconOverlay[],
+ *   results: AnalyzerResults | null | undefined,
+ *   samples: ChartSample[],
+ *   maxTime: number,
+ *   visibility: ChartVisibility,
+ *   resolvePhaseNumber: PhaseNumberResolver,
+ *   colors: ShotChartColors,
+ * }} params
+ */
 function addFinalStopAnnotations({
   phaseAnnotations,
   stopIconOverlays,
@@ -678,6 +887,13 @@ function addFinalStopAnnotations({
   });
 }
 
+/**
+ * @param {{
+ *   shotData: ChartShotData | null | undefined,
+ *   results: AnalyzerResults | null | undefined,
+ * }} params
+ * @returns {PhaseOverviewRow[]}
+ */
 export function buildPhaseOverviewRows({ shotData, results }) {
   const resultPhases = Array.isArray(results?.phases) ? results.phases : [];
   if (resultPhases.length > 0) {
@@ -709,6 +925,7 @@ export function buildPhaseOverviewRows({ shotData, results }) {
 
   const transitions = Array.isArray(shotData?.phaseTransitions) ? shotData.phaseTransitions : [];
   if (transitions.length > 0) {
+    /** @type {Map<number, string>} */
     const phaseNameByNumber = new Map();
 
     transitions.forEach((transition, index) => {
@@ -722,25 +939,49 @@ export function buildPhaseOverviewRows({ shotData, results }) {
 
     return [...phaseNameByNumber.entries()]
       .sort(([a], [b]) => a - b)
-      .map(([zeroBasedPhaseNumber, phaseName]) => ({
-        phaseNumber: zeroBasedPhaseNumber + 1,
-        phaseName,
-        stopReason: '-',
-        stopValue: '-',
-        stopTargetValue: null,
-      }));
+      .map(
+        /** @returns {PhaseOverviewRow} */ ([zeroBasedPhaseNumber, phaseName]) => ({
+          phaseNumber: zeroBasedPhaseNumber + 1,
+          phaseName,
+          stopReason: '-',
+          stopValue: '-',
+          stopTargetValue: null,
+        }),
+      );
   }
 
-  const profilePhases = Array.isArray(shotData?.profile?.phases) ? shotData.profile.phases : [];
-  return profilePhases.map((phase, index) => ({
-    phaseNumber: index + 1,
-    phaseName: phase?.displayName || phase?.name || getPhaseName(shotData, index),
-    stopReason: '-',
-    stopValue: '-',
-    stopTargetValue: null,
-  }));
+  const embeddedProfile =
+    /** @type {{ phases?: import('./types').ChartShotProfilePhase[] } | undefined} */ (
+      shotData?.profile
+    );
+  const profilePhases = Array.isArray(embeddedProfile?.phases) ? embeddedProfile.phases : [];
+  return profilePhases.map(
+    /** @returns {PhaseOverviewRow} */ (phase, index) => ({
+      phaseNumber: index + 1,
+      phaseName: phase?.displayName || phase?.name || getPhaseName(shotData, index),
+      stopReason: '-',
+      stopValue: '-',
+      stopTargetValue: null,
+    }),
+  );
 }
 
+/**
+ * @param {{
+ *   shotData: ChartShotData | null | undefined,
+ *   results: AnalyzerResults | null | undefined,
+ *   samples: ChartSample[],
+ *   maxTime: number,
+ *   colors: ShotChartColors,
+ *   visibility: ChartVisibility,
+ *   usePhaseNumbers: boolean,
+ *   phaseLabelOverlays?: PhaseLabelOverlay[],
+ *   phaseBackgroundRanges?: PhaseBackgroundRange[],
+ *   extendedStartX?: number | null,
+ *   stopIconOverlays?: StopIconOverlay[],
+ * }} params
+ * @returns {PhaseAnnotationMap}
+ */
 export function buildPhaseAnnotations({
   shotData,
   results,
@@ -754,6 +995,7 @@ export function buildPhaseAnnotations({
   extendedStartX = null,
   stopIconOverlays = [],
 }) {
+  /** @type {PhaseAnnotationMap} */
   const phaseAnnotations = {};
   const resolvePhaseNumber = buildPhaseNumberResolver(results);
   const hasPhaseTransitions =
@@ -761,6 +1003,7 @@ export function buildPhaseAnnotations({
   if (!hasPhaseTransitions) return phaseAnnotations;
 
   const phaseNameCache = buildPhaseNameCache(shotData);
+  /** @param {number} zeroBasedNum */
   const getPhaseLabel = zeroBasedNum =>
     usePhaseNumbers
       ? String(zeroBasedNum + 1)
@@ -806,6 +1049,10 @@ export function buildPhaseAnnotations({
   return phaseAnnotations;
 }
 
+/**
+ * @param {PhaseAnnotationMap} phaseAnnotations
+ * @returns {PhaseAnnotationMap}
+ */
 export function buildTempPhaseAnnotations(phaseAnnotations) {
   // The temperature chart mirrors only the timing separators. Labels stay on the
   // main chart to avoid duplicated annotation text in the stacked layout.
@@ -819,5 +1066,5 @@ export function buildTempPhaseAnnotations(phaseAnnotations) {
       label: { display: false },
     };
     return acc;
-  }, {});
+  }, /** @type {PhaseAnnotationMap} */ ({}));
 }

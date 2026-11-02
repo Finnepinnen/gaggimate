@@ -1,6 +1,15 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { STATISTICS_DENSE_VALUE_CLASS, STATISTICS_METRIC_LABEL_CLASS } from './statisticsUi';
 
+/**
+ * @param {object} props
+ * @param {string} props.accentColor - CSS color
+ * @param {import('@fortawesome/fontawesome-svg-core').IconDefinition} props.icon
+ * @param {string} props.label
+ * @param {string | null} [props.unit]
+ * @param {string} props.value - Pre-formatted
+ * @param {string} [props.valueClassName]
+ */
 export function StatisticsMetricHeader({
   accentColor,
   icon,

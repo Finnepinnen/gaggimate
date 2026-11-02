@@ -1,5 +1,81 @@
 import { TclConverter } from './TclConverter.js';
 
+/** @typedef {import('../../types').Profile} Profile */
+/** @typedef {import('../../types').ProfilePhase} ProfilePhase */
+/** @typedef {import('../../types').PhaseTarget} PhaseTarget */
+/** @typedef {import('../../types').PumpSettings} PumpSettings */
+/** @typedef {import('../../types').TransitionType} TransitionType */
+/** @typedef {import('../../types').TargetOperator} TargetOperator */
+/** A profile ready to save; `image` is a data URL uploaded separately. */
+/** @typedef {Profile & { image?: string }} ImportedProfile */
+
+/**
+ * @typedef {{
+ *   name?: string,
+ *   type?: string,
+ *   restriction?: number,
+ *   waterTemperature?: number,
+ *   target: { time: number, end: number, curve: string },
+ *   stopConditions: {
+ *     time?: number,
+ *     pressureAbove?: number,
+ *     pressureBelow?: number,
+ *     flowAbove?: number,
+ *     flowBelow?: number,
+ *     weight?: number,
+ *     waterPumpedInPhase?: number,
+ *   },
+ * }} GaggiuinoPhase
+ */
+/**
+ * @typedef {{
+ *   name?: string,
+ *   waterTemperature?: number,
+ *   phases: GaggiuinoPhase[],
+ *   globalStopConditions?: { weight?: number },
+ * }} GaggiuinoProfile
+ */
+
+/** Numbers, or `$key` references into the profile's variables. */
+/** @typedef {number | string} MeticulousValue */
+/**
+ * @typedef {{
+ *   type?: string,
+ *   value?: MeticulousValue,
+ *   relative?: boolean,
+ *   comparison?: string,
+ * }} MeticulousExitTrigger
+ */
+/**
+ * @typedef {{
+ *   name?: string,
+ *   type?: string,
+ *   temperature_delta?: number,
+ *   dynamics?: {
+ *     points?: [MeticulousValue, MeticulousValue][],
+ *     over?: string,
+ *     interpolation?: string,
+ *   },
+ *   exit_triggers?: MeticulousExitTrigger[],
+ *   limits?: { type?: string, value?: MeticulousValue }[],
+ * }} MeticulousStage
+ */
+/**
+ * @typedef {{
+ *   name?: unknown,
+ *   temperature?: unknown,
+ *   final_weight?: unknown,
+ *   display?: { description?: unknown, shortDescription?: unknown, image?: unknown },
+ *   variables?: { key?: unknown, value?: unknown }[],
+ *   stages: MeticulousStage[],
+ * }} MeticulousProfile
+ */
+/** @typedef {(value: unknown) => unknown} VariableResolver */
+
+/**
+ * @param {string} input JSON (profile or array of profiles) or a Decent TCL profile.
+ * @returns {ImportedProfile[]}
+ */
 export function parseProfile(input) {
   try {
     let profiles = JSON.parse(input);
@@ -21,6 +97,10 @@ export function parseProfile(input) {
 // Detect the source profile format and dispatch to the appropriate importer.
 // Falls through to returning the raw input (existing behaviour) when no
 // recognised format matches.
+/**
+ * @param {any} input Parsed JSON, not yet validated.
+ * @returns {ImportedProfile}
+ */
 function convertJsonProfile(input) {
   if (!input || typeof input !== 'object') return input;
   // Meticulous signature: stages[] with a dynamics object on each stage.
@@ -28,7 +108,9 @@ function convertJsonProfile(input) {
   if (
     Array.isArray(input.stages) &&
     input.stages.length > 0 &&
-    input.stages.some(s => s && typeof s === 'object' && s.dynamics)
+    input.stages.some(
+      (/** @type {MeticulousStage} */ s) => s && typeof s === 'object' && s.dynamics,
+    )
   ) {
     return convertMeticulousProfile(input);
   }
@@ -39,25 +121,33 @@ function convertJsonProfile(input) {
   return input;
 }
 
+/**
+ * @param {GaggiuinoProfile} input
+ * @returns {ImportedProfile}
+ */
 function parseJsonProfile(input) {
   if (input.waterTemperature) {
-    let profile = {
+    let profile = /** @type {ImportedProfile} */ ({
       label: input.name,
       type: 'pro',
       temperature: input.waterTemperature,
       phases: [],
-    };
+    });
 
+    /**
+     * @param {unknown} v
+     * @returns {v is number}
+     */
     let isPositive = function (v) {
       return typeof v === 'number' && v > 0 && Number.isFinite(v);
     };
 
     for (let i = 0; i < input.phases.length; i++) {
       let p = input.phases[i];
-      let phase = {
+      let phase = /** @type {ProfilePhase} */ ({
         name: p && typeof p.name === 'string' && p.name.trim() ? p.name : `Phase ${i + 1}`,
         valve: 1,
-        pump: /** @type {number | { target: string, pressure: number, flow: number }} */ (0),
+        pump: /** @type {PumpSettings} */ (0),
         duration: Math.max(p.target.time, p.stopConditions.time) / 1000,
         targets: [],
         temperature: isPositive(p.waterTemperature) ? p.waterTemperature : 0,
@@ -66,7 +156,7 @@ function parseJsonProfile(input) {
           duration: p.target.time / 1000,
           adaptive: true,
         },
-      };
+      });
       if (p.target.end > 0) {
         if (p.type == 'PRESSURE') {
           phase.pump = {
@@ -110,7 +200,7 @@ function parseJsonProfile(input) {
 
     return profile;
   }
-  return input;
+  return /** @type {ImportedProfile} */ (/** @type {unknown} */ (input));
 }
 
 // ---- Meticulous JSON → Gaggimate ------------------------------------------
@@ -118,26 +208,44 @@ function parseJsonProfile(input) {
 
 const PREINFUSION_KEYWORDS = ['preinfu', 'soak', 'bloom', 'fill', 'wet'];
 
+/**
+ * @param {unknown} value
+ * @returns {value is number}
+ */
 function isPositive(value) {
   return typeof value === 'number' && value > 0 && Number.isFinite(value);
 }
 
+/** @param {number} seconds */
 function clampDuration(seconds) {
   if (!Number.isFinite(seconds) || seconds <= 0) return 0.5;
   return Math.max(0.5, Math.min(300, seconds));
 }
 
+/**
+ * @param {string | undefined} interpolation
+ * @returns {TransitionType}
+ */
 function mapInterpolation(interpolation) {
   if (interpolation === 'linear') return 'linear';
   if (interpolation === 'curve') return 'ease-in-out';
   return 'instant';
 }
 
+/**
+ * @param {string | undefined} comparison
+ * @returns {TargetOperator}
+ */
 function mapComparison(comparison) {
   return comparison === '<=' ? 'lte' : 'gte';
 }
 
+/**
+ * @param {MeticulousProfile['variables']} variables
+ * @returns {VariableResolver}
+ */
 function buildVariableResolver(variables) {
+  /** @type {Record<string, unknown>} */
   const table = {};
   for (const v of variables || []) {
     if (v && typeof v.key === 'string') table[v.key] = v.value;
@@ -150,11 +258,16 @@ function buildVariableResolver(variables) {
   };
 }
 
+/**
+ * @param {MeticulousStage} stage
+ * @param {VariableResolver} resolve
+ * @returns {{ points: [number, number][], duration: number, rampDuration: number }}
+ */
 function deriveDurations(stage, resolve) {
-  const points = (stage.dynamics?.points || []).map(([x, y]) => [
-    Number(resolve(x)) || 0,
-    Number(resolve(y)) || 0,
-  ]);
+  const points = (stage.dynamics?.points || []).map(
+    ([x, y]) =>
+      /** @type {[number, number]} */ ([Number(resolve(x)) || 0, Number(resolve(y)) || 0]),
+  );
   const isTimeAxis = stage.dynamics?.over === 'time';
   const rampSpan =
     isTimeAxis && points.length >= 2 ? Math.max(0, points[points.length - 1][0] - points[0][0]) : 0;
@@ -171,6 +284,12 @@ function deriveDurations(stage, resolve) {
   };
 }
 
+/**
+ * @param {MeticulousStage} stage
+ * @param {[number, number][]} points
+ * @param {VariableResolver} resolve
+ * @returns {PumpSettings}
+ */
 function buildPump(stage, points, resolve) {
   const setpoint = points.length ? points[points.length - 1][1] : 0;
   // `power` stages map to a fixed pump duty cycle (Gaggimate's simple pump form).
@@ -189,13 +308,20 @@ function buildPump(stage, points, resolve) {
   return { target: 'flow', pressure: resolvedPressureLimit, flow: setpoint };
 }
 
+/**
+ * @param {MeticulousStage} stage
+ * @param {VariableResolver} resolve
+ * @returns {PhaseTarget[]}
+ */
 function buildTargets(stage, resolve) {
+  /** @type {PhaseTarget[]} */
   const out = [];
   for (const trigger of stage.exit_triggers || []) {
     if (!trigger || trigger.type === 'time') continue;
     // Relative weight is "delta since stage start"; Gaggimate's volumetric target compares
     // absolute scale mass, so applying a relative value would fire too early. Drop them.
     if (trigger.type === 'weight' && trigger.relative === true) continue;
+    /** @type {PhaseTarget['type']} */
     let type;
     if (trigger.type === 'weight') type = 'volumetric';
     else if (trigger.type === 'pressure') type = 'pressure';
@@ -208,11 +334,19 @@ function buildTargets(stage, resolve) {
   return out;
 }
 
+/**
+ * @param {MeticulousStage} stage
+ * @param {number} index
+ * @param {number} profileTemperature
+ * @param {VariableResolver} resolve
+ * @returns {ProfilePhase}
+ */
 function convertStage(stage, index, profileTemperature, resolve) {
   const { points, duration, rampDuration } = deriveDurations(stage, resolve);
   const isPreinfusion = PREINFUSION_KEYWORDS.some(kw =>
     (stage.name || '').toLowerCase().includes(kw),
   );
+  /** @type {ProfilePhase} */
   const phase = {
     name: stage.name || `Phase ${index + 1}`,
     phase: isPreinfusion ? 'preinfusion' : 'brew',
@@ -234,6 +368,10 @@ function convertStage(stage, index, profileTemperature, resolve) {
   return phase;
 }
 
+/**
+ * @param {MeticulousProfile['display']} display
+ * @returns {string}
+ */
 function pickDescription(display) {
   if (!display) return '';
   if (typeof display.description === 'string') return display.description;
@@ -241,8 +379,13 @@ function pickDescription(display) {
   return '';
 }
 
+/**
+ * @param {MeticulousProfile} input
+ * @returns {ImportedProfile}
+ */
 function convertMeticulousProfile(input) {
   const resolve = buildVariableResolver(input.variables);
+  /** @type {ImportedProfile} */
   const profile = {
     label: typeof input.name === 'string' && input.name.trim() ? input.name : 'Imported Profile',
     type: 'pro',

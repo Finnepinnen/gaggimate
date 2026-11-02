@@ -6,6 +6,15 @@ import {
   getPuckResistanceValue,
 } from '../../../services/analyzer/puckResistance';
 
+/** @typedef {import('./types').ChartSample} ChartSample */
+/** @typedef {import('./types').ChartSeriesMap} ChartSeriesMap */
+
+/**
+ * @template {keyof ChartSample} K
+ * @param {ChartSample} sample
+ * @param {K[]} keys
+ * @returns {ChartSample[K] | null}
+ */
 function getSampleValue(sample, keys) {
   for (const key of keys) {
     if (sample[key] !== undefined) return sample[key];
@@ -13,17 +22,22 @@ function getSampleValue(sample, keys) {
   return null;
 }
 
+/** @param {ChartSample} sample */
 function getFlowFromSample(sample) {
   return getSampleValue(sample, ['fl', 'f', 'flow']);
 }
 
+/** @param {ChartSample | undefined} sample */
 function getSampleTimeMs(sample) {
   const time = Number(sample?.t);
   return Number.isFinite(time) ? time : 0;
 }
 
+/** @param {ChartSample[]} samples */
 export function buildSampleTimeline(samples) {
+  /** @type {number[]} */
   const sampleTimesSec = new Array(samples.length);
+  /** @type {number[]} */
   const cumulativeWaterTotalBySample = new Array(samples.length);
   const pumpedWaterSource = createPumpedWaterSource(samples);
   const initialRecordedWater = pumpedWaterSource.usesRecordedPumpedWater
@@ -32,7 +46,7 @@ export function buildSampleTimeline(samples) {
   let cumulativeWaterTotal = 0;
 
   for (let i = 0; i < samples.length; i++) {
-    const sample = samples[i] || {};
+    const sample = samples[i] || /** @type {ChartSample} */ ({});
     const tMs = getSampleTimeMs(sample);
     sampleTimesSec[i] = tMs / 1000;
 
@@ -48,7 +62,7 @@ export function buildSampleTimeline(samples) {
 
     // The previous sample's flow was active during this interval. This also keeps
     // t=0 valid instead of treating the first 250 ms as a zero-length interval.
-    const previousSample = samples[i - 1] || {};
+    const previousSample = samples[i - 1] || /** @type {ChartSample} */ ({});
     const prevTMs = getSampleTimeMs(previousSample);
     const dt = Math.max(0, (tMs - prevTMs) / 1000);
     const flow = Number(getFlowFromSample(previousSample));
@@ -64,7 +78,12 @@ export function buildSampleTimeline(samples) {
   };
 }
 
+/**
+ * @param {ChartSample[]} samples
+ * @returns {ChartSeriesMap}
+ */
 export function buildSeries(samples) {
+  /** @type {ChartSeriesMap} */
   const series = {
     pressure: [],
     flow: [],
@@ -117,6 +136,7 @@ export function buildSeries(samples) {
   return series;
 }
 
+/** @param {ChartSeriesMap} series */
 export function buildAxisRanges(series) {
   const hasWeight = series.weight.some(point => point.y > 0);
 

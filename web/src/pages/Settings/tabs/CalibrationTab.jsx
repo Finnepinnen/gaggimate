@@ -7,6 +7,12 @@ import Section from '../../../components/Card.jsx';
 import PumpFlowCalibration from '../../../components/PumpFlowCalibration/index.jsx';
 import { SettingsFormField } from '../../../components/SettingsFormField.jsx';
 
+/**
+ * @param {{
+ *   formData: import('../types').SettingsFormData,
+ *   setField: import('../types').SetField,
+ * }} props
+ */
 export function CalibrationTab({ formData, setField }) {
   const { t } = useLingui();
   const apiService = useContext(ApiServiceContext);

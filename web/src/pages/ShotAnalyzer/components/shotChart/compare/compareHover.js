@@ -1,5 +1,11 @@
 import { areTooltipStatesEqual } from '../ShotChartExternalTooltip';
 
+/** @typedef {import('../tooltip/tooltipTypes').ShotChartInstance} ShotChartInstance */
+/** @typedef {import('../tooltip/tooltipTypes').ExternalTooltipState} ExternalTooltipState */
+/** @typedef {import('chart.js').ActiveDataPoint} ActiveDataPoint */
+/** @typedef {(event: MouseEvent | TouchEvent | PointerEvent) => void} HoverListener */
+
+/** @param {ShotChartInstance | null | undefined} chart */
 export function clearCompareChartHover(chart) {
   if (!chart) return;
   chart.$fixedTooltipPointerY = null;
@@ -10,6 +16,11 @@ export function clearCompareChartHover(chart) {
   chart.update('none');
 }
 
+/**
+ * @param {unknown} datasetData
+ * @param {number} xValue
+ * @returns {number}
+ */
 function findClosestPointIndex(datasetData, xValue) {
   if (!Array.isArray(datasetData) || datasetData.length === 0 || !Number.isFinite(xValue)) {
     return -1;
@@ -50,6 +61,11 @@ function findClosestPointIndex(datasetData, xValue) {
   return bestIndex;
 }
 
+/**
+ * @param {ShotChartInstance} chart
+ * @param {number} xValue
+ * @returns {ActiveDataPoint[]}
+ */
 function buildCompareActiveElements(chart, xValue) {
   if (!chart || !Number.isFinite(xValue)) return [];
 
@@ -64,9 +80,10 @@ function buildCompareActiveElements(chart, xValue) {
       active.push({ datasetIndex, index: pointIndex });
     }
     return active;
-  }, []);
+  }, /** @type {ActiveDataPoint[]} */ ([]));
 }
 
+/** @param {{ data?: unknown } | null | undefined} dataset */
 function getDatasetEndX(dataset) {
   const points = Array.isArray(dataset?.data) ? dataset.data : [];
   for (let index = points.length - 1; index >= 0; index -= 1) {
@@ -77,6 +94,10 @@ function getDatasetEndX(dataset) {
   return Number.NEGATIVE_INFINITY;
 }
 
+/**
+ * @param {ShotChartInstance} chart
+ * @returns {number}
+ */
 function resolveCompareTitleOnlyDatasetIndex(chart) {
   if (!chart) return -1;
   const cachedIndex = Number(chart.$compareTitleOnlyDatasetIndex);
@@ -111,6 +132,11 @@ function resolveCompareTitleOnlyDatasetIndex(chart) {
   return chart.$compareTitleOnlyDatasetIndex;
 }
 
+/**
+ * @param {ShotChartInstance} chart
+ * @param {number} xValue
+ * @returns {ActiveDataPoint[]}
+ */
 function buildCompareTitleOnlyActiveElements(chart, xValue) {
   if (!chart || !Number.isFinite(xValue)) return [];
 
@@ -121,6 +147,12 @@ function buildCompareTitleOnlyActiveElements(chart, xValue) {
   return pointIndex >= 0 ? [{ datasetIndex, index: pointIndex }] : [];
 }
 
+/**
+ * @param {ShotChartInstance | null | undefined} chart
+ * @param {number} clientX
+ * @param {number | null | undefined} clientY
+ * @returns {{ xValue: number, xPixel: number, tooltipY: number } | null}
+ */
 function resolveCompareHoverGeometry(chart, clientX, clientY) {
   const xScale = chart?.scales?.x;
   if (!chart?.canvas || !chart?.chartArea || !xScale || !Number.isFinite(clientX)) return null;
@@ -148,6 +180,12 @@ function resolveCompareHoverGeometry(chart, clientX, clientY) {
   };
 }
 
+/**
+ * @param {ShotChartInstance | null | undefined} chart
+ * @param {number} clientX
+ * @param {number | null | undefined} clientY
+ * @param {import('preact/hooks').Dispatch<import('preact/hooks').StateUpdater<ExternalTooltipState>>} setExternalTooltipState
+ */
 export function applyCompareTitleOnlyHover(chart, clientX, clientY, setExternalTooltipState) {
   const hoverGeometry = resolveCompareHoverGeometry(chart, clientX, clientY);
   if (!hoverGeometry) {
@@ -163,6 +201,7 @@ export function applyCompareTitleOnlyHover(chart, clientX, clientY, setExternalT
   chart.tooltip?.setActiveElements([], { x: 0, y: 0 });
   chart.draw();
 
+  /** @type {ExternalTooltipState} */
   const nextState = {
     visible: true,
     titleLines: [`${xValue.toFixed(2)} s`],
@@ -181,6 +220,12 @@ export function applyCompareTitleOnlyHover(chart, clientX, clientY, setExternalT
   setExternalTooltipState(prev => (areTooltipStatesEqual(prev, nextState) ? prev : nextState));
 }
 
+/**
+ * @param {ShotChartInstance | null | undefined} chart
+ * @param {number} clientX
+ * @param {number | null | undefined} clientY
+ * @param {{ titleOnly?: boolean }} [options]
+ */
 export function applyCompareHover(chart, clientX, clientY, { titleOnly = false } = {}) {
   const hoverGeometry = resolveCompareHoverGeometry(chart, clientX, clientY);
   if (!hoverGeometry) {
@@ -212,6 +257,11 @@ export function applyCompareHover(chart, clientX, clientY, { titleOnly = false }
   chart.update('none');
 }
 
+/**
+ * @param {ShotChartInstance | null | undefined} chart
+ * @param {number | null} xValue
+ * @param {{ titleOnly?: boolean }} [options]
+ */
 export function applyCompareHoverAtX(chart, xValue, { titleOnly = false } = {}) {
   const xScale = chart?.scales?.x;
   if (!chart?.canvas || !chart?.chartArea || !xScale || !Number.isFinite(Number(xValue))) {
@@ -235,6 +285,12 @@ export function applyCompareHoverAtX(chart, xValue, { titleOnly = false } = {}) 
   applyCompareHover(chart, chartRect.left + xPixel, clientY, { titleOnly });
 }
 
+/**
+ * @param {EventTarget} hoverSurface
+ * @param {boolean} supportsPointerEvents
+ * @param {HoverListener} handleHoverMove
+ * @param {HoverListener} clearHover
+ */
 export function addCompareHoverListeners(
   hoverSurface,
   supportsPointerEvents,
@@ -258,6 +314,12 @@ export function addCompareHoverListeners(
   hoverSurface.addEventListener('touchcancel', clearHover);
 }
 
+/**
+ * @param {EventTarget} hoverSurface
+ * @param {boolean} supportsPointerEvents
+ * @param {HoverListener} handleHoverMove
+ * @param {HoverListener} clearHover
+ */
 export function removeCompareHoverListeners(
   hoverSurface,
   supportsPointerEvents,

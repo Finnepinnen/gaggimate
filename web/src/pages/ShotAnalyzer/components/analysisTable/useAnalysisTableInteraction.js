@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'preact/hooks';
 
+/** @type {import('preact').JSX.CSSProperties} */
 export const ANALYSIS_SCROLLBAR_HIDE_STYLE = {
   scrollbarWidth: 'none',
   msOverflowStyle: 'none',
 };
 
+/**
+ * @param {boolean} isTouchOptimized
+ * @returns {import('preact').JSX.CSSProperties}
+ */
 export function getAnalysisTouchInteractionStyle(isTouchOptimized) {
   if (!isTouchOptimized) {
     return { touchAction: 'pan-y' };
@@ -17,10 +22,20 @@ export function getAnalysisTouchInteractionStyle(isTouchOptimized) {
   };
 }
 
+/** @typedef {import('preact').RefObject<HTMLElement>} TableContainerRef */
+
+/**
+ * @param {TableContainerRef} ref
+ * @param {number} amount px
+ */
 export function scrollAnalysisTable(ref, amount) {
   ref.current?.scrollBy({ left: amount, behavior: 'smooth' });
 }
 
+/**
+ * @param {TableContainerRef} ref
+ * @param {'start' | 'end'} direction
+ */
 export function scrollAnalysisTableToBound(ref, direction) {
   const tableElement = ref.current;
   if (!tableElement) return;
@@ -28,11 +43,13 @@ export function scrollAnalysisTableToBound(ref, direction) {
   tableElement.scrollTo({ left, behavior: 'smooth' });
 }
 
+/** @param {TableContainerRef} tableContainerRef */
 export function useVerticalWheelForwarding(tableContainerRef) {
   useEffect(() => {
     const tableElement = tableContainerRef.current;
     if (!tableElement) return undefined;
 
+    /** @param {WheelEvent} event */
     const handleWheel = event => {
       if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
       globalThis.window?.scrollBy({

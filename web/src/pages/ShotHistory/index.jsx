@@ -34,10 +34,13 @@ import { faFilter } from '@fortawesome/free-solid-svg-icons/faFilter';
 
 const connected = computed(() => machine.value.connected);
 
+/** @typedef {import('../../types').Shot} Shot */
+/** @typedef {import('../../types').ShotLog} ShotLog */
+
 export function ShotHistory() {
   const { t } = useLingui();
   const apiService = useContext(ApiServiceContext);
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState(/** @type {Shot[]} */ ([]));
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('date'); // date, rating, profile, duration, volume
@@ -104,6 +107,7 @@ export function ShotHistory() {
   }, [connected.value]);
 
   const onDelete = useCallback(
+    /** @param {string} id */
     async id => {
       setLoading(true);
       await apiService.request({ tp: 'req:history:delete', id });
@@ -296,6 +300,7 @@ export function ShotHistory() {
                 const resp = await fetch(`/api/history/${paddedId}.slog`);
                 if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
                 const buf = await resp.arrayBuffer();
+                /** @type {ShotLog & Partial<Pick<Shot, 'notes' | 'rating'>>} */
                 const parsed = parseBinaryShot(buf, id);
                 parsed.incomplete = (target?.incomplete ?? false) || parsed.incomplete;
                 if (target?.notes) parsed.notes = target.notes;

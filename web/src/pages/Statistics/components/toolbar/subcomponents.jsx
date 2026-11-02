@@ -26,8 +26,71 @@ import { getMenuItemClasses, getSegmentButtonClasses, getDateBasisOptionTitle } 
 import { Trans, useLingui } from '@lingui/react/macro';
 import { i18n } from '../../../../i18n.js';
 
+/**
+ * @typedef {import('../../types').StatisticsSourceSelection} StatisticsSourceSelection
+ * @typedef {import('../../types').StatisticsMode} StatisticsMode
+ * @typedef {import('../../types').DateBasisMode} DateBasisMode
+ * @typedef {import('../../types').StatisticsQueryIssue} StatisticsQueryIssue
+ * @typedef {import('../../types').ProfileSelectionItem} ProfileSelectionItem
+ * @typedef {import('../../types').ShotSelectionItem} ShotSelectionItem
+ * @typedef {import('./helpers').DateRangeDisplay} DateRangeDisplay
+ * @typedef {typeof SOURCE_OPTIONS[number]} SourceOption
+ * @typedef {typeof MODE_OPTIONS[number]} ModeOption
+ * @typedef {(value: boolean) => void} BooleanSetter
+ * @typedef {{ isBusy: boolean, toolbarControlClass: string }} ToolbarControlProps
+ * @typedef {ToolbarControlProps & { busyDropdownClass: string }} ToolbarDropdownProps
+ * @typedef {ToolbarDropdownProps & {
+ *   mode: StatisticsMode,
+ *   onModeChange: (mode: StatisticsMode) => void,
+ *   currentModeOption: ModeOption,
+ *   modeTriggerClasses: string,
+ * }} ModeSelectionDropdownProps
+ * @typedef {ToolbarControlProps & {
+ *   mode: StatisticsMode,
+ *   profileSelectionItems: ProfileSelectionItem[],
+ *   selectedProfileNames: string[],
+ *   onSelectedProfileNamesChange: (names: string[]) => void,
+ *   onProfilePinToggle: (item: ProfileSelectionItem) => void,
+ *   shotSelectionItems: ShotSelectionItem[],
+ *   selectedShotKeys: string[],
+ *   onSelectedShotKeysChange: (keys: string[]) => void,
+ *   onShotPinToggle: (item: ShotSelectionItem) => void,
+ * }} SelectionDropdownsProps
+ * @typedef {ToolbarDropdownProps & {
+ *   currentShotSourceOption: SourceOption,
+ *   currentProfileSourceOption: SourceOption,
+ *   shotSource: StatisticsSourceSelection,
+ *   onShotSourceChange: (source: StatisticsSourceSelection) => void,
+ *   profileSource: StatisticsSourceSelection,
+ *   onProfileSourceChange: (source: StatisticsSourceSelection) => void,
+ *   sourceTriggerClasses: string,
+ * }} SourceSelectionDropdownProps
+ * @typedef {ToolbarDropdownProps & {
+ *   hasDateFilter: boolean,
+ *   showDateRangeLabelInTrigger: boolean,
+ *   dateRangeDisplay: DateRangeDisplay,
+ *   dateFromLocal: string,
+ *   onDateFromChange: (value: string) => void,
+ *   dateToLocal: string,
+ *   onDateToChange: (value: string) => void,
+ *   dateTriggerClasses: string,
+ *   compactNeutralButtonClasses: string,
+ * }} DateRangeDropdownProps
+ * @typedef {ToolbarControlProps & {
+ *   showAdvancedSearch: boolean,
+ *   setShowAdvancedSearch: BooleanSetter,
+ *   setShowDslSelectionPreview: BooleanSetter,
+ *   dslInputRef: import('preact').Ref<HTMLDivElement>,
+ *   query: string,
+ *   onQueryChange: (query: string) => void,
+ *   compactNeutralButtonClasses: string,
+ *   activeCompactNeutralButtonClasses: string,
+ * }} AdvancedSearchControlsProps
+ */
+
 const STATISTICS_DROPDOWN_PANEL_CLASSES = `dropdown-content mt-2 ${STATISTICS_DROPDOWN_PANEL_SURFACE_CLASS}`;
 
+/** @param {SourceOption | undefined} option */
 function renderCompactSourceSummary(option) {
   if (!option) return null;
   if (option.value === 'both') {
@@ -42,6 +105,7 @@ function renderCompactSourceSummary(option) {
   return <SourceMarker source={option.value} variant='compact' />;
 }
 
+/** @param {{ shotOption: SourceOption, profileOption: SourceOption }} options */
 function renderCombinedSourceSummary({ shotOption, profileOption }) {
   return (
     <span className='inline-flex min-w-0 items-center gap-1.5'>
@@ -62,6 +126,7 @@ function renderCombinedSourceSummary({ shotOption, profileOption }) {
   );
 }
 
+/** @param {SourceOption | undefined} option */
 function renderSourceOptionContent(option) {
   if (!option) return null;
   if (option.value === 'both') {
@@ -71,11 +136,13 @@ function renderSourceOptionContent(option) {
   return (
     <span className='inline-flex items-center gap-2'>
       <SourceMarker source={option.value} variant='compact' />
-      <span>{i18n._(option.label)}</span>
+      {/* `any`: i18n._ takes a plain id or a descriptor, but its overloads reject the union. */}
+      <span>{i18n._(/** @type {any} */ (option.label))}</span>
     </span>
   );
 }
 
+/** @param {{ visible: boolean }} props */
 export function ToolbarBusyOverlay({ visible }) {
   if (!visible) return null;
 
@@ -86,6 +153,13 @@ export function ToolbarBusyOverlay({ visible }) {
   );
 }
 
+/**
+ * @param {object} props
+ * @param {string} props.collapsedShotCountLabel
+ * @param {string} props.collapsedProfileCountLabel
+ * @param {string | number} props.collapsedDateRangeText
+ * @param {() => void} props.onExpand
+ */
 export function CollapsedToolbarStrip({
   collapsedShotCountLabel,
   collapsedProfileCountLabel,
@@ -121,6 +195,7 @@ export function CollapsedToolbarStrip({
   );
 }
 
+/** @param {ModeSelectionDropdownProps} props */
 export function ModeSelectionDropdown({
   mode,
   onModeChange,
@@ -175,11 +250,13 @@ export function ModeSelectionDropdown({
   );
 }
 
+/** @param {Element} target */
 function closeParentDetails(target) {
   const details = target.closest('details');
   if (details) details.open = false;
 }
 
+/** @param {SelectionDropdownsProps} props */
 export function SelectionDropdowns({
   mode,
   profileSelectionItems,
@@ -246,6 +323,7 @@ export function SelectionDropdowns({
   return null;
 }
 
+/** @param {SourceSelectionDropdownProps} props */
 export function SourceSelectionDropdown({
   sourceTriggerClasses,
   currentShotSourceOption,
@@ -324,6 +402,7 @@ export function SourceSelectionDropdown({
   );
 }
 
+/** @param {DateRangeDropdownProps} props */
 export function DateRangeDropdown({
   dateTriggerClasses,
   hasDateFilter,
@@ -433,6 +512,7 @@ export function DateRangeDropdown({
   );
 }
 
+/** @param {AdvancedSearchControlsProps} props */
 export function AdvancedSearchControls({
   showAdvancedSearch,
   setShowAdvancedSearch,
@@ -462,10 +542,13 @@ export function AdvancedSearchControls({
           <input
             type='text'
             value={query}
-            onInput={e => {
-              setShowDslSelectionPreview(!!String(e.currentTarget.value || '').trim());
-              onQueryChange(e.currentTarget.value);
-            }}
+            onInput={
+              /** @param {import('preact').JSX.TargetedEvent<HTMLInputElement, Event>} e */
+              e => {
+                setShowDslSelectionPreview(!!String(e.currentTarget.value || '').trim());
+                onQueryChange(e.currentTarget.value);
+              }
+            }
             onFocus={() => setShowDslSelectionPreview(true)}
             onClick={() => setShowDslSelectionPreview(true)}
             placeholder='name:"325"; profile:3_0_25; date:>h-7d;'
@@ -491,11 +574,14 @@ export function AdvancedSearchControls({
           disabled={isBusy}
           aria-label={t`Toggle advanced search`}
           className='toggle toggle-primary toggle-xs'
-          onChange={event => {
-            const next = event.currentTarget.checked;
-            setShowAdvancedSearch(next);
-            if (!next) setShowDslSelectionPreview(false);
-          }}
+          onChange={
+            /** @param {import('preact').JSX.TargetedEvent<HTMLInputElement, Event>} event */
+            event => {
+              const next = event.currentTarget.checked;
+              setShowAdvancedSearch(next);
+              if (!next) setShowDslSelectionPreview(false);
+            }
+          }
         />
         <span>
           <Trans>Advanced</Trans>
@@ -505,6 +591,25 @@ export function AdvancedSearchControls({
   );
 }
 
+/**
+ * @param {Omit<ModeSelectionDropdownProps, 'toolbarControlClass'>
+ *   & SelectionDropdownsProps
+ *   & SourceSelectionDropdownProps
+ *   & DateRangeDropdownProps
+ *   & AdvancedSearchControlsProps
+ *   & {
+ *     useBlankCollapseLayer: boolean,
+ *     toolbarPassiveLayerClass: string,
+ *     setIsCollapsedStripExpanded: BooleanSetter,
+ *     onClearFilters: () => void,
+ *     resetButtonClasses: string,
+ *     runButtonClasses: string,
+ *     resetAriaCount: string,
+ *     candidateLabel: string,
+ *     onGo: () => void,
+ *     canExecute: boolean,
+ *   }} props
+ */
 export function ExpandedToolbarControls({
   useBlankCollapseLayer,
   toolbarPassiveLayerClass,
@@ -675,6 +780,16 @@ export function ExpandedToolbarControls({
   );
 }
 
+/**
+ * @param {object} props
+ * @param {boolean} props.visible
+ * @param {string | null} props.dateBasisWarningMessage
+ * @param {DateBasisMode} props.dateBasisMode
+ * @param {(mode: DateBasisMode) => void} props.onDateBasisModeChange
+ * @param {boolean} props.isBusy
+ * @param {string} props.toolbarPassiveLayerClass
+ * @param {string} props.toolbarControlClass
+ */
 export function DateBasisWarning({
   visible,
   dateBasisWarningMessage,
@@ -729,6 +844,16 @@ export function DateBasisWarning({
   );
 }
 
+/**
+ * @param {object} props
+ * @param {boolean} props.visible
+ * @param {string | null} props.noticeMessage
+ * @param {'error' | 'warning'} props.noticeTone
+ * @param {StatisticsQueryIssue[]} props.parseErrors
+ * @param {StatisticsQueryIssue[]} props.parseWarnings
+ * @param {string | null} props.topError
+ * @param {string} props.toolbarPassiveLayerClass
+ */
 export function ToolbarNotice({
   visible,
   noticeMessage,
@@ -767,6 +892,12 @@ export function ToolbarNotice({
   );
 }
 
+/**
+ * @param {object} props
+ * @param {boolean} props.visible
+ * @param {string | null} props.selectionHint
+ * @param {string} props.toolbarPassiveLayerClass
+ */
 export function SelectionHint({ visible, selectionHint, toolbarPassiveLayerClass }) {
   if (!visible || !selectionHint) return null;
 
@@ -780,6 +911,13 @@ export function SelectionHint({ visible, selectionHint, toolbarPassiveLayerClass
   );
 }
 
+/**
+ * @param {object} props
+ * @param {boolean} props.visible
+ * @param {{ id: string, primary: string }[]} props.profilePreviewItems
+ * @param {ShotSelectionItem[]} props.shotPreviewItems
+ * @param {string} props.toolbarPassiveLayerClass
+ */
 export function DslSelectionPreview({
   visible,
   profilePreviewItems,

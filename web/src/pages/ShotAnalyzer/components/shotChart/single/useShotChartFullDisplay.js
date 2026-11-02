@@ -24,6 +24,11 @@ function isFullDisplayAllowedViewport() {
 // Fit both charts into the available viewport height when possible. On very
 // small viewports the chart area may still scroll, but the initial sizing should
 // stay close to the visible overlay instead of forcing a desktop-sized chart.
+/**
+ * @param {number} viewportHeight
+ * @param {number} tempChartHeightRatio
+ * @returns {number}
+ */
 function getFullDisplayMainChartHeight(viewportHeight, tempChartHeightRatio) {
   if (!Number.isFinite(viewportHeight) || viewportHeight <= 0) return MAIN_CHART_HEIGHT_DEFAULT;
 
@@ -35,6 +40,15 @@ function getFullDisplayMainChartHeight(viewportHeight, tempChartHeightRatio) {
   return Math.max(responsiveMinimum, Math.min(980, fittedMainHeight));
 }
 
+/**
+ * @param {{
+ *   isControlsLocked: boolean,
+ *   clearAllHoverRef: import('preact').RefObject<(() => void) | null>,
+ *   onBeforeToggle?: () => void,
+ *   resolvedMainChartHeight: number,
+ *   tempChartHeightRatio: number,
+ * }} options
+ */
 export function useShotChartFullDisplay({
   isControlsLocked,
   clearAllHoverRef,
@@ -64,6 +78,7 @@ export function useShotChartFullDisplay({
       setFullDisplayViewportHeight(getFullDisplayViewportHeight());
     };
 
+    /** @param {KeyboardEvent} event */
     const handleKeyDown = event => {
       if (event.key !== 'Escape' || isControlsLocked) return;
       setIsFullDisplay(false);
@@ -94,6 +109,7 @@ export function useShotChartFullDisplay({
     if (!browserWindow?.matchMedia) return undefined;
 
     const mediaQuery = browserWindow.matchMedia('(max-width: 1023px)');
+    /** @param {MediaQueryListEvent} event */
     const handleChange = event => {
       if (event.matches) setIsFullDisplay(false);
     };

@@ -21,16 +21,27 @@ import { splitPidString } from '../Settings/settingsForm.js';
 import { InfoNote } from './InfoNote.jsx';
 import { postSettings } from './setupState.js';
 
+/** @typedef {import('../Settings/types').SettingsFormData} SettingsFormData */
+/** @typedef {import('../../utils/machineProfiles.js').MachineProfile} MachineProfile */
+/** @typedef {import('../../utils/machineProfiles.js').ProfileChange} ProfileChange */
+
+/**
+ * @param {object} props
+ * @param {(profile: MachineProfile) => void} [props.onSaved] Called after the preset was applied.
+ * @param {() => void} [props.onDirty] Called when the form changes after applying.
+ * @param {() => void} props.onConfigure Continue without configuring the machine.
+ */
 export function MachineStep({ onSaved, onDirty, onConfigure }) {
   const { t } = useLingui();
   const [formData, setFormData] = useState(() => {
-    const settings = getCachedSettings() || {};
-    return { ...settings, ...splitPidString(settings.pid) };
+    const settings = /** @type {SettingsFormData} */ (getCachedSettings() || {});
+    return /** @type {SettingsFormData} */ ({ ...settings, ...splitPidString(settings.pid) });
   });
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   useEffect(() => {
     let cancelled = false;
+    /** @type {ReturnType<typeof setTimeout> | undefined} */
     let timer;
     const refresh = async () => {
       try {
@@ -57,8 +68,9 @@ export function MachineStep({ onSaved, onDirty, onConfigure }) {
   }, []);
   const [saving, setSaving] = useState(false);
   const [applied, setApplied] = useState(false);
-  const [confirmation, setConfirmation] = useState(null);
+  const [confirmation, setConfirmation] = useState(/** @type {ProfileChange[] | null} */ (null));
   const [error, setError] = useState('');
+  /** @param {SettingsFormData} values */
   const setFields = values => {
     setFormData(previous => ({ ...previous, ...values }));
     setApplied(false);
@@ -73,7 +85,9 @@ export function MachineStep({ onSaved, onDirty, onConfigure }) {
     { label: t`Gear pump add-on`, available: caps.gearpumpAddon },
     { label: t`Alba add-on`, available: caps.albaAddon },
   ];
-  const [resolvedProfile, setResolvedProfile] = useState(null);
+  const [resolvedProfile, setResolvedProfile] = useState(
+    /** @type {MachineProfile | null} */ (null),
+  );
   const selection = parseProfileSelection(formData.machineProfileSelection);
   const profile = selection?.settings
     ? selection

@@ -4,8 +4,19 @@ import { faMugHot } from '@fortawesome/free-solid-svg-icons/faMugHot';
 import { faScaleBalanced } from '@fortawesome/free-solid-svg-icons/faScaleBalanced';
 import { faWeightScale } from '@fortawesome/free-solid-svg-icons/faWeightScale';
 
+/** @typedef {import('../services/machineTypes.js').SmartDoseMeasurement} SmartDoseMeasurementData */
+
+/** @param {number | null | undefined} value */
 const formatWeight = value => (Number.isFinite(value) ? `${value.toFixed(1)} g` : '—');
 
+/**
+ * @param {object} props
+ * @param {string} props.accessory cup, portafilter, shared or manual.
+ * @param {(SmartDoseMeasurementData & { portafilterCalibration?: number }) | null | undefined} props.measurement
+ *   `portafilterCalibration` is set for the shared-scale reading.
+ * @param {boolean} props.active
+ * @param {string} [props.phase]
+ */
 export default function SmartDoseMeasurement({ accessory, measurement, active, phase }) {
   const portafilter = accessory === 'portafilter';
   const shared = accessory === 'shared';

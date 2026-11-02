@@ -6,6 +6,9 @@ import { Spinner } from '../../components/Spinner.jsx';
 import { PluginCard } from '../Settings/PluginCard.jsx';
 import { CHECKBOX_KEYS, parseAutoWakeupSchedules } from '../Settings/settingsForm.js';
 
+/** @typedef {import('../Settings/types').SettingsFormData} SettingsFormData */
+/** @typedef {import('../Settings/types').AutoWakeupSchedule} AutoWakeupSchedule */
+
 // Everything PluginCard edits; only these are POSTed from the wizard.
 export const PLUGIN_KEYS = [
   'autowakeupEnabled',
@@ -41,7 +44,9 @@ export const BOOT_PLUGIN_KEYS = [
 ];
 
 export function usePluginForm() {
-  const [formData, setFormData] = useState(() => getCachedSettings() || {});
+  const [formData, setFormData] = useState(
+    () => /** @type {SettingsFormData} */ (getCachedSettings() || {}),
+  );
   const [initial, setInitial] = useState(formData);
   const [schedules, updateSchedules] = useState(() =>
     parseAutoWakeupSchedules(getCachedSettings()?.autowakeupSchedules),
@@ -50,17 +55,24 @@ export function usePluginForm() {
   const [loadError, setLoadError] = useState('');
   const [saving, setSaving] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
-  const edits = useRef({});
+  const edits = useRef(/** @type {SettingsFormData} */ ({}));
   const schedulesEdited = useRef(false);
 
+  /** @param {SettingsFormData} values */
   const setFields = values => {
     Object.assign(edits.current, values);
     setFormData(previous => ({ ...previous, ...values }));
   };
+  /** @param {AutoWakeupSchedule[]} values */
   const setSchedules = values => {
     schedulesEdited.current = true;
     updateSchedules(values);
   };
+  /**
+   * @param {string} key
+   * @param {unknown} value
+   * @param {import('../../utils/settingsRequest.js').SettingsResponse} settings
+   */
   const onSettingSaved = (key, value, settings) => {
     updateSettingsCache(settings);
     setFields({ [key]: value });
@@ -107,14 +119,23 @@ export function usePluginForm() {
   };
 }
 
+/**
+ * @param {object} props
+ * @param {ReturnType<typeof usePluginForm>} props.form
+ */
 export function PluginsStep({ form }) {
   const { formData, setFields, schedules, setSchedules } = form;
 
+  /** @type {import('../Settings/types').FormChange} */
   const onChange = key => e => {
     const value = CHECKBOX_KEYS.includes(key) ? !formData[key] : e.currentTarget.value;
     setFields({ [key]: value });
   };
 
+  /**
+   * @param {number} index
+   * @param {Partial<AutoWakeupSchedule>} patch
+   */
   const updateSchedule = (index, patch) =>
     setSchedules(
       schedules.map((schedule, i) => (i === index ? { ...schedule, ...patch } : schedule)),

@@ -2,6 +2,12 @@
 
 export const SLOW_SAMPLE_INTERVAL_THRESHOLD_MS = 255;
 
+/** @typedef {import('../../../../types').ShotSample} ShotSample */
+
+/**
+ * @param {{ t?: number | string | null } | null | undefined} sample
+ * @returns {number | null}
+ */
 function getFiniteTimestamp(sample) {
   const rawTimestamp = sample?.t;
   if (rawTimestamp === null || rawTimestamp === undefined || rawTimestamp === '') return null;
@@ -10,7 +16,12 @@ function getFiniteTimestamp(sample) {
   return Number.isFinite(timestamp) ? timestamp : null;
 }
 
+/**
+ * @param {ShotSample[] | null | undefined} samples
+ * @returns {{ hasSlowSampleInterval: boolean, maxSampleIntervalMs: number | null }}
+ */
 export function getSlowSampleIntervalSummary(samples) {
+  /** @type {number | null} */
   let maxSampleIntervalMs = null;
   if (!Array.isArray(samples)) {
     return { hasSlowSampleInterval: false, maxSampleIntervalMs };

@@ -1,5 +1,23 @@
 import { ANALYZER_DB_KEYS } from './constants';
 
+/** @typedef {import('../types').AnalyzerShot} AnalyzerShot */
+/**
+ * Legacy localStorage library entry.
+ * @typedef {object} StoredLibraryEntry
+ * @property {string} name
+ * @property {string} fileName
+ * @property {number} saveDate ms epoch
+ * @property {number} shotDate ms epoch
+ * @property {string} profileName
+ * @property {string | number} duration s; toFixed(1) string, or 0 without samples
+ * @property {Omit<AnalyzerShot, 'samples'> & { samples?: import('../../../types').ShotSample[], label?: string }} data
+ */
+
+/**
+ * @param {string} key
+ * @param {unknown} value JSON-serializable
+ * @param {Storage} [storage]
+ */
 export const saveToStorage = (key, value, storage = localStorage) => {
   try {
     storage.setItem(key, JSON.stringify(value));
@@ -8,6 +26,14 @@ export const saveToStorage = (key, value, storage = localStorage) => {
   }
 };
 
+/**
+ * Parsed JSON is not validated; `T` is what the caller expects to have stored.
+ * @template [T=any]
+ * @param {string} key
+ * @param {T} [defaultValue]
+ * @param {Storage} [storage]
+ * @returns {T}
+ */
 export const loadFromStorage = (key, defaultValue = null, storage = localStorage) => {
   try {
     const item = storage.getItem(key);
@@ -18,15 +44,25 @@ export const loadFromStorage = (key, defaultValue = null, storage = localStorage
   }
 };
 
+/**
+ * @param {StoredLibraryEntry} item
+ * @param {string} sortKey
+ * @returns {string | number}
+ */
 function getSortValue(item, sortKey) {
   if (sortKey === 'data.rating') return item.data?.rating || 0;
-  if (sortKey === 'duration') return Number.parseFloat(item.duration || 0);
-  return item[sortKey] ?? '';
+  if (sortKey === 'duration') return Number.parseFloat(/** @type {string} */ (item.duration || 0));
+  return /** @type {Record<string, any>} */ (item)[sortKey] ?? '';
 }
 
+/**
+ * @param {string} collectionKey
+ * @param {{ search?: string, sortKey?: string, sortOrder?: 'asc' | 'desc' }} [options]
+ * @returns {StoredLibraryEntry[]}
+ */
 export const getSortedLibrary = (collectionKey, options = {}) => {
   const { search = '', sortKey = 'shotDate', sortOrder = 'desc' } = options;
-  const raw = loadFromStorage(collectionKey, []);
+  const raw = loadFromStorage(collectionKey, /** @type {StoredLibraryEntry[]} */ ([]));
   const orderMult = sortOrder === 'asc' ? 1 : -1;
 
   let items = raw;
@@ -52,13 +88,19 @@ export const getSortedLibrary = (collectionKey, options = {}) => {
   });
 };
 
+/**
+ * @param {string} collection
+ * @param {string} fileName
+ * @param {StoredLibraryEntry['data']} data
+ */
 export const saveToLibrary = (collection, fileName, data) => {
-  const library = loadFromStorage(collection, []);
+  const library = loadFromStorage(collection, /** @type {StoredLibraryEntry[]} */ ([]));
   const displayName =
     collection === ANALYZER_DB_KEYS.PROFILES && data.label ? data.label : fileName;
 
   const existingIndex = library.findIndex(item => item.name === displayName);
 
+  /** @type {StoredLibraryEntry} */
   const entry = {
     name: displayName,
     fileName,
@@ -80,12 +122,17 @@ export const saveToLibrary = (collection, fileName, data) => {
   saveToStorage(collection, library);
 };
 
+/**
+ * @param {string} collection
+ * @param {string} name
+ */
 export const deleteFromLibrary = (collection, name) => {
-  const library = loadFromStorage(collection, []);
+  const library = loadFromStorage(collection, /** @type {StoredLibraryEntry[]} */ ([]));
   const filtered = library.filter(i => i.name !== name);
   saveToStorage(collection, filtered);
 };
 
+/** @param {string} collection */
 export const clearLibrary = collection => {
   saveToStorage(collection, []);
 };

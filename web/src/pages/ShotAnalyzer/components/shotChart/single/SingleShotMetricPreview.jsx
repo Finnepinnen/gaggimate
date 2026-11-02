@@ -33,6 +33,13 @@ function getSingleMetricPageLabels() {
   ];
 }
 
+/**
+ * @param {{
+ *   activePageKey: string,
+ *   onPageChange: (pageKey: string) => void,
+ *   results: import('../types').ShotChartAnalysisResults | null | undefined,
+ * }} props
+ */
 export function ShotChartStaticMetricPreview({ activePageKey, onPageChange, results }) {
   const pages = getSingleMetricPageLabels();
   const activePage = pages.find(page => page.key === activePageKey) || pages[0];

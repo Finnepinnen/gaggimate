@@ -2,10 +2,16 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { getShotChartDisplayLabel, getShotChartLabelIcon } from '../labelVisuals';
 import { TooltipShotBadge } from './TooltipPrimitives';
 
+/** @typedef {import('./tooltipTypes').ExternalTooltipState} ExternalTooltipState */
+/** @typedef {import('./tooltipTypes').TooltipPhaseSummary} TooltipPhaseSummary */
+/** @typedef {import('./tooltipTypes').TooltipRow} TooltipRow */
+
+/** @param {TooltipPhaseSummary | null | undefined} summary */
 function getStopReasonClassName(summary) {
   return `shot-chart-tooltip__phase-reason${summary?.stopType === 'safety' ? ' shot-chart-tooltip__phase-reason--warning' : ''}`;
 }
 
+/** @param {{ state: ExternalTooltipState }} props */
 function FloatingTooltipTitle({ state }) {
   if (!state.visible || state.titleLines.length === 0) return null;
   return (
@@ -17,6 +23,7 @@ function FloatingTooltipTitle({ state }) {
   );
 }
 
+/** @param {{ phaseSummary: TooltipPhaseSummary, index: number }} props */
 function FloatingPhaseHeading({ phaseSummary, index }) {
   return (
     <div
@@ -39,6 +46,7 @@ function FloatingPhaseHeading({ phaseSummary, index }) {
   );
 }
 
+/** @param {{ state: ExternalTooltipState }} props */
 function FloatingPhaseHeadingList({ state }) {
   const phaseSummaries = (state.phaseSummaries || []).filter(
     summary => summary.phaseLabel || summary.shotLabel,
@@ -58,6 +66,7 @@ function FloatingPhaseHeadingList({ state }) {
   );
 }
 
+/** @param {{ phaseSummary: TooltipPhaseSummary, index: number }} props */
 function FloatingStopSummary({ phaseSummary, index }) {
   return (
     <div
@@ -86,6 +95,7 @@ function FloatingStopSummary({ phaseSummary, index }) {
   );
 }
 
+/** @param {{ state: ExternalTooltipState }} props */
 function FloatingStopSummaryList({ state }) {
   const stopSummaries = (state.phaseSummaries || []).filter(
     phaseSummary => phaseSummary.skipNotice || phaseSummary.stopReason || phaseSummary.stopValue,
@@ -105,6 +115,7 @@ function FloatingStopSummaryList({ state }) {
   );
 }
 
+/** @param {{ row: TooltipRow, index: number }} props */
 function FloatingTooltipRow({ row, index }) {
   const rowIcon = getShotChartLabelIcon(row.label);
   const displayLabel = row.displayLabel || getShotChartDisplayLabel(row.label);
@@ -136,6 +147,7 @@ function FloatingTooltipRow({ row, index }) {
   );
 }
 
+/** @param {{ state: ExternalTooltipState }} props */
 function FloatingTooltipRows({ state }) {
   if (!state.visible || state.rows.length === 0) return null;
   return state.rows.map((row, index) => (
@@ -147,6 +159,7 @@ function FloatingTooltipRows({ state }) {
   ));
 }
 
+/** @param {{ state: ExternalTooltipState }} props */
 export function FloatingTooltipContent({ state }) {
   return (
     <>

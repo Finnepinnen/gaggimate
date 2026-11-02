@@ -1,6 +1,14 @@
 import PropTypes from 'prop-types';
 import { Trans, useLingui } from '@lingui/react/macro';
 
+/**
+ * @param {object} props
+ * @param {boolean} props.hasTankLevel
+ * @param {boolean | null} props.tankLevelOK null when the level is unknown.
+ * @param {boolean} props.hasSteamLevel
+ * @param {boolean | null} props.steamBoilerLow null when the level is unknown.
+ * @param {boolean} [props.inCard]
+ */
 export function MachineLevelsCard({
   hasTankLevel,
   tankLevelOK,

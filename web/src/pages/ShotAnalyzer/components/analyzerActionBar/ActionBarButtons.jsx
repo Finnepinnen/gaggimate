@@ -11,6 +11,16 @@ import { faFileImport } from '@fortawesome/free-solid-svg-icons/faFileImport';
 import { faLaptopFile } from '@fortawesome/free-solid-svg-icons/faLaptopFile';
 import { analyzerUiColors } from '../../utils/analyzerUtils';
 
+/** @typedef {(event: import('preact').JSX.TargetedMouseEvent<HTMLElement>) => void} ActionBarClickHandler */
+
+/**
+ * @param {object} props
+ * @param {string} props.navButtonClasses
+ * @param {boolean} props.canGoPrev
+ * @param {boolean} props.canGoNext
+ * @param {number} props.currentIndex
+ * @param {(targetIndex: number, direction: number) => void} props.onNavigateToIndex
+ */
 export function ActionBarNavigationButtons({
   navButtonClasses,
   canGoPrev,
@@ -44,6 +54,13 @@ export function ActionBarNavigationButtons({
   );
 }
 
+/**
+ * @param {object} props
+ * @param {string} props.actionButtonClasses
+ * @param {boolean} props.compareAvailable
+ * @param {boolean} props.compareMode
+ * @param {() => void} [props.onCompareModeToggle]
+ */
 export function ActionBarCompareButton({
   actionButtonClasses,
   compareAvailable,
@@ -56,11 +73,13 @@ export function ActionBarCompareButton({
       type='button'
       className={`${actionButtonClasses} ${compareMode ? 'text-primary opacity-100' : ''}`}
       disabled={!compareAvailable}
-      onClick={event => {
-        event.preventDefault();
-        event.stopPropagation();
-        onCompareModeToggle?.();
-      }}
+      onClick={
+        /** @param {Event} event */ event => {
+          event.preventDefault();
+          event.stopPropagation();
+          onCompareModeToggle?.();
+        }
+      }
       title={compareMode ? t`Disable compare mode` : t`Enable compare mode`}
     >
       <FontAwesomeIcon icon={faEquals} className='text-sm' />
@@ -71,6 +90,14 @@ export function ActionBarCompareButton({
   );
 }
 
+/**
+ * @param {object} props
+ * @param {string} props.actionButtonClasses
+ * @param {boolean} props.compareMode
+ * @param {boolean} props.statisticsAvailable
+ * @param {string} props.statsHref
+ * @param {() => void} [props.onShowStats]
+ */
 export function ActionBarStatisticsAction({
   actionButtonClasses,
   compareMode,
@@ -115,6 +142,13 @@ export function ActionBarStatisticsAction({
   );
 }
 
+/**
+ * @param {object} props
+ * @param {string} props.actionButtonClasses
+ * @param {import('../types').ImportMode} props.importMode
+ * @param {import('preact').Ref<HTMLElement>} props.modeButtonRef
+ * @param {ActionBarClickHandler} props.handleModeToggle
+ */
 function ActionBarImportModeToggle({
   actionButtonClasses,
   importMode,
@@ -126,7 +160,7 @@ function ActionBarImportModeToggle({
 
   return (
     <button
-      ref={modeButtonRef}
+      ref={/** @type {import('preact').Ref<HTMLButtonElement>} */ (modeButtonRef)}
       type='button'
       className={`${actionButtonClasses} ${isBrowserImportMode ? 'opacity-100' : ''}`}
       style={isBrowserImportMode ? { color: analyzerUiColors.sourceBadgeWebText } : undefined}
@@ -154,6 +188,16 @@ function ActionBarImportModeToggle({
   );
 }
 
+/**
+ * @param {object} props
+ * @param {string} props.actionButtonClasses
+ * @param {ActionBarClickHandler} props.handleImportClick
+ * @param {ActionBarClickHandler} props.handleModeToggle
+ * @param {import('../types').ImportMode} props.importMode
+ * @param {boolean} props.isImporting
+ * @param {import('preact').Ref<HTMLElement>} props.modeButtonRef
+ * @param {boolean} props.showImportModeToggle
+ */
 export function ActionBarImportActions({
   actionButtonClasses,
   handleImportClick,

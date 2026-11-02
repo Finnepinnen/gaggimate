@@ -61,6 +61,52 @@ import {
 } from './useLibraryPanelState';
 import { useCallback, useContext, useEffect, useRef, useState } from 'preact/hooks';
 
+/** @typedef {import('../types').LibraryItem} LibraryItem */
+/** @typedef {import('../types').LibrarySelectionTarget} LibrarySelectionTarget */
+/** @typedef {import('../types').LibrarySortConfig} LibrarySortConfig */
+/** @typedef {import('../types').LibraryMobileSection} LibraryMobileSection */
+/** @typedef {import('../types').LibraryShotSelectRequest} LibraryShotSelectRequest */
+/** @typedef {import('../types').ImportMode} ImportMode */
+
+/**
+ * @typedef {object} LibraryPanelProps
+ * @property {LibraryItem | null} [currentShot]
+ * @property {LibraryItem | null} [currentProfile]
+ * @property {string} [currentShotName]
+ * @property {string} [currentProfileName]
+ * @property {import('../types').PendingShotSelection | null} [pendingPrimarySelection]
+ * @property {LibraryItem | null} [secondaryShot]
+ * @property {LibraryItem | null} [secondaryProfile]
+ * @property {string} [secondaryShotName]
+ * @property {string} [secondaryProfileName]
+ * @property {import('../types').PendingShotSelection | null} [pendingCompareSelection]
+ * @property {import('../types').OnShotSelect} [onShotSelect]
+ * @property {import('../types').OnProfileLoad} onProfileLoad
+ * @property {() => void} [onShotUnload]
+ * @property {() => void} [onProfileUnload]
+ * @property {import('../types').OnShowStats} [onShowStats]
+ * @property {string} [statsHref]
+ * @property {string} [secondaryStatsHref]
+ * @property {ImportMode} [importMode]
+ * @property {(mode: ImportMode) => void} [onImportModeChange]
+ * @property {boolean} [compareMode]
+ * @property {boolean} [compareHasSecondaryShot]
+ * @property {number} [compareSelectedCount]
+ * @property {Set<string>} [compareSelectionKeys]
+ * @property {string[]} [comparePendingKeys]
+ * @property {string} [compareSecondaryShotKey]
+ * @property {() => void} [onCompareModeToggle]
+ * @property {import('../types').OnCompareShotToggle} [onCompareShotToggle]
+ * @property {import('../types').OnProfileLoad} [onCompareProfileLoad]
+ * @property {() => void} [onCompareProfileUnload]
+ * @property {() => void} [onCompareSwap]
+ * @property {() => void} [onRetryProfileSearch]
+ * @property {() => void} [onRetryCompareProfileSearch]
+ * @property {boolean} [isSearchingProfile]
+ * @property {boolean} [compareIsSearchingProfile]
+ */
+
+/** @param {LibraryPanelProps} props */
 export function LibraryPanel({
   currentShot,
   currentProfile,
@@ -98,16 +144,22 @@ export function LibraryPanel({
   compareIsSearchingProfile = false,
 }) {
   const apiService = useContext(ApiServiceContext);
+  /** @type {import('preact').RefObject<HTMLDivElement>} */
   const panelRef = useRef(null);
+  /** @type {import('preact').RefObject<HTMLDivElement>} */
   const sentinelRef = useRef(null);
+  /** @type {import('preact').RefObject<HTMLDivElement>} */
   const barSlotRef = useRef(null);
+  /** @type {import('preact').RefObject<HTMLDivElement>} */
   const barRef = useRef(null);
 
   // UI State
   const [collapsed, setCollapsed] = useState(true);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false); // Specific state for import spinner
-  const [librarySelectionTarget, setLibrarySelectionTarget] = useState('primaryShot');
+  const [librarySelectionTarget, setLibrarySelectionTarget] = useState(
+    /** @type {LibrarySelectionTarget} */ ('primaryShot'),
+  );
   const { isStuck, isMobileViewport, barRect } = useLibraryPanelLayoutState({
     sentinelRef,
     barSlotRef,
@@ -148,9 +200,13 @@ export function LibraryPanel({
   });
 
   // Data State
-  const [shots, setShots] = useState([]);
-  const [profiles, setProfiles] = useState([]);
-  const [navigationShots, setNavigationShots] = useState([]);
+  const [shots, setShots] = useState(/** @type {import('../types').LibraryShotItem[]} */ ([]));
+  const [profiles, setProfiles] = useState(
+    /** @type {import('../types').LibraryProfileItem[]} */ ([]),
+  );
+  const [navigationShots, setNavigationShots] = useState(
+    /** @type {import('../types').LibraryShotItem[]} */ ([]),
+  );
 
   // Filter & Sort State
   const [shotsSourceFilter, setShotsSourceFilter] = useState(() =>
@@ -161,17 +217,24 @@ export function LibraryPanel({
   );
 
   const [shotsSearch, setShotsSearch] = useState('');
-  const [shotsSort, setShotsSort] = useState({ key: 'shotDate', order: 'desc' });
+  const [shotsSort, setShotsSort] = useState(
+    /** @type {LibrarySortConfig} */ ({ key: 'shotDate', order: 'desc' }),
+  );
 
   const [profilesSearch, setProfilesSearch] = useState('');
-  const [profilesSort, setProfilesSort] = useState({ key: 'name', order: 'asc' });
-  const [mobileActiveSection, setMobileActiveSection] = useState('shots');
+  const [profilesSort, setProfilesSort] = useState(
+    /** @type {LibrarySortConfig} */ ({ key: 'name', order: 'asc' }),
+  );
+  const [mobileActiveSection, setMobileActiveSection] = useState(
+    /** @type {LibraryMobileSection} */ ('shots'),
+  );
   const [pinnedProfiles, setPinnedProfiles] = useState(() => getPinnedProfiles());
   const [pinnedShotsByProfile, setPinnedShotsByProfile] = useState(() => getPinnedShotsByProfile());
   const [shotsPinnedFirst, setShotsPinnedFirst] = useState(false);
   const [profilesPinnedFirst, setProfilesPinnedFirst] = useState(false);
 
   const handleLibraryProfileStatsOpen = useCallback(
+    /** @param {LibraryItem} profileItem */
     profileItem => {
       if (!profileItem) return;
       try {
@@ -217,10 +280,12 @@ export function LibraryPanel({
     primaryDisplayProfileName,
   });
   const getEffectiveShotPinBucketKey = useCallback(
+    /** @param {LibraryItem} item */
     item => activeShotPinBucketKey || getShotPinBucketKey(item),
     [activeShotPinBucketKey],
   );
   const getPinnedShotBucketKey = useCallback(
+    /** @param {LibraryItem} item */
     item => getPinnedShotBucketKeyForItem(item, pinnedShotsByProfile),
     [pinnedShotsByProfile],
   );
@@ -266,11 +331,13 @@ export function LibraryPanel({
   // --- Action Handlers ---
 
   const getProfilePinDisabledReason = useCallback(
+    /** @param {LibraryItem} item */
     item => getProfilePinDisabledReasonForItem(item, pinnedProfiles),
     [pinnedProfiles],
   );
 
   const getShotPinDisabledReason = useCallback(
+    /** @param {LibraryItem} item */
     item =>
       getShotPinDisabledReasonForItem({
         item,
@@ -280,11 +347,15 @@ export function LibraryPanel({
     [getEffectiveShotPinBucketKey, pinnedShotsByProfile],
   );
 
-  const handleProfilePinToggle = useCallback(item => {
-    applyChangedProfilePins(toggleProfilePin(item), setPinnedProfiles);
-  }, []);
+  const handleProfilePinToggle = useCallback(
+    /** @param {LibraryItem} item */ item => {
+      applyChangedProfilePins(toggleProfilePin(item), setPinnedProfiles);
+    },
+    [],
+  );
 
   const handleShotPinToggle = useCallback(
+    /** @param {LibraryItem} item */
     item => {
       const resolvedBucketKey = getShotPinToggleBucketKey({
         getEffectiveShotPinBucketKey,
@@ -297,16 +368,21 @@ export function LibraryPanel({
     [getEffectiveShotPinBucketKey, getPinnedShotBucketKey, shotsPinnedFirst],
   );
 
+  /**
+   * @param {LibraryItem} item
+   * @param {boolean} isShot
+   */
   const handleExport = async (item, isShot) => {
     try {
       await exportLibraryItems([{ item, isShot }]);
     } catch (e) {
-      const message = e.message;
+      const message = /** @type {Error} */ (e).message;
       alert(t`Export failed: ${message}`);
       console.error(e);
     }
   };
 
+  /** @param {LibraryItem} item */
   const handleDelete = async item => {
     const itemName = item.name || item.id;
     if (!confirm(t`Are you sure you want to delete "${itemName}"?`)) return;
@@ -314,7 +390,7 @@ export function LibraryPanel({
       await deleteLibraryItem(item);
       refreshLibraries();
     } catch (e) {
-      const message = e.message;
+      const message = /** @type {Error} */ (e).message;
       alert(t`Delete failed: ${message}`);
     }
   };
@@ -333,6 +409,7 @@ export function LibraryPanel({
   });
 
   const openLibraryForTarget = useCallback(
+    /** @param {LibrarySelectionTarget} target */
     target => {
       setMobileActiveSection(getLibraryTargetMobileSection(target));
 
@@ -347,6 +424,7 @@ export function LibraryPanel({
     [collapsed, librarySelectionTarget],
   );
 
+  /** @param {LibraryItem} item */
   const handleShotRowAction = item => {
     executeShotRowActionIntent({
       compareMode,
@@ -384,6 +462,7 @@ export function LibraryPanel({
     handleStatusBarCompareToggle,
   });
 
+  /** @param {LibraryItem} item */
   const handleProfileRowAction = item => {
     executeProfileRowAction({
       item,
@@ -395,6 +474,7 @@ export function LibraryPanel({
     });
   };
 
+  /** @param {LibraryShotSelectRequest} request */
   const handleNavigateShot = request => {
     onShotSelect?.({
       ...request,
@@ -403,6 +483,7 @@ export function LibraryPanel({
     });
   };
 
+  /** @param {LibraryShotSelectRequest} request */
   const handleNavigateCompareShot = request => {
     if (!secondaryDisplayShot) return;
     onCompareShotToggle?.(request, true);
@@ -441,7 +522,7 @@ export function LibraryPanel({
     onRetryProfileSearch,
     onShotPanelToggle: () => openLibraryForTarget('primaryShot'),
     onProfilePanelToggle: () => openLibraryForTarget('primaryProfile'),
-    onImport: files => handleImport(files, { slot: 'primary' }),
+    onImport: /** @param {File[]} files */ files => handleImport(files, { slot: 'primary' }),
     onShowStats: createPrimaryStatsHandler({
       onShowStats,
       primaryDisplayProfile,
@@ -469,7 +550,8 @@ export function LibraryPanel({
     onShowStats: primaryStatusBarProps.onShowStats,
     statsHref,
     statisticsAvailable: Boolean(primaryDisplayProfile || primaryProfileMismatch),
-    onImport: files => handleImport(files, { slot: 'primary', targetType: 'any' }),
+    onImport: /** @param {File[]} files */ files =>
+      handleImport(files, { slot: 'primary', targetType: 'any' }),
     isImporting: importing,
     importMode,
     onImportModeChange,
@@ -489,7 +571,7 @@ export function LibraryPanel({
     onShotPanelToggle: () => openLibraryForTarget(getSecondaryShotPanelTarget(primaryDisplayShot)),
     onProfilePanelToggle: () =>
       maybeOpenSecondaryProfilePanel({ openLibraryForTarget, secondaryDisplayShot }),
-    onImport: files =>
+    onImport: /** @param {File[]} files */ files =>
       handleImport(files, {
         slot: getSecondaryImportSlot(currentShot),
       }),
@@ -520,7 +602,7 @@ export function LibraryPanel({
     onShowStats: secondaryStatusBarProps.onShowStats,
     statsHref: secondaryStatsHref,
     statisticsAvailable: Boolean(secondaryDisplayProfile || secondaryProfileMismatch),
-    onImport: files =>
+    onImport: /** @param {File[]} files */ files =>
       handleImport(files, {
         slot: getSecondaryImportSlot(currentShot),
         targetType: 'any',

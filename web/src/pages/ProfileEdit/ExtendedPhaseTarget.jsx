@@ -3,6 +3,18 @@ import { faTrashCan } from '@fortawesome/free-solid-svg-icons/faTrashCan';
 import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react/macro';
 
+/** @typedef {import('../../types').PhaseTarget} PhaseTarget */
+/**
+ * @typedef {{
+ *   label: import('@lingui/core').MessageDescriptor,
+ *   type: PhaseTarget['type'],
+ *   operator: import('../../types').TargetOperator,
+ *   unit: string,
+ *   unitPosition?: 'left',
+ * }} TargetTypeDef
+ */
+
+/** @type {TargetTypeDef[]} */
 export const TargetTypes = [
   {
     label: msg`Water drawn`,
@@ -49,6 +61,14 @@ export const TargetTypes = [
   },
 ];
 
+/**
+ * @param {{
+ *   onChange: (target: PhaseTarget) => void,
+ *   target: PhaseTarget,
+ *   index: number,
+ *   onRemove: () => void,
+ * }} props
+ */
 export function ExtendedPhaseTarget({ onChange, target, index, onRemove }) {
   const { t, i18n } = useLingui();
   const targetType =

@@ -36,6 +36,18 @@ const RIGHT_AXIS_UNIT_ROW_GAP = 14;
  * settings for the custom plugins (phaseBackgroundOverlay, axisUnitLabels, ...) that Chart.js'
  * `PluginOptionsByType` does not know about.
  *
+ * @param {{
+ *   model: import('../model/types').ShotChartModel,
+ *   colors: import('../helpers/chartTheme').ShotChartColors,
+ *   visibility: import('../types').ShotChartVisibility,
+ *   hasWeightData: boolean,
+ *   hasWeightFlowData: boolean,
+ *   targetPressureFill: CanvasPattern | string,
+ *   targetFlowFill: CanvasPattern | string,
+ *   tempToTargetFill: CanvasPattern | string,
+ *   updateExternalTooltip: (context: { chart: import('chart.js').Chart, tooltip: import('chart.js').TooltipModel<'line'> }) => void,
+ *   showStopBadges?: boolean,
+ * }} options
  * @returns {{ mainConfig: any, tempConfig: any }}
  */
 export function createShotChartConfigs({
@@ -58,11 +70,13 @@ export function createShotChartConfigs({
     visibility.liquidResistance && model.series.liquidResistance.length > 0,
   );
   const neutralAxisTickColor = getNeutralAxisTickColor();
+  /** @type {import('../helpers/axisPlugins').AxisUnitYLabel[]} */
   const mainAxisUnitLabels = [
     { scaleId: 'yMain', label: 'bar / ml/s' },
     { scaleId: 'yMain', label: t`Phase`, side: 'center', yOffset: 0 },
   ];
   const showWeightAxis = Boolean(showWeightSeries && visibility.weight);
+  /** @type {import('../helpers/axisPlugins').AxisUnitYLabel[]} */
   const rightAxisUnitLabels = [];
   if (showWeightAxis) {
     rightAxisUnitLabels.push({
@@ -88,7 +102,9 @@ export function createShotChartConfigs({
   rightAxisUnitLabels.forEach((axisLabel, index) => {
     mainAxisUnitLabels.push({ ...axisLabel, yOffset: index * RIGHT_AXIS_UNIT_ROW_GAP });
   });
+  /** @type {import('../helpers/axisPlugins').AxisUnitChartLabel[]} */
   const mainChartInsideLabels = [];
+  /** @type {import('../helpers/axisPlugins').AxisUnitYLabel[]} */
   const tempAxisUnitLabels = [{ scaleId: 'yTemp', label: '°C', side: 'left' }];
   const mainAxisUnitPadding = getAxisUnitReservedPadding({ yLabels: mainAxisUnitLabels });
   mainAxisUnitPadding.top = Math.max(
@@ -107,7 +123,7 @@ export function createShotChartConfigs({
   const mainDatasets = [
     {
       label: 'Phases',
-      data: [],
+      data: /** @type {import('../model/types').ChartPoint[]} */ ([]),
       borderColor: colors.phaseLine,
       backgroundColor: colors.phaseLine,
       yAxisID: 'yMain',
@@ -358,13 +374,15 @@ export function createShotChartConfigs({
             caretPadding: 0,
             // The external tooltip owns all rendering. The built-in tooltip still
             // provides item ordering/filtering so both paths share one data model.
-            filter: context => shouldRenderTooltipLabel(context.dataset.label),
+            filter: /** @param {import('chart.js').TooltipItem<'line'>} context */ context =>
+              shouldRenderTooltipLabel(context.dataset.label),
             itemSort: sortTooltipItems,
             callbacks: {
-              title: tooltipItems => {
-                const xValue = tooltipItems?.[0]?.parsed?.x;
-                return Number.isFinite(xValue) ? `${xValue.toFixed(2)} s` : '';
-              },
+              title:
+                /** @param {import('chart.js').TooltipItem<'line'>[]} tooltipItems */ tooltipItems => {
+                  const xValue = tooltipItems?.[0]?.parsed?.x;
+                  return Number.isFinite(xValue) ? `${xValue.toFixed(2)} s` : '';
+                },
             },
             external: updateExternalTooltip,
           },

@@ -11,10 +11,16 @@ import { useProfileList } from '../../services/hooks.js';
 const MAHLKONIG_MIN_RECIPES = 4;
 
 // Profile per grinder recipe slot, stored as "r1,r2,..."; the grinder reports only the recipe number.
+/**
+ * @param {{
+ *   formData: import('./types').SettingsFormData,
+ *   onChange: import('./types').FormChange,
+ * }} props
+ */
 function MahlkonigRecipeProfiles({ formData, onChange }) {
   const { t } = useLingui();
   const apiService = useContext(ApiServiceContext);
-  const [lastRecipe, setLastRecipe] = useState(null);
+  const [lastRecipe, setLastRecipe] = useState(/** @type {number | null} */ (null));
   const { profiles: allProfiles } = useProfileList();
   const profiles = allProfiles.filter(p => !p.utility);
   const mapped = String(formData.mahlkonigRecipeProfiles || '').split(',');
@@ -28,6 +34,10 @@ function MahlkonigRecipeProfiles({ formData, onChange }) {
       .catch(() => setLastRecipe(null));
   }, [apiService]);
 
+  /**
+   * @param {number} recipe
+   * @param {string} value
+   */
   const setProfile = (recipe, value) => {
     const next = recipes.map(r => (r === recipe ? value : (mapped[r - 1] ?? '')));
     while (next.length > MAHLKONIG_MIN_RECIPES && !next[next.length - 1]) next.pop();

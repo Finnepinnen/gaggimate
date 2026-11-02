@@ -21,15 +21,29 @@ import { ApiServiceContext } from '../../services/ApiService.js';
 import { Tooltip } from '../../components/Tooltip.jsx';
 import { Trans, useLingui } from '@lingui/react/macro';
 
+/** @typedef {import('../../types').Shot} Shot */
+/** @typedef {import('../../types').ShotNotes} ShotNotes */
+
+/**
+ * @param {number | null | undefined} v
+ * @returns {number | null | undefined}
+ */
 function round2(v) {
   if (v == null || Number.isNaN(v)) return v;
   return Math.round((v + Number.EPSILON) * 100) / 100;
 }
 
+/**
+ * @param {object} props
+ * @param {Shot} props.shot
+ * @param {(id: string) => void} props.onDelete
+ * @param {(id: string) => void} [props.onLoad]
+ * @param {() => void} [props.onNotesChanged]
+ */
 export default function HistoryCard({ shot, onDelete, onLoad, onNotesChanged }) {
   const { t } = useLingui();
   const apiService = useContext(ApiServiceContext);
-  const [shotNotes, setShotNotes] = useState(shot.notes || null);
+  const [shotNotes, setShotNotes] = useState(/** @type {ShotNotes | null} */ (shot.notes || null));
   const [expanded, setExpanded] = useState(false);
   const { armed: confirmDelete, armOrRun: confirmOrDelete } = useConfirmAction(4000);
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -65,11 +79,12 @@ export default function HistoryCard({ shot, onDelete, onLoad, onNotesChanged }) 
     downloadJson(exportData, `shot-${shot.id}.json`);
   }, [shot, shotNotes]);
 
-  const handleNotesLoaded = useCallback(notes => {
+  const handleNotesLoaded = useCallback((/** @type {ShotNotes} */ notes) => {
     setShotNotes(notes);
   }, []);
 
   const handleNotesUpdate = useCallback(
+    /** @param {ShotNotes} notes */
     notes => {
       setShotNotes(notes);
       // Notify parent that notes changed (so it can reload the index)
@@ -87,6 +102,7 @@ export default function HistoryCard({ shot, onDelete, onLoad, onNotesChanged }) 
   }
 
   const handleUpload = useCallback(
+    /** @type {(username: string, password: string, remember: boolean) => Promise<void>} */
     async (username, password) => {
       setIsUploading(true);
       try {

@@ -18,10 +18,22 @@ import {
   ToggleField,
 } from '../../../components/SettingsFormField.jsx';
 
+/** @typedef {import('../../../types').Profile & { id: string }} ListedProfile */
+/** @typedef {import('../types').FieldChangeHandler} FieldChangeHandler */
+
 const pressureAvailable = computed(() => machine.value.capabilities.pressure);
 
 const FLUSH_DURATION_STEPS = [0, 5, 10, 15, 20];
 
+/**
+ * @param {{
+ *   id: string,
+ *   label: string,
+ *   icon: string,
+ *   value: number | string | undefined,
+ *   onChange: FieldChangeHandler,
+ * }} props
+ */
 function WarningLevelSelect({ id, label, icon, value, onChange }) {
   const { t } = useLingui();
   const current = Number(value ?? 1);
@@ -61,7 +73,7 @@ function WarningLevelSelect({ id, label, icon, value, onChange }) {
  * @param {string} props.label
  * @param {string} [props.placeholder]
  * @param {string} props.value
- * @param {(e: Event) => void} props.onChange
+ * @param {FieldChangeHandler} props.onChange
  * @param {boolean} props.shown
  * @param {(shown: boolean) => void} props.setShown
  * @param {number} [props.minLength]
@@ -92,6 +104,20 @@ function PasswordField({ id, label, placeholder, value, onChange, shown, setShow
   );
 }
 
+/**
+ * @param {{
+ *   formData: import('../types').SettingsFormData,
+ *   onChange: import('../types').FormChange,
+ *   profiles: ListedProfile[],
+ *   currentTheme: string,
+ *   setCurrentTheme: (theme: string) => void,
+ *   handleThemeChange: (event: Event) => void,
+ *   showWifiPassword: boolean,
+ *   setShowWifiPassword: (shown: boolean) => void,
+ *   showApPassword: boolean,
+ *   setShowApPassword: (shown: boolean) => void,
+ * }} props
+ */
 export function GeneralTab({
   formData,
   onChange,

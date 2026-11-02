@@ -24,25 +24,50 @@ import {
   normalizePhaseExitReasonCode,
 } from './exitReasons.js';
 
+/** @typedef {import('../../../../types').ShotPhaseTransition} ShotPhaseTransition */
+/** @typedef {import('../../../../types').ShotSample} ShotSample */
+/** @typedef {import('../../../../types').ShotSystemInfo} ShotSystemInfo */
+/** @typedef {import('../../types').AnalysisSettings} AnalysisSettings */
+/** @typedef {import('../../types').AnalyzedPhase} AnalyzedPhase */
+/** @typedef {import('../../types').AnalyzerProfile} AnalyzerProfile */
+/** @typedef {import('../../types').AnalyzerShot} AnalyzerShot */
+/** @typedef {import('../../types').DelayTotals} DelayTotals */
+/** @typedef {import('../../types').SamplesByPhase} SamplesByPhase */
+/** @typedef {import('../../types').ShotAnalysisResult} ShotAnalysisResult */
+/** @typedef {import('../../types').TotalStats} TotalStats */
+
 const CONFIGURED_SCALE_DELAY_WARNING_THRESHOLD_MS = 1200;
 
+/**
+ * @param {ShotPhaseTransition[] | undefined} [phaseTransitions]
+ * @returns {Record<string, string>}
+ */
 function buildPhaseNameMap(phaseTransitions = []) {
   const transitions = Array.isArray(phaseTransitions) ? phaseTransitions : [];
   return transitions.reduce((map, pt) => {
     map[pt.phaseNumber] = pt.phaseName;
     return map;
-  }, {});
+  }, /** @type {Record<string, string>} */ ({}));
 }
 
+/**
+ * @param {ShotSample[]} samples
+ * @returns {SamplesByPhase}
+ */
 function groupSamplesByPhase(samples) {
   return samples.reduce((groups, sample) => {
     const pNum = sample.phaseNumber;
     if (!groups[pNum]) groups[pNum] = [];
     groups[pNum].push(sample);
     return groups;
-  }, {});
+  }, /** @type {SamplesByPhase} */ ({}));
 }
 
+/**
+ * @param {AnalyzedPhase[]} analyzedPhases
+ * @param {number} configuredScaleDelayMs
+ * @returns {boolean}
+ */
 function applyConfiguredScaleDelayWarning(analyzedPhases, configuredScaleDelayMs) {
   const configuredHighScaleDelay =
     configuredScaleDelayMs > CONFIGURED_SCALE_DELAY_WARNING_THRESHOLD_MS;
@@ -59,6 +84,11 @@ function applyConfiguredScaleDelayWarning(analyzedPhases, configuredScaleDelayMs
   return configuredHighScaleDelay;
 }
 
+/**
+ * @param {AnalyzedPhase[]} analyzedPhases
+ * @param {string} brewModeLabel
+ * @param {number} configuredScaleDelayMs
+ */
 function applySkippedPhaseSystemStats(analyzedPhases, brewModeLabel, configuredScaleDelayMs) {
   analyzedPhases.forEach(phase => {
     if (!phase.skipped) return;
@@ -68,6 +98,10 @@ function applySkippedPhaseSystemStats(analyzedPhases, brewModeLabel, configuredS
   });
 }
 
+/**
+ * @param {AnalysisSettings & { delayTotals: DelayTotals }} options
+ * @returns {{ avgScaleDelay: number, avgSensorDelay: number }}
+ */
 function getAverageDelaySettings({ delayTotals, isAutoAdjusted, scaleDelayMs, sensorDelayMs }) {
   if (!isAutoAdjusted) {
     return { avgScaleDelay: scaleDelayMs, avgSensorDelay: sensorDelayMs };
@@ -85,6 +119,7 @@ function getAverageDelaySettings({ delayTotals, isAutoAdjusted, scaleDelayMs, se
   return { avgScaleDelay, avgSensorDelay };
 }
 
+/** @param {AnalyzedPhase[]} analyzedPhases */
 function getDelayReviewSummary(analyzedPhases) {
   const delayReviewPhases = analyzedPhases
     .map((phase, idx) => ({ ...phase, tablePhaseNumber: idx + 1 }))
@@ -108,7 +143,12 @@ function getDelayReviewSummary(analyzedPhases) {
   };
 }
 
-/** Converts ratio targets to grams using the shot's dose (notes, then profile); without a dose the firmware skips them too. */
+/**
+ * Converts ratio targets to grams using the shot's dose (notes, then profile); without a dose the firmware skips them too.
+ * @param {AnalyzerProfile | null} profileData
+ * @param {AnalyzerShot} shotData
+ * @returns {AnalyzerProfile | null}
+ */
 function resolveRatioTargets(profileData, shotData) {
   if (!profileData?.phases?.some(phase => phase.targets?.some(t => t.type === 'ratio')))
     return profileData;
@@ -129,13 +169,10 @@ function resolveRatioTargets(profileData, shotData) {
 /**
  * Main Analysis Function
  * Calculates all metrics for a shot with optional profile comparison
- * * @param {Object} shotData - Shot data with samples array
- * @param {Object|null} rawProfileData - Optional profile for comparison
- * @param {Object} settings - Analysis settings
- * @param {number} settings.scaleDelayMs - Scale latency in ms (default: 0)
- * @param {number} settings.sensorDelayMs - System sensor delay in ms (default: 200)
- * @param {boolean} settings.isAutoAdjusted - Whether delay was auto-detected
- * @returns {Object} Analysis results with phases and totals
+ * * @param {AnalyzerShot | null | undefined} shotData - Shot data with samples array
+ * @param {AnalyzerProfile | null} rawProfileData - Optional profile for comparison
+ * @param {AnalysisSettings} settings - Analysis settings
+ * @returns {ShotAnalysisResult} Analysis results with phases and totals
  */
 export function calculateShotMetrics(shotData, rawProfileData, settings) {
   // Defensive guard: ensure valid shot data with samples
@@ -159,7 +196,7 @@ export function calculateShotMetrics(shotData, rawProfileData, settings) {
   const recordedExitReasonByPhase = buildRecordedExitReasonByPhase(shotData);
 
   // --- 2. BREW MODE DETECTION ---
-  const startSysInfo = gSamples[0].systemInfo || {};
+  const startSysInfo = gSamples[0].systemInfo || /** @type {Partial<ShotSystemInfo>} */ ({});
   const isBrewByWeight = startSysInfo.shotStartedVolumetric === true;
   const brewModeLabel = getBrewModeLabel(isBrewByWeight);
   const configuredScaleDelayMs = Math.max(0, Number(shotData.brewDelay) || 0);
@@ -176,6 +213,7 @@ export function calculateShotMetrics(shotData, rawProfileData, settings) {
   const gWeight = (getFinalWeightSample(gSamples) || gSamples.at(-1)).v;
 
   // --- 4. PHASE-BY-PHASE ANALYSIS ---
+  /** @type {AnalyzedPhase[]} */
   const analyzedPhases = [];
   const delayTotals = createDelayTotals();
   let bluetoothScaleWasConnected = false;
@@ -233,8 +271,9 @@ export function calculateShotMetrics(shotData, rawProfileData, settings) {
   });
 
   // --- 5. TOTAL STATS ---
-  const finalSysInfo = gSamples.at(-1).systemInfo || {};
+  const finalSysInfo = gSamples.at(-1).systemInfo || /** @type {Partial<ShotSystemInfo>} */ ({});
 
+  /** @type {TotalStats} */
   const totalStats = {
     duration: gDuration,
     water: gWater,
@@ -302,10 +341,10 @@ export function calculateShotMetrics(shotData, rawProfileData, settings) {
  * Auto-Delay Detection
  * Optimization Loop: 0 to 3000ms in 100ms steps.
  * Special Handling: Last phase weight target is calculated independently.
- * * @param {Object} shotData - Shot data
- * @param {Object|null} profileData - Profile data with targets
+ * * @param {AnalyzerShot | null | undefined} shotData - Shot data
+ * @param {AnalyzerProfile | null} profileData - Profile data with targets
  * @param {number} fallbackDelay - Delay used when automatic detection cannot find a match
- * @returns {Object} { delay: number, auto: boolean }
+ * @returns {{ delay: number, auto: boolean }}
  */
 export function detectAutoDelay(shotData, profileData, fallbackDelay) {
   // Perform a quick check using calculateShotMetrics logic

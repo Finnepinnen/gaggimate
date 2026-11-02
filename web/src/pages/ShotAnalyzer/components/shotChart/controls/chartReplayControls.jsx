@@ -17,6 +17,56 @@ import {
   getAnalyzerTextButtonClasses,
 } from '../../analyzerControlStyles';
 
+/**
+ * @typedef {object} ExportMenuState
+ * @property {boolean} open
+ * @property {string | null} exportType 'video' | 'image' or a '+'-joined file export list ('shot', 'profile')
+ * @property {string} exportFormat
+ * @property {boolean} includeLegend
+ * @property {boolean} showFormatInfo
+ */
+
+/** @typedef {{ status?: string, error?: string | null, isCancelled?: boolean }} ReplayExportStatusState */
+
+/**
+ * @typedef {object} ExportMenuProps
+ * @property {import('preact').Ref<HTMLDivElement>} exportMenuRef
+ * @property {ExportMenuState} exportMenuState
+ * @property {boolean} [hasVideoExportSupport]
+ * @property {boolean} [isControlsLocked]
+ * @property {() => void} onCloseExportMenu
+ * @property {() => void} onExportAction
+ * @property {() => void} onExportMenuToggle
+ * @property {boolean} [profileExportAvailable]
+ * @property {(exportType: string | null) => void} onExportTypeChange
+ * @property {(exportFormat: string) => void} onExportFormatChange
+ * @property {() => void} onExportFormatInfoToggle
+ * @property {(includeLegend: boolean) => void} onIncludeLegendChange
+ * @property {boolean} [shouldLockWebmToggle]
+ * @property {boolean} [shouldShowWebmToggle]
+ */
+
+/**
+ * @typedef {object} ReplayButtonProps
+ * @property {boolean} [isReplayPaused]
+ * @property {boolean} [isReplaying]
+ * @property {boolean} [isReplayExporting]
+ * @property {boolean} [isVideoExportActive]
+ * @property {() => void} onReplayToggle
+ * @property {() => void} onStop
+ */
+
+/**
+ * @typedef {object} ReplayExportStatusProps
+ * @property {ReplayExportStatusState} replayExportStatus
+ * @property {string} [replayExportStatusHint]
+ * @property {string} [replayExportStatusLabel]
+ */
+
+/**
+ * @param {{ isReplaying?: boolean, isReplayPaused?: boolean }} options
+ * @returns {string}
+ */
 function useReplayActionLabel({ isReplaying, isReplayPaused }) {
   const { t } = useLingui();
   if (isReplaying) return t`Pause replay`;
@@ -28,6 +78,14 @@ function ChartActionDivider() {
   return <span className='bg-base-content/15 mx-1 h-4 w-px shrink-0' aria-hidden='true' />;
 }
 
+/**
+ * @param {ExportMenuProps & {
+ *   buttonClassName: string,
+ *   buttonIconClassName?: string,
+ *   buttonIconStyle?: import('preact').JSX.CSSProperties,
+ *   menuClassName?: string,
+ * }} props
+ */
 function ShotMediaExportMenu({
   exportMenuRef,
   exportMenuState,
@@ -53,6 +111,7 @@ function ShotMediaExportMenu({
     exportMenuState.exportType?.includes(type),
   );
 
+  /** @param {string} fileExportType */
   const handleFileExportTypeToggle = fileExportType => {
     const nextExportType = fileExportTypes.includes(fileExportType)
       ? fileExportTypes.filter(type => type !== fileExportType)
@@ -230,6 +289,14 @@ function ShotMediaExportMenu({
   );
 }
 
+/**
+ * @param {object} props
+ * @param {string} props.chartActionButtonClasses
+ * @param {boolean} [props.isControlsLocked]
+ * @param {boolean} [props.isReplayPaused]
+ * @param {boolean} [props.isReplaying]
+ * @param {() => void} props.onReplayToggle
+ */
 function ReplayActionButton({
   chartActionButtonClasses,
   isControlsLocked,
@@ -257,6 +324,13 @@ function ReplayActionButton({
   );
 }
 
+/**
+ * @param {object} props
+ * @param {string} props.chartActionButtonClasses
+ * @param {boolean} [props.isReplayExporting]
+ * @param {boolean} [props.isVideoExportActive]
+ * @param {() => void} props.onStop
+ */
 function StopReplayButton({
   chartActionButtonClasses,
   isReplayExporting,
@@ -286,6 +360,14 @@ function StopReplayButton({
   );
 }
 
+/**
+ * @param {ExportMenuProps & ReplayButtonProps & {
+ *   chartActionButtonClasses: string,
+ *   showExportButton?: boolean,
+ *   showReplayButton?: boolean,
+ *   showStopButton?: boolean,
+ * }} props
+ */
 function ReplayAndExportActions({
   chartActionButtonClasses,
   exportMenuRef,
@@ -360,6 +442,9 @@ function ReplayAndExportActions({
   );
 }
 
+/**
+ * @param {ExportMenuProps & ReplayButtonProps & ReplayExportStatusProps} props
+ */
 export function ShotChartMobileReplayActions({
   exportMenuRef,
   exportMenuState,
@@ -439,6 +524,13 @@ export function ShotChartMobileReplayActions({
   );
 }
 
+/**
+ * @param {object} props
+ * @param {string} props.chartActionButtonClasses
+ * @param {boolean} [props.isControlsLocked]
+ * @param {boolean} [props.isFullDisplay]
+ * @param {() => void} props.onFullDisplayToggle
+ */
 function FullDisplayButton({
   chartActionButtonClasses,
   isControlsLocked,
@@ -465,6 +557,19 @@ function FullDisplayButton({
   );
 }
 
+/**
+ * @param {ExportMenuProps & ReplayButtonProps & {
+ *   chartActionButtonClasses: string,
+ *   isCompareMode?: boolean,
+ *   isFullDisplay?: boolean,
+ *   isMobile?: boolean,
+ *   onFullDisplayToggle: () => void,
+ *   showExportButton?: boolean,
+ *   showFullDisplayButton?: boolean,
+ *   showReplayButton?: boolean,
+ *   showStopButton?: boolean,
+ * }} props
+ */
 export function ChartActionGroup({
   chartActionButtonClasses,
   exportMenuRef,
@@ -540,6 +645,9 @@ export function ChartActionGroup({
   );
 }
 
+/**
+ * @param {ReplayExportStatusProps} props
+ */
 export function ReplayExportStatus({
   replayExportStatus,
   replayExportStatusHint,

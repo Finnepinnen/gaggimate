@@ -1,6 +1,12 @@
 import { Trans } from '@lingui/react/macro';
 import { machine } from '../../../services/ApiService.js';
 
+/**
+ * @param {{
+ *   formData: import('../types').SettingsFormData,
+ *   onChange: import('../types').FormChange,
+ * }} props
+ */
 export function HeaterCoordinationSection({ formData, onChange }) {
   if (!machine.value.capabilities.dualBoiler) return null;
   return (

@@ -1,6 +1,6 @@
 import { t } from '@lingui/core/macro';
 import { requestSettings } from './settingsRequest.js';
-import fields from '../data/machineProfileFields.json';
+import profileFieldsJson from '../data/machineProfileFields.json';
 import { splitPidString } from '../pages/Settings/settingsForm.js';
 
 /**
@@ -12,7 +12,18 @@ import { splitPidString } from '../pages/Settings/settingsForm.js';
  * @property {number} [revision]
  * @property {Record<string, any>} [requires] Capabilities the machine must (not) have.
  * @property {Record<string, any>} [settings]
+ * @property {string[]} [plugins] Recommended plugins, e.g. 'boilerFillActive'.
+ * @property {{ targetSteamTemp?: boolean }} [locks] Fields the profile keeps editable or locked.
+ * @property {string[]} [settingKeys] Setting names, on device library entries without `settings`.
+ * @property {string} [hash] Definition hash, on device library entries.
  */
+
+/**
+ * Capability flags, from evt:status or the settings' machineProfileCapabilities.
+ * @typedef {Partial<import('../types').Capabilities> & Record<string, any>} ProfileCapabilities
+ */
+
+/** One [setting key, profile value] pair that differs from the current value. @typedef {[string, any]} ProfileChange */
 
 /**
  * One editable setting in src/data/machineProfileFields.json.
@@ -30,6 +41,9 @@ import { splitPidString } from '../pages/Settings/settingsForm.js';
  * @property {Record<string, string>} [options] Labels for select values.
  */
 
+/** @type {Record<string, ProfileField>} */
+const fields = profileFieldsJson;
+
 /** @type {Record<string, MachineProfile>} */
 const modules = import.meta.glob('../data/machineProfiles/*.json', {
   eager: true,
@@ -41,6 +55,10 @@ export const PROFILE_FIELDS = fields;
 export const CUSTOM_PROFILE = '';
 export const MAX_PROFILE_BYTES = 3500;
 
+/**
+ * @param {string | null | undefined} value JSON of the selected profile.
+ * @returns {MachineProfile | null}
+ */
 export function parseProfileSelection(value) {
   try {
     return value ? JSON.parse(value) : null;
@@ -48,6 +66,10 @@ export function parseProfileSelection(value) {
     return null;
   }
 }
+/**
+ * @param {import('../pages/Settings/types').SettingsFormData} formData
+ * @param {string} key
+ */
 export function isProfileFieldLocked(formData, key) {
   const profile = parseProfileSelection(formData.machineProfileSelection);
   if (
@@ -73,6 +95,11 @@ export function isProfileFieldLocked(formData, key) {
   return true;
 }
 
+/**
+ * @param {string} key
+ * @param {ProfileCapabilities} [capabilities]
+ * @param {boolean} [hardware]
+ */
 export function profileSupported(key, capabilities = {}, hardware = false) {
   const field = fields[key];
   return (
@@ -82,6 +109,11 @@ export function profileSupported(key, capabilities = {}, hardware = false) {
     (!field.singleBoiler || !capabilities.dualBoiler)
   );
 }
+/**
+ * Validates an imported or stored profile and returns a clean copy.
+ * @param {any} input Untrusted JSON.
+ * @returns {MachineProfile}
+ */
 export function normalizeProfile(input) {
   if (!input || Array.isArray(input) || typeof input !== 'object' || input.schemaVersion !== 1)
     throw new Error('Unsupported machine profile format.');
@@ -129,7 +161,9 @@ export function normalizeProfile(input) {
       (!Array.isArray(requires.boards) ||
         !requires.boards.length ||
         requires.boards.length > 16 ||
-        requires.boards.some(b => typeof b !== 'string' || !b || b.length > 80)))
+        requires.boards.some(
+          (/** @type {unknown} */ b) => typeof b !== 'string' || !b || b.length > 80,
+        )))
   )
     throw new Error('Invalid board requirements.');
   if (
@@ -139,6 +173,7 @@ export function normalizeProfile(input) {
     !Object.keys(input.settings).length
   )
     throw new Error('Profile has no machine settings.');
+  /** @type {Record<string, any>} */
   const settings = {};
   for (const [key, value] of Object.entries(input.settings)) {
     const field = fields[key];
@@ -177,7 +212,8 @@ export function normalizeProfile(input) {
   }
   if (
     input.plugins &&
-    (!Array.isArray(input.plugins) || input.plugins.some(p => p !== 'boilerFillActive'))
+    (!Array.isArray(input.plugins) ||
+      input.plugins.some((/** @type {unknown} */ p) => p !== 'boilerFillActive'))
   )
     throw new Error('Unknown recommended plugin.');
   const profile = {
@@ -194,6 +230,11 @@ export function normalizeProfile(input) {
     throw new Error('Profile is too large.');
   return profile;
 }
+/**
+ * @param {string} board Board name reported by the controller.
+ * @param {ProfileCapabilities} [capabilities]
+ * @returns {string}
+ */
 export function machineBoardName(board, capabilities = {}) {
   if (capabilities.dualBoiler) return 'GaggiMate Max';
   if (/pro.*lego/i.test(board)) return 'GaggiMate Pro Lego';
@@ -202,6 +243,13 @@ export function machineBoardName(board, capabilities = {}) {
   return board;
 }
 
+/**
+ * Reasons the profile can't be applied to this machine; empty when it can.
+ * @param {MachineProfile} profile
+ * @param {import('../pages/Settings/types').SettingsFormData} settings
+ * @param {{ capabilities?: import('../types').Capabilities, hardware?: string }} [machine]
+ * @returns {string[]}
+ */
 export function profileProblems(profile, settings, machine) {
   const caps = settings.machineProfileCapabilities || machine?.capabilities || {};
   const board = settings.machineProfileBoard || machine?.hardware;
@@ -250,12 +298,23 @@ export function profileProblems(profile, settings, machine) {
     return [t`The ${profileName} profile is not supported by your current board or firmware.`];
   return [];
 }
+/**
+ * @param {MachineProfile} profile
+ * @returns {import('../pages/Settings/types').SettingsFormData}
+ */
 export function profileToForm(profile) {
   const values = { ...profile.settings };
   if ('pid' in values) Object.assign(values, splitPidString(values.pid));
   return { ...values, machineProfileSelection: JSON.stringify(profile) };
 }
+/**
+ * @param {import('../pages/Settings/types').SettingsFormData} settings
+ * @param {ProfileCapabilities} capabilities
+ * @param {boolean} hardware
+ * @returns {Record<string, boolean | string | number>}
+ */
 export function currentProfileValues(settings, capabilities, hardware) {
+  /** @type {Record<string, boolean | string | number>} */
   const values = {};
   for (const [key, field] of Object.entries(fields)) {
     if (!profileSupported(key, capabilities, hardware) || settings[key] === undefined) continue;
@@ -270,6 +329,11 @@ export function currentProfileValues(settings, capabilities, hardware) {
   }
   return values;
 }
+/**
+ * @param {Pick<MachineProfile, 'settings'>} profile
+ * @param {Record<string, any>} current
+ * @returns {ProfileChange[]}
+ */
 export function changedProfileValues(profile, current) {
   return Object.entries(profile.settings).filter(([key, value]) => {
     if (current[key] === undefined) return true;
@@ -283,6 +347,11 @@ export function changedProfileValues(profile, current) {
 }
 
 // Compare against saved device values, rather than unsaved form edits.
+/**
+ * @param {import('../pages/Settings/types').SettingsFormData} formData
+ * @param {(changed: ProfileChange[]) => boolean | Promise<boolean>} [confirmChanges]
+ * @returns {Promise<boolean>}
+ */
 export async function confirmProfileApply(formData, confirmChanges) {
   const saved = await requestSettings();
   const selected = parseProfileSelection(formData.machineProfileSelection);
@@ -311,6 +380,7 @@ export async function confirmProfileApply(formData, confirmChanges) {
   );
 }
 
+/** @returns {Promise<import('./settingsRequest.js').SettingsResponse>} */
 export async function waitForMachineHardware() {
   const deadline = Date.now() + 45000;
   let temperatureFault = '';
@@ -338,6 +408,10 @@ export async function waitForMachineHardware() {
 }
 
 // Existing controller error 4 covers temperature faults (sensor failure or overtemperature).
+/**
+ * @param {Record<string, any> | undefined} data Settings response.
+ * @returns {string}
+ */
 export function machineTemperatureFault(data) {
   if (data?.controllerError !== 4) return '';
   return data.machineHardwareConfiguration || data.machineProfileCapabilities?.dualBoiler

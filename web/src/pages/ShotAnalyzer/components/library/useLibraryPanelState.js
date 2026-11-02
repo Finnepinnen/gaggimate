@@ -8,8 +8,22 @@ import {
 } from './libraryData';
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 
+/** @typedef {import('../types').LibraryItem} LibraryItem */
+/** @typedef {import('../types').LibraryBarRect} LibraryBarRect */
+/** @typedef {import('../types').LibrarySelectionTarget} LibrarySelectionTarget */
+/** @typedef {import('../types').LibrarySortConfig} LibrarySortConfig */
+/** @typedef {import('../types').LibraryUiSourceFilter} LibraryUiSourceFilter */
+/** @typedef {import('../types').PinnedShotsByProfile} PinnedShotsByProfile */
+/** @template T @typedef {import('preact').RefObject<T>} RefObject */
+
 const STATUS_BAR_CARD_GAP = 12;
 
+/**
+ * @param {object} refs
+ * @param {RefObject<HTMLElement>} refs.sentinelRef
+ * @param {RefObject<HTMLElement>} refs.barSlotRef
+ * @param {RefObject<HTMLElement>} refs.barRef
+ */
 export function useLibraryPanelLayoutState({ sentinelRef, barSlotRef, barRef }) {
   const [isStuck, setIsStuck] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(() =>
@@ -31,6 +45,7 @@ export function useLibraryPanelLayoutState({ sentinelRef, barSlotRef, barRef }) 
     if (globalThis.window === undefined) return undefined;
 
     const mediaQuery = globalThis.window.matchMedia('(max-width: 1023px)');
+    /** @param {MediaQueryListEvent} event */
     const handleChange = event => setIsMobileViewport(event.matches);
 
     setIsMobileViewport(mediaQuery.matches);
@@ -80,6 +95,14 @@ export function useLibraryPanelLayoutState({ sentinelRef, barSlotRef, barRef }) 
   };
 }
 
+/**
+ * @param {object} options
+ * @param {boolean} options.collapsed
+ * @param {LibrarySelectionTarget} options.librarySelectionTarget
+ * @param {(target: LibrarySelectionTarget) => void} options.openLibraryForTarget
+ * @param {(collapsed: boolean) => void} options.setCollapsed
+ * @param {() => void} options.handleStatusBarCompareToggle
+ */
 export function useLibraryPanelHotkeys({
   collapsed,
   librarySelectionTarget,
@@ -88,6 +111,7 @@ export function useLibraryPanelHotkeys({
   handleStatusBarCompareToggle,
 }) {
   useEffect(() => {
+    /** @param {KeyboardEvent} event */
     const handleKeyDown = event => {
       if (event.defaultPrevented || event.repeat) return;
       if (event.metaKey || event.ctrlKey || event.altKey) return;
@@ -121,10 +145,18 @@ export function useLibraryPanelHotkeys({
   ]);
 }
 
+/**
+ * @param {object} options
+ * @param {boolean} options.collapsed
+ * @param {boolean} options.isMobileViewport
+ * @param {boolean} options.isStuck
+ * @param {LibraryBarRect} options.barRect
+ */
 export function getLibraryPanelLayoutStyles({ collapsed, isMobileViewport, isStuck, barRect }) {
   const shouldBeFixed = !collapsed || (!isMobileViewport && isStuck);
   const barSlotHeight = barRect.height + (collapsed ? STATUS_BAR_CARD_GAP : 0);
   const barSlotStyle = { height: `${barSlotHeight}px` };
+  /** @type {import('preact').JSX.CSSProperties} */
   const barStyle = shouldBeFixed
     ? {
         position: 'fixed',
@@ -146,19 +178,20 @@ export function getLibraryPanelLayoutStyles({ collapsed, isMobileViewport, isStu
     barSlotHeight,
     barSlotStyle,
     dropdownTop,
-    dropdownStyle: {
+    dropdownStyle: /** @type {import('preact').JSX.CSSProperties} */ ({
       position: 'fixed',
       top: `${dropdownTop}px`,
       left: `${barRect.left}px`,
       width: `${barRect.width}px`,
       zIndex: 49,
-    },
+    }),
     desktopSectionHeight: isMobileViewport
       ? undefined
       : `max(18rem, calc(100dvh - ${dropdownTop}px - 2rem))`,
   };
 }
 
+/** @param {EventTarget | null} target */
 function isLibraryHotkeyTypingTarget(target) {
   const activeElement =
     typeof Element !== 'undefined' && target instanceof Element
@@ -173,6 +206,10 @@ function isLibraryHotkeyTypingTarget(target) {
   );
 }
 
+/**
+ * @param {string} value
+ * @param {number} [delayMs]
+ */
 export function useDebouncedLibraryValue(value, delayMs = 250) {
   const [debouncedValue, setDebouncedValue] = useState('');
 
@@ -184,12 +221,21 @@ export function useDebouncedLibraryValue(value, delayMs = 250) {
   return debouncedValue;
 }
 
+/** @param {import('../../../../services/ApiService.js').default | null | undefined} apiService */
 export function useLibraryServiceApi(apiService) {
   useEffect(() => {
     if (apiService) libraryService.setApiService(apiService);
   }, [apiService]);
 }
 
+/**
+ * @param {object} options
+ * @param {boolean} options.compareMode
+ * @param {LibraryItem | null | undefined} options.currentShot
+ * @param {LibrarySelectionTarget} options.librarySelectionTarget
+ * @param {LibraryItem | null | undefined} options.secondaryShot
+ * @param {(target: LibrarySelectionTarget) => void} options.setLibrarySelectionTarget
+ */
 export function useLibrarySelectionTargetSync({
   compareMode,
   currentShot,
@@ -210,11 +256,18 @@ export function useLibrarySelectionTargetSync({
   }, [compareMode, currentShot, secondaryShot, librarySelectionTarget, setLibrarySelectionTarget]);
 }
 
+/**
+ * @param {object} options
+ * @param {boolean} options.collapsed
+ * @param {RefObject<HTMLElement>} options.panelRef
+ * @param {(collapsed: boolean) => void} options.setCollapsed
+ */
 export function useCloseLibraryOnOutsideClick({ collapsed, panelRef, setCollapsed }) {
   useEffect(() => {
     if (collapsed) return;
+    /** @param {MouseEvent} event */
     const handleOutsideClick = event => {
-      const target = event.target;
+      const target = /** @type {Element | null} */ (event.target);
       const isLibraryActionMenuClick = target?.closest?.('[data-library-actions-menu]');
       if (panelRef.current && !panelRef.current.contains(target) && !isLibraryActionMenuClick) {
         setCollapsed(true);
@@ -225,9 +278,15 @@ export function useCloseLibraryOnOutsideClick({ collapsed, panelRef, setCollapse
   }, [collapsed, panelRef, setCollapsed]);
 }
 
+/**
+ * @param {RefObject<HTMLElement>} panelRef
+ * @param {number} barSlotHeight
+ */
 export function useAnalyzerStickyOffset(panelRef, barSlotHeight) {
   useEffect(() => {
-    const pageElement = panelRef.current?.closest?.('.shot-analyzer-page');
+    const pageElement = /** @type {HTMLElement | null | undefined} */ (
+      panelRef.current?.closest?.('.shot-analyzer-page')
+    );
     if (!pageElement) return undefined;
 
     pageElement.style.setProperty('--analyzer-sticky-offset', `${barSlotHeight}px`);
@@ -238,6 +297,27 @@ export function useAnalyzerStickyOffset(panelRef, barSlotHeight) {
   }, [barSlotHeight, panelRef]);
 }
 
+/**
+ * @param {object} options
+ * @param {string} options.debouncedProfilesSearch
+ * @param {string} options.debouncedShotsSearch
+ * @param {string} options.normalizedCurrentProfileName
+ * @param {string} options.normalizedCurrentShotProfileName
+ * @param {string[]} options.pinnedProfiles
+ * @param {PinnedShotsByProfile} options.pinnedShotsByProfile
+ * @param {boolean} options.profilesPinnedFirst
+ * @param {LibrarySortConfig} options.profilesSort
+ * @param {LibraryUiSourceFilter} options.profilesSourceFilter
+ * @param {boolean} options.selectionPromotionsEnabled
+ * @param {(loading: boolean) => void} options.setLoading
+ * @param {(shots: import('../types').LibraryShotItem[]) => void} options.setNavigationShots
+ * @param {(profiles: import('../types').LibraryProfileItem[]) => void} options.setProfiles
+ * @param {(shots: import('../types').LibraryShotItem[]) => void} options.setShots
+ * @param {boolean} options.shotsPinnedFirst
+ * @param {LibrarySortConfig} options.shotsSort
+ * @param {LibraryUiSourceFilter} options.shotsSourceFilter
+ * @returns {() => Promise<void>}
+ */
 export function useLibraryRefresh({
   debouncedProfilesSearch,
   debouncedShotsSearch,

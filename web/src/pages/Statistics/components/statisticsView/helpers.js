@@ -15,17 +15,56 @@ import { resolveShotEffectiveTimestampMs } from '../../utils/statisticsSearchDsl
 import { STATISTICS_SOURCE_FALLBACK } from '../../utils/statisticsRoute';
 import { t } from '@lingui/core/macro';
 
+/**
+ * @typedef {import('../../types').DateBasisMode} DateBasisMode
+ * @typedef {import('../../types').StatisticsMode} StatisticsMode
+ * @typedef {import('../../types').StatisticsSource} StatisticsSource
+ * @typedef {import('../../types').StatisticsDetailSection} StatisticsDetailSection
+ * @typedef {import('../../types').StatisticsInitialContext} StatisticsInitialContext
+ * @typedef {import('../../types').StatisticsShotMeta} StatisticsShotMeta
+ * @typedef {import('../../types').StatisticsProfileMeta} StatisticsProfileMeta
+ * @typedef {import('../../types').StatisticsEntry} StatisticsEntry
+ * @typedef {import('../../types').StatisticsCompareEntry} StatisticsCompareEntry
+ * @typedef {import('../../types').ShotSelectionBaseItem} ShotSelectionBaseItem
+ * @typedef {import('../../types').PinnedShotsByProfile} PinnedShotsByProfile
+ * @typedef {import('../../types').ShotCandidateFilter} ShotCandidateFilter
+ * @typedef {import('../../types').ParsedDateInput} ParsedDateInput
+ * @typedef {import('../../types').StatisticsFilterState} StatisticsFilterState
+ * @typedef {import('../../types').DateBasisWarningState} DateBasisWarningState
+ * @typedef {Map<string, string | null>} ShotKeyToCanonicalProfile
+ * @typedef {{
+ *   hasCompareStatistics: boolean,
+ *   hasMetricStatistics: boolean,
+ *   hasTrendStatistics: boolean,
+ *   hasProfileGroupStatistics: boolean,
+ *   hasPhaseStatistics: boolean,
+ * }} DetailSectionAvailability
+ */
+
+/**
+ * @param {string} source
+ * @returns {StatisticsSource | null}
+ */
 export function getStatisticsFallbackSource(source) {
   return STATISTICS_SOURCE_FALLBACK[source] || null;
 }
 
+/**
+ * @param {StatisticsInitialContext | null | undefined} initialContext
+ * @returns {string}
+ */
 export function getInitialProfileName(initialContext) {
   const profileName = initialContext?.profileName;
   if (profileName && profileName !== 'No Profile Loaded') return profileName;
   return '';
 }
 
+/**
+ * @param {StatisticsProfileMeta[] | null | undefined} profileList
+ * @returns {string[]}
+ */
 export function getAvailableProfileNames(profileList) {
+  /** @type {string[]} */
   const profileNames = [];
   for (const p of profileList || []) {
     const displayName = getProfileDisplayLabel(p, '');
@@ -35,6 +74,11 @@ export function getAvailableProfileNames(profileList) {
   return [...new Set(profileNames)];
 }
 
+/**
+ * @param {string | null | undefined} value - `YYYY-MM-DD` or any Date-parsable string
+ * @param {'start' | 'end'} [boundary] - Time of day for date-only values
+ * @returns {ParsedDateInput}
+ */
 export function parseDateInputMs(value, boundary = 'start') {
   if (!value) return { valueMs: null, error: null };
 
@@ -76,6 +120,7 @@ export function parseDateInputMs(value, boundary = 'start') {
   return { valueMs, error: null };
 }
 
+/** @param {number} ms */
 export function formatDateTimeLocalInputValue(ms) {
   if (!Number.isFinite(ms) || ms <= 0) return '';
   const date = new Date(ms);
@@ -87,18 +132,24 @@ export function formatDateTimeLocalInputValue(ms) {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
+/**
+ * @param {StatisticsShotMeta | null | undefined} shotMeta
+ * @returns {string}
+ */
 export function getShotSelectionKey(shotMeta) {
   if (!shotMeta) return '';
   if (shotMeta.source === 'gaggimate') return `gaggimate:${String(shotMeta.id || '')}`;
   return `browser:${String(shotMeta.storageKey || shotMeta.name || shotMeta.id || '')}`;
 }
 
+/** @param {string | undefined} source */
 export function getSourceShortLabel(source) {
   if (source === 'gaggimate') return 'GM';
   if (source === 'browser') return 'WEB';
   return 'SRC';
 }
 
+/** @param {number | null} ms */
 export function formatShotDateTime(ms) {
   if (!Number.isFinite(ms) || ms <= 0) return t`No date`;
   try {
@@ -114,29 +165,37 @@ export function formatShotDateTime(ms) {
   }
 }
 
+/** @param {StatisticsShotMeta | null | undefined} shotMeta */
 export function getShotDisplayPrimary(shotMeta) {
   return String(
     shotMeta?.name || shotMeta?.label || shotMeta?.title || shotMeta?.id || t`Unknown Shot`,
   );
 }
 
+/** @param {string | null | undefined} value */
 function stripFileExtension(value) {
   const text = String(value || '').trim();
   if (!text) return '';
   return text.replace(/\.[^./\\]{1,8}$/, '');
 }
 
+/** @param {StatisticsShotMeta | null | undefined} shotMeta */
 export function getShotFileStem(shotMeta) {
   const fileName = shotMeta?.name || shotMeta?.storageKey;
   if (fileName) return String(stripFileExtension(fileName));
   return String(shotMeta?.label || shotMeta?.title || shotMeta?.id || t`Unknown Shot`);
 }
 
+/**
+ * @param {StatisticsShotMeta | null | undefined} shotMeta
+ * @param {DateBasisMode | null | undefined} dateBasisMode
+ */
 export function getShotDisplaySecondary(shotMeta, dateBasisMode) {
   const ts = resolveShotEffectiveTimestampMs(shotMeta, dateBasisMode || 'auto');
   return `${formatShotDateTime(ts)} • ${getSourceShortLabel(shotMeta?.source)}`;
 }
 
+/** @param {EventTarget | null} target */
 export function isStatisticsHotkeyBlockedTarget(target) {
   const activeElement =
     typeof Element !== 'undefined' && target instanceof Element ? target : document.activeElement;
@@ -149,6 +208,11 @@ export function isStatisticsHotkeyBlockedTarget(target) {
   );
 }
 
+/**
+ * @param {StatisticsShotMeta} shot
+ * @param {DateBasisMode} dateBasisMode
+ * @returns {ShotSelectionBaseItem}
+ */
 export function buildShotSelectionItem(shot, dateBasisMode) {
   return {
     id: getShotSelectionKey(shot),
@@ -160,6 +224,11 @@ export function buildShotSelectionItem(shot, dateBasisMode) {
   };
 }
 
+/**
+ * @param {StatisticsEntry | null | undefined} entry
+ * @param {number} index
+ * @returns {string}
+ */
 export function getStatisticsCompareFallbackKey(entry, index) {
   return (
     entry?.meta?.selectionKey || `${entry?.meta?.source || 'shot'}:${entry?.meta?.id || index}`
@@ -167,10 +236,11 @@ export function getStatisticsCompareFallbackKey(entry, index) {
 }
 
 /**
- * @param {any} entry
+ * @param {StatisticsEntry | null | undefined} entry
  * @param {object} [options]
  * @param {string} [options.key]
  * @param {boolean} [options.isReference]
+ * @returns {StatisticsCompareEntry | null}
  */
 export function buildStatisticsCompareEntry(entry, { key, isReference = false } = {}) {
   if (!entry?.shotData || !entry?.analysis) return null;
@@ -187,6 +257,10 @@ export function buildStatisticsCompareEntry(entry, { key, isReference = false } 
   };
 }
 
+/**
+ * @param {{ runMode: StatisticsMode | undefined } & Omit<DetailSectionAvailability, 'hasProfileGroupStatistics' | 'hasPhaseStatistics'>} args
+ * @returns {StatisticsDetailSection}
+ */
 export function getPreferredStatisticsDetailSection({
   runMode,
   hasCompareStatistics,
@@ -199,10 +273,22 @@ export function getPreferredStatisticsDetailSection({
   return runMode === 'profile' ? 'phase' : 'profile';
 }
 
+/**
+ * @param {unknown} value
+ * @returns {StatisticsDetailSection | null}
+ */
 export function normalizeStatisticsDetailSection(value) {
-  return ['metrics', 'trends', 'compare', 'profile', 'phase'].includes(value) ? value : null;
+  return ['metrics', 'trends', 'compare', 'profile', 'phase'].includes(
+    /** @type {string} */ (value),
+  )
+    ? /** @type {StatisticsDetailSection} */ (value)
+    : null;
 }
 
+/**
+ * @param {{ candidate: StatisticsDetailSection } & DetailSectionAvailability} args
+ * @returns {StatisticsDetailSection}
+ */
 export function resolveStatisticsDetailSectionChoice({
   candidate,
   hasCompareStatistics,
@@ -211,6 +297,7 @@ export function resolveStatisticsDetailSectionChoice({
   hasProfileGroupStatistics,
   hasPhaseStatistics,
 }) {
+  /** @type {Record<StatisticsDetailSection, boolean>} */
   const availabilityBySection = {
     compare: hasCompareStatistics,
     metrics: hasMetricStatistics,
@@ -223,6 +310,7 @@ export function resolveStatisticsDetailSectionChoice({
     return candidate;
   }
 
+  /** @type {StatisticsDetailSection[]} */
   const fallbackOrder = ['compare', 'metrics', 'trends', 'profile', 'phase'];
   const fallbackSection = fallbackOrder.find(section => availabilityBySection[section]);
   if (fallbackSection) {
@@ -232,6 +320,10 @@ export function resolveStatisticsDetailSectionChoice({
   return candidate;
 }
 
+/**
+ * @param {StatisticsShotMeta} shotMeta
+ * @param {ShotKeyToCanonicalProfile} shotKeyToCanonicalProfile
+ */
 export function getCanonicalShotProfilePinKeyFromMap(shotMeta, shotKeyToCanonicalProfile) {
   const shotKey = getShotSelectionKey(shotMeta);
   const canonicalProfile = shotKeyToCanonicalProfile.get(shotKey);
@@ -240,6 +332,13 @@ export function getCanonicalShotProfilePinKeyFromMap(shotMeta, shotKeyToCanonica
     : getProfilePinKey(shotMeta?.profile || shotMeta?.profileName || '');
 }
 
+/**
+ * @param {StatisticsShotMeta} shotMeta
+ * @param {object} pins
+ * @param {ShotKeyToCanonicalProfile} pins.shotKeyToCanonicalProfile
+ * @param {PinnedShotsByProfile} pins.pinnedShotsByProfile
+ * @param {string[]} pins.pinnedProfiles
+ */
 export function matchesPinnedShotMetaWithPins(
   shotMeta,
   { shotKeyToCanonicalProfile, pinnedShotsByProfile, pinnedProfiles },
@@ -252,11 +351,19 @@ export function matchesPinnedShotMetaWithPins(
   );
 }
 
+/**
+ * @param {string} shotKey
+ * @param {PinnedShotsByProfile} pinnedShotsByProfile
+ */
 function isShotPinnedAnywhere(shotKey, pinnedShotsByProfile) {
   if (!shotKey) return false;
   return Object.values(pinnedShotsByProfile).some(bucket => bucket.includes(shotKey));
 }
 
+/**
+ * @param {string} profileName
+ * @param {string[]} pinnedProfiles
+ */
 export function getProfilePinDisabledReasonText(profileName, pinnedProfiles) {
   if (isProfilePinned(profileName, pinnedProfiles)) return '';
   if (pinnedProfiles.length >= MAX_PINNED_PROFILES) {
@@ -266,6 +373,11 @@ export function getProfilePinDisabledReasonText(profileName, pinnedProfiles) {
   return '';
 }
 
+/**
+ * @param {StatisticsShotMeta} shotMeta
+ * @param {ShotKeyToCanonicalProfile} shotKeyToCanonicalProfile
+ * @param {PinnedShotsByProfile} pinnedShotsByProfile
+ */
 export function getShotPinDisabledReasonText(
   shotMeta,
   shotKeyToCanonicalProfile,
@@ -287,6 +399,10 @@ export function getShotPinDisabledReasonText(
   return '';
 }
 
+/**
+ * @param {StatisticsShotMeta[] | null | undefined} rawShotCandidates
+ * @returns {DateBasisWarningState}
+ */
 export function buildDateBasisWarningState(rawShotCandidates) {
   let missingShotTimestampCount = 0;
   let uploadFallbackCount = 0;
@@ -324,6 +440,15 @@ export function buildDateBasisWarningState(rawShotCandidates) {
   };
 }
 
+/**
+ * @param {object} args
+ * @param {ShotCandidateFilter} args.compiledDslFilter
+ * @param {ParsedDateInput} args.visualDateFrom
+ * @param {ParsedDateInput} args.visualDateTo
+ * @param {DateBasisMode} args.dateBasisMode
+ * @param {StatisticsShotMeta[] | null | undefined} args.rawShotCandidates
+ * @returns {StatisticsFilterState}
+ */
 export function buildBaseFilterState({
   compiledDslFilter,
   visualDateFrom,
@@ -381,6 +506,15 @@ export function buildBaseFilterState({
   };
 }
 
+/**
+ * @param {object} args
+ * @param {StatisticsFilterState} args.baseFilterState
+ * @param {StatisticsMode} args.mode
+ * @param {string[]} args.selectedProfileNames
+ * @param {string[]} args.selectedShotKeys
+ * @param {ShotKeyToCanonicalProfile} args.shotKeyToCanonicalProfile
+ * @returns {StatisticsFilterState}
+ */
 export function buildCandidateFilterState({
   baseFilterState,
   mode,
@@ -429,6 +563,10 @@ export function buildCandidateFilterState({
   };
 }
 
+/**
+ * @param {{ mode: StatisticsMode, selectedProfileNames: string[], selectedShotKeys: string[] }} args
+ * @returns {string | null}
+ */
 export function getStatisticsSelectionHint({ mode, selectedProfileNames, selectedShotKeys }) {
   if (mode === 'profile' && selectedProfileNames.length === 0) {
     return t`Select one or more profiles.`;

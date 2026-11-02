@@ -9,14 +9,23 @@ import { Spinner } from '../../components/Spinner.jsx';
 import { SettingsFormField } from '../../components/SettingsFormField.jsx';
 import { InfoNote } from './InfoNote.jsx';
 
+/** @typedef {import('./types').WifiChoice} WifiChoice */
+/** @typedef {import('./types').WifiNetwork} WifiNetwork */
+/** @typedef {import('@lingui/core').MessageDescriptor} MessageDescriptor */
+
 const OTHER = '\u0000other'; // can never collide with a real SSID
 export const WPA_MIN_PASSWORD = 8;
 
+/** @type {Record<string, MessageDescriptor>} */
 const SCAN_ERRORS = {
   busy: msg`The machine is busy, try again in a moment.`,
   notAp: msg`Scanning only works while GaggiMate runs its own Wi-Fi network.`,
 };
 
+/**
+ * @param {number} rssi dBm
+ * @returns {MessageDescriptor}
+ */
 function signalLabel(rssi) {
   if (rssi >= -60) return msg`Strong`;
   if (rssi >= -72) return msg`Good`;
@@ -24,15 +33,21 @@ function signalLabel(rssi) {
 }
 
 // A network is chosen and, for WPA, has a password of 8+ characters; skipping has its own button.
+/** @param {WifiChoice} wifi */
 export function isWifiChoiceValid(wifi) {
   if (!wifi.ssid) return false;
   return !wifi.secure || wifi.password.length >= WPA_MIN_PASSWORD;
 }
 
+/**
+ * @param {object} props
+ * @param {WifiChoice} props.wifi
+ * @param {(wifi: WifiChoice) => void} props.onChange
+ */
 export function WifiStep({ wifi, onChange }) {
   const { t, i18n } = useLingui();
   const apiService = useContext(ApiServiceContext);
-  const [networks, setNetworks] = useState(null);
+  const [networks, setNetworks] = useState(/** @type {WifiNetwork[] | null} */ (null));
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -41,7 +56,8 @@ export function WifiStep({ wifi, onChange }) {
     const id = apiService.on('evt:wifi:scan', event => {
       setScanning(false);
       // The firmware only joins networks with a password, so open ones are left out
-      if (event.success) setNetworks((event.networks || []).filter(n => n.secure));
+      if (event.success)
+        setNetworks((event.networks || []).filter((/** @type {WifiNetwork} */ n) => n.secure));
       else setError('failed');
     });
     return () => apiService.off('evt:wifi:scan', id);
@@ -66,6 +82,7 @@ export function WifiStep({ wifi, onChange }) {
     scan();
   }, [scan]);
 
+  /** @param {WifiNetwork | typeof OTHER} network */
   const select = network => {
     if (network === OTHER) {
       onChange({ selected: OTHER, ssid: '', secure: true, password: '' });

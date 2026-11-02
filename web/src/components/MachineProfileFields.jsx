@@ -24,6 +24,16 @@ const RESISTANCE_FIELDS = [
   'ntcSteamSeriesResistance',
 ];
 
+/** @typedef {import('../utils/machineProfiles.js').ProfileField} ProfileField */
+
+/**
+ * @param {object} props
+ * @param {number | undefined} props.value Resistance in Ω.
+ * @param {ProfileField} props.field
+ * @param {number[]} props.presets
+ * @param {boolean} props.disabled
+ * @param {(value: number | undefined) => void} props.onChange
+ */
 function ResistanceControl({ value, field, presets, disabled, onChange }) {
   const [custom, setCustom] = useState(false);
   const showCustom = custom || !presets.includes(value);
@@ -78,8 +88,18 @@ function ResistanceControl({ value, field, presets, disabled, onChange }) {
   );
 }
 
+/**
+ * @param {object} props
+ * @param {import('../pages/Settings/types').SettingsFormData} props.formData
+ * @param {(values: Record<string, any>) => void} props.setFields
+ * @param {boolean} [props.hardwareOnly]
+ */
 export function MachineProfileFields({ formData, setFields, hardwareOnly = false }) {
   const caps = formData.machineProfileCapabilities || {};
+  /**
+   * @param {string} key
+   * @param {ProfileField} field
+   */
   const inHardwareSection = (key, field) => field.hardware || key === 'heaterHandoverMs';
   const fields = Object.entries(PROFILE_FIELDS).filter(
     ([key, field]) =>
@@ -100,6 +120,7 @@ export function MachineProfileFields({ formData, setFields, hardwareOnly = false
       field.type !== 'boolean' && !LIGHT_FIELDS.includes(key) && key !== 'defaultSteamMode',
   );
 
+  /** @param {[string, ProfileField]} entry */
   const renderField = ([key, field]) => {
     const supported = profileSupported(key, caps, !!formData.machineHardwareConfiguration);
     const disabled = isProfileFieldLocked(formData, key) || !supported;
@@ -153,8 +174,9 @@ export function MachineProfileFields({ formData, setFields, hardwareOnly = false
             type={field.type === 'csv' ? 'text' : 'number'}
             className='input input-bordered w-full'
             value={key === 'pid' ? `${formData.pid},${formData.kf}` : (formData[key] ?? '')}
-            min={field.min}
-            max={field.max}
+            // Preact stringifies numbers; the attribute types only allow strings.
+            min={/** @type {any} */ (field.min)}
+            max={/** @type {any} */ (field.max)}
             step={field.type === 'integer' ? 1 : 'any'}
             disabled={disabled}
             onChange={event => {

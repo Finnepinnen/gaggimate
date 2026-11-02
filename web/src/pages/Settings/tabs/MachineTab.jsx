@@ -23,6 +23,17 @@ const tofDistance = computed(() => machine.value.status.tofDistance);
 const hardwareScaleAvailable = computed(() => !!machine.value.capabilities.hardwareScale);
 const status = computed(() => machine.value.status);
 
+/** @typedef {import('../types').FieldChangeHandler} FieldChangeHandler */
+
+/**
+ * @param {{
+ *   id: string,
+ *   label: string,
+ *   value: string | undefined,
+ *   fallback: string,
+ *   onChange: FieldChangeHandler,
+ * }} props
+ */
 function SunriseColorField({ id, label, value, fallback, onChange }) {
   return (
     <SettingsFormField label={label} htmlFor={id} noMargin>
@@ -42,10 +53,20 @@ function SunriseColorField({ id, label, value, fallback, onChange }) {
   );
 }
 
+/**
+ * @param {{
+ *   id: string,
+ *   label: string,
+ *   value: number | string | undefined,
+ *   error: string | undefined,
+ *   onChange: FieldChangeHandler,
+ *   onUseCurrent: () => void,
+ * }} props
+ */
 function TankDistanceField({ id, label, value, error, onChange, onUseCurrent }) {
   const { t } = useLingui();
   const distance = tofDistance.value;
-  const inputRef = useRef(null);
+  const inputRef = useRef(/** @type {HTMLInputElement | null} */ (null));
 
   // Feeds the rule into native form validation so a plain Save is blocked with the same message.
   useEffect(() => {
@@ -90,10 +111,18 @@ function TankDistanceField({ id, label, value, error, onChange, onUseCurrent }) 
   );
 }
 
+/**
+ * @param {{
+ *   formData: import('../types').SettingsFormData,
+ *   onChange: import('../types').FormChange,
+ *   setField: import('../types').SetField,
+ *   profiles?: (import('../../../types').Profile & { id: string })[],
+ * }} props
+ */
 export function MachineTab({ formData, onChange, setField, profiles = [] }) {
   const { t } = useLingui();
   const apiService = useContext(ApiServiceContext);
-  const [steamPumpDraft, setSteamPumpDraft] = useState(null);
+  const [steamPumpDraft, setSteamPumpDraft] = useState(/** @type {string | null} */ (null));
   const [calibrationWeight, setCalibrationWeight] = useState('');
 
   const tareScale = useCallback(() => {
@@ -101,6 +130,7 @@ export function MachineTab({ formData, onChange, setField, profiles = [] }) {
   }, [apiService]);
 
   const changeHardwareScaleSampleRate = useCallback(
+    /** @param {import('preact').JSX.TargetedEvent<HTMLSelectElement, Event>} event */
     event => {
       const sampleRate = Number.parseInt(event.currentTarget.value, 10) === 80 ? 80 : 10;
       const defaultAlpha = sampleRate === 80 ? '0.40' : '0.80';
@@ -112,6 +142,7 @@ export function MachineTab({ formData, onChange, setField, profiles = [] }) {
   );
 
   const calibrateLoadCell = useCallback(
+    /** @param {1 | 2} cellNumber */
     cellNumber => {
       const measuredWeight =
         cellNumber === 1
@@ -147,6 +178,7 @@ export function MachineTab({ formData, onChange, setField, profiles = [] }) {
   );
 
   const tankErrors = validateTankCalibration(formData.emptyTankDistance, formData.fullTankDistance);
+  /** @type {Record<string, string>} */
   const tankErrorMessages = {
     invalid: t`Enter a whole number of millimeters, 0 or more.`,
     order: t`Must be larger than the distance to the fill line.`,
@@ -450,8 +482,9 @@ export function MachineTab({ formData, onChange, setField, profiles = [] }) {
           <MachineProfileFields
             formData={formData}
             hardwareOnly
-            setFields={values =>
-              Object.entries(values).forEach(([key, value]) => setField(key, value))
+            setFields={
+              /** @param {Record<string, any>} values */ values =>
+                Object.entries(values).forEach(([key, value]) => setField(key, value))
             }
           />
           <fieldset

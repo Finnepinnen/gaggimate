@@ -8,6 +8,14 @@ import SmartDoseMeasurement from './SmartDoseMeasurement.jsx';
 import { saveSmartDoseSetting } from '../utils/smartDoseSettings.js';
 import { ApiServiceContext, updateSettingsCache } from '../services/ApiService.js';
 
+/** @typedef {import('../services/machineTypes.js').SmartDoseStatus} SmartDoseStatus */
+/** @typedef {import('../services/machineTypes.js').SmartDoseMeasurement} SmartDoseMeasurementData */
+
+/**
+ * @param {object} props
+ * @param {SmartDoseStatus | null | undefined} props.dose
+ * @param {boolean} [props.inCard]
+ */
 export default function SmartDoseControl({ dose, inCard = false }) {
   const api = useContext(ApiServiceContext);
   const [error, setError] = useState('');
@@ -24,6 +32,7 @@ export default function SmartDoseControl({ dose, inCard = false }) {
       setBusy(false);
     }
   };
+  /** @param {number} direction -1 or 1 */
   const adjust = async direction => {
     setBusy(true);
     setError('');
@@ -36,10 +45,15 @@ export default function SmartDoseControl({ dose, inCard = false }) {
       setBusy(false);
     }
   };
+  /** @param {string} mode */
   const chooseMode = async mode => {
     setBusy(true);
     try {
-      updateSettingsCache(await saveSmartDoseSetting('smartDoseMode', mode));
+      updateSettingsCache(
+        /** @type {import('../types').Settings} */ (
+          await saveSmartDoseSetting('smartDoseMode', mode)
+        ),
+      );
       setError('');
     } catch {
       setError('Could not change dosing mode.');
@@ -51,6 +65,7 @@ export default function SmartDoseControl({ dose, inCard = false }) {
   const active = owner !== 'none';
   const cup = dose.cupConfigured ? dose.cup : null;
   const portafilter = dose.portafilterConfigured ? dose.portafilter : null;
+  /** @type {[string, (SmartDoseMeasurementData & { portafilterCalibration?: number }) | undefined][]} */
   let measurements;
   if (cup && portafilter && cup.source !== portafilter.source) {
     measurements = [

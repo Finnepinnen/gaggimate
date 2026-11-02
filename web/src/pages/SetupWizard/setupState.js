@@ -6,9 +6,16 @@ import {
   updateSettingsCache,
 } from '../../services/ApiService.js';
 
+/** @typedef {import('./types').SetupSettings} SetupSettings */
+
 // True while the machine reports a first run that has not finished the setup wizard.
 export const setupNeeded = signal(false);
 
+/**
+ * @param {boolean} offerWifi
+ * @param {boolean} configureLater
+ * @returns {string[]}
+ */
 export function setupSteps(offerWifi, configureLater) {
   return [
     'machine',
@@ -19,11 +26,17 @@ export function setupSteps(offerWifi, configureLater) {
 }
 
 // Keep deferred machine setup in the existing persisted wizard progress field.
+/** @param {string} [value] */
 export function parseSetupStep(value = '') {
   const configureLater = value.startsWith('custom:');
   return { step: configureLater ? value.slice(7) : value, configureLater };
 }
 
+/**
+ * @param {string} step
+ * @param {boolean} configureLater
+ * @returns {string}
+ */
 export function savedSetupStep(step, configureLater) {
   return configureLater ? `custom:${step}` : step;
 }
@@ -31,7 +44,7 @@ export function savedSetupStep(step, configureLater) {
 export async function checkSetup({ fresh = false } = {}) {
   if (fresh) invalidateSettingsCache(); // another machine was selected in the app
   try {
-    const settings = await prefetchSettings();
+    const settings = /** @type {SetupSettings} */ (await prefetchSettings());
     setupNeeded.value = settings?.setupDone === false;
   } catch {
     // Older firmware or a failed fetch: never block the UI behind the wizard.
@@ -40,6 +53,10 @@ export async function checkSetup({ fresh = false } = {}) {
 }
 
 // Partial POST: the firmware only changes the fields a request carries (GM-214).
+/**
+ * @param {Record<string, unknown>} fields
+ * @returns {Promise<import('../../utils/settingsRequest.js').SettingsResponse>}
+ */
 export async function postSettings(fields) {
   const body = new URLSearchParams();
   for (const [key, value] of Object.entries(fields)) {

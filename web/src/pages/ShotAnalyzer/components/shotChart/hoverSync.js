@@ -5,6 +5,14 @@
  * temperature charts visually aligned and hover-synchronized.
  */
 
+/** @typedef {import('./tooltip/tooltipTypes').ShotChartInstance} ShotChartInstance */
+/** @typedef {import('chart.js').ActiveDataPoint} ActiveDataPoint */
+/** @typedef {import('chart.js').Scale} Scale */
+/** @typedef {{ top: number, bottom: number }} VerticalTolerance */
+/** @typedef {{ top: number, bottom: number, left: number }} ClientRectLike */
+/** @typedef {MouseEvent | TouchEvent | PointerEvent} HoverEvent */
+
+/** @param {ShotChartInstance | null | undefined} chart */
 function clearTooltipState(chart) {
   if (!chart) return;
   chart.$fixedTooltipPointerX = null;
@@ -17,6 +25,11 @@ function clearTooltipState(chart) {
   chart.update('none');
 }
 
+/**
+ * @param {unknown} datasetData
+ * @param {number} xValue
+ * @returns {number}
+ */
 function findClosestPointIndex(datasetData, xValue) {
   if (!Array.isArray(datasetData) || datasetData.length === 0) return -1;
 
@@ -26,10 +39,10 @@ function findClosestPointIndex(datasetData, xValue) {
   let bestDistance = Number.POSITIVE_INFINITY;
 
   for (let i = 0; i < datasetData.length; i++) {
-    const point = datasetData[i];
+    const point = /** @type {{ x?: unknown } | null} */ (datasetData[i]);
     if (!point || typeof point.x !== 'number') continue;
 
-    const distance = Math.abs(point.x - xValue);
+    const distance = Math.abs(/** @type {number} */ (point.x) - xValue);
     if (distance < bestDistance) {
       bestDistance = distance;
       bestIndex = i;
@@ -39,7 +52,13 @@ function findClosestPointIndex(datasetData, xValue) {
   return bestIndex;
 }
 
+/**
+ * @param {ShotChartInstance} chart
+ * @param {number} xValue
+ * @returns {ActiveDataPoint[]}
+ */
 function buildActiveElementsForX(chart, xValue) {
+  /** @type {ActiveDataPoint[]} */
   const active = [];
 
   chart.data.datasets.forEach((dataset, datasetIndex) => {
@@ -53,6 +72,13 @@ function buildActiveElementsForX(chart, xValue) {
   return active;
 }
 
+/**
+ * @param {ShotChartInstance} chart
+ * @param {number} xValue
+ * @param {number | null | undefined} pointerClientY
+ * @param {boolean} [showTooltip]
+ * @param {{ tooltipSource?: string, tooltipClientY?: number | null }} [options]
+ */
 function applyHoverForChart(chart, xValue, pointerClientY, showTooltip = true, options = {}) {
   if (!chart || !Number.isFinite(xValue)) return;
 
@@ -72,7 +98,10 @@ function applyHoverForChart(chart, xValue, pointerClientY, showTooltip = true, o
     const chartRect = chart.canvas.getBoundingClientRect();
     const minClientY = chartRect.top + chart.chartArea.top;
     const maxClientY = chartRect.top + chart.chartArea.bottom;
-    const clampedClientY = Math.min(maxClientY, Math.max(minClientY, pointerClientY));
+    const clampedClientY = Math.min(
+      maxClientY,
+      Math.max(minClientY, /** @type {number} */ (pointerClientY)),
+    );
     tooltipY = clampedClientY - chartRect.top;
   }
 
@@ -94,8 +123,8 @@ function applyHoverForChart(chart, xValue, pointerClientY, showTooltip = true, o
 
 /**
  * @param {object} options
- * @param {any} options.mainChart
- * @param {any} options.tempChart
+ * @param {ShotChartInstance | null | undefined} options.mainChart
+ * @param {ShotChartInstance | null | undefined} options.tempChart
  * @param {number} options.xValue
  * @param {number | null | undefined} options.pointerClientY
  * @param {string} [options.tooltipSource]
@@ -119,13 +148,19 @@ export function applyShotChartHoverAtX({
   onHoverXChange?.(xValue);
 }
 
+/**
+ * @param {HoverEvent | null | undefined} event
+ * @returns {{ clientX: number, clientY: number } | null}
+ */
 export function extractClientPoint(event) {
   if (!event) return null;
-  if (Number.isFinite(event.clientX) && Number.isFinite(event.clientY)) {
-    return { clientX: event.clientX, clientY: event.clientY };
+  const mouseEvent = /** @type {MouseEvent} */ (event);
+  if (Number.isFinite(mouseEvent.clientX) && Number.isFinite(mouseEvent.clientY)) {
+    return { clientX: mouseEvent.clientX, clientY: mouseEvent.clientY };
   }
 
-  const touch = event.touches?.[0] || event.changedTouches?.[0];
+  const touchEvent = /** @type {TouchEvent} */ (event);
+  const touch = touchEvent.touches?.[0] || touchEvent.changedTouches?.[0];
   if (touch && Number.isFinite(touch.clientX) && Number.isFinite(touch.clientY)) {
     return { clientX: touch.clientX, clientY: touch.clientY };
   }
@@ -133,6 +168,11 @@ export function extractClientPoint(event) {
   return null;
 }
 
+/**
+ * @param {ShotChartInstance} mainChart
+ * @param {ShotChartInstance} tempChart
+ * @returns {{ mainXScale: Scale, mainRect: DOMRect, tempRect: DOMRect | null } | null}
+ */
 function getChartClientRects(mainChart, tempChart) {
   if (!mainChart.scales?.x || !mainChart.canvas) return null;
 
@@ -143,6 +183,10 @@ function getChartClientRects(mainChart, tempChart) {
   };
 }
 
+/**
+ * @param {boolean | undefined} isTouch
+ * @returns {VerticalTolerance}
+ */
 function getHoverVerticalTolerance(isTouch) {
   return {
     bottom: isTouch ? 96 : 10,
@@ -150,10 +194,21 @@ function getHoverVerticalTolerance(isTouch) {
   };
 }
 
+/**
+ * @param {number} clientY
+ * @param {ClientRectLike} rect
+ * @param {VerticalTolerance} tolerance
+ */
 function isClientYInRect(clientY, rect, tolerance) {
   return clientY >= rect.top - tolerance.top && clientY <= rect.bottom + tolerance.bottom;
 }
 
+/**
+ * @param {number} clientY
+ * @param {ClientRectLike} mainRect
+ * @param {ClientRectLike | null} tempRect
+ * @param {boolean | undefined} isTouch
+ */
 function isClientYInChartHoverRange(clientY, mainRect, tempRect, isTouch) {
   const tolerance = getHoverVerticalTolerance(isTouch);
   const withinMainChart = isClientYInRect(clientY, mainRect, tolerance);
@@ -165,6 +220,13 @@ function isClientYInChartHoverRange(clientY, mainRect, tempRect, isTouch) {
   return withinMainChart || withinTempChart || withinChartStack;
 }
 
+/**
+ * @param {ShotChartInstance} mainChart
+ * @param {Scale} mainXScale
+ * @param {ClientRectLike} mainRect
+ * @param {number} clientX
+ * @returns {number}
+ */
 function getHoverXValueForClientX(mainChart, mainXScale, mainRect, clientX) {
   const minClientX = mainRect.left + (mainChart.chartArea?.left || 0);
   const maxClientX = mainRect.left + (mainChart.chartArea?.right || mainChart.width || 0);
@@ -174,10 +236,21 @@ function getHoverXValueForClientX(mainChart, mainXScale, mainRect, clientX) {
   return mainXScale.getValueForPixel(sourceX);
 }
 
+/**
+ * @param {ClientRectLike | null} tempRect
+ * @param {number} clientY
+ * @returns {'temp' | 'main'}
+ */
 function getTooltipSourceForClientY(tempRect, clientY) {
   return tempRect && clientY >= tempRect.top && clientY <= tempRect.bottom ? 'temp' : 'main';
 }
 
+/**
+ * @param {object} options
+ * @param {ShotChartInstance | null | undefined} options.mainChart
+ * @param {ShotChartInstance | null | undefined} options.tempChart
+ * @returns {() => void} Detaches the observers.
+ */
 export function attachTempChartLayoutSync({ mainChart, tempChart }) {
   if (!mainChart || !tempChart) return () => {};
 
@@ -268,10 +341,10 @@ export function attachTempChartLayoutSync({ mainChart, tempChart }) {
 /**
  * @param {object} options
  * @param {HTMLElement | null} options.hoverArea
- * @param {any} options.mainChart
- * @param {any} options.tempChart
+ * @param {ShotChartInstance | null | undefined} options.mainChart
+ * @param {ShotChartInstance | null | undefined} options.tempChart
  * @param {() => void} options.hideExternalTooltip
- * @param {{ current: any }} options.clearAllHoverRef
+ * @param {{ current: () => void }} options.clearAllHoverRef
  * @param {{ current: boolean }} options.isReplayingRef
  * @param {{ current: boolean }} options.isExportingRef
  * @param {(xValue: number | null) => void} [options.onHoverXChange]
@@ -301,9 +374,15 @@ export function attachShotChartHoverSync({
     disableDirectHoverOnMobile &&
     Boolean(globalThis.window?.matchMedia?.('(max-width: 640px)').matches);
   clearAllHoverRef.current = clearAllHover;
+  /** @type {number | null} */
   let activeTouchPointerId = null;
   let touchHoverActive = false;
 
+  /**
+   * @param {number} clientX
+   * @param {number} clientY
+   * @param {{ isTouch?: boolean, keepHoverOnMiss?: boolean }} [options]
+   */
   const applyUnifiedHoverFromClientPoint = (clientX, clientY, options = {}) => {
     if (isReplayingRef.current) {
       clearAllHover();
@@ -336,6 +415,7 @@ export function attachShotChartHoverSync({
     });
   };
 
+  /** @param {HoverEvent} event */
   const handleUnifiedMove = event => {
     if (isReplayingRef.current || isExportingRef.current) {
       clearAllHover();
@@ -349,7 +429,9 @@ export function attachShotChartHoverSync({
     const point = extractClientPoint(event);
     if (!point) return;
 
-    const isTouch = event?.pointerType === 'touch' || event?.type?.startsWith('touch');
+    const isTouch =
+      /** @type {PointerEvent} */ (event)?.pointerType === 'touch' ||
+      event?.type?.startsWith('touch');
     if (isTouch) {
       return;
     }
@@ -360,6 +442,7 @@ export function attachShotChartHoverSync({
     });
   };
 
+  /** @param {PointerEvent} event */
   const handlePointerEnd = event => {
     if (isDirectMobileHoverDisabled()) return;
     if (event?.pointerType === 'touch') {
@@ -369,6 +452,7 @@ export function attachShotChartHoverSync({
     clearAllHover();
   };
 
+  /** @param {PointerEvent} event */
   const handlePointerDown = event => {
     if (isDirectMobileHoverDisabled()) return;
     if (event?.pointerType === 'touch') {
@@ -380,11 +464,13 @@ export function attachShotChartHoverSync({
     handleUnifiedMove(event);
   };
 
+  /** @param {PointerEvent} event */
   const handlePointerLeave = event => {
     if (event?.pointerType === 'touch' || activeTouchPointerId != null || touchHoverActive) return;
     clearAllHover();
   };
 
+  /** @param {PointerEvent} event */
   const handlePointerCancel = event => {
     if (isDirectMobileHoverDisabled()) return;
     if (event?.pointerType === 'touch') {
@@ -395,6 +481,7 @@ export function attachShotChartHoverSync({
     clearAllHover();
   };
 
+  /** @param {TouchEvent} event */
   const handleTouchStart = event => {
     if (isReplayingRef.current || isExportingRef.current) {
       clearAllHover();
@@ -415,6 +502,7 @@ export function attachShotChartHoverSync({
     });
   };
 
+  /** @param {TouchEvent} event */
   const handleTouchMove = event => {
     if (!touchHoverActive) return;
     const point = extractClientPoint(event);

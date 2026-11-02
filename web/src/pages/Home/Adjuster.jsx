@@ -2,6 +2,13 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMinus } from '@fortawesome/free-solid-svg-icons/faMinus';
 import { faPlus } from '@fortawesome/free-solid-svg-icons/faPlus';
 
+/**
+ * @param {object} props
+ * @param {import('preact').ComponentChildren} props.label
+ * @param {import('preact').ComponentChildren} props.value
+ * @param {() => void} props.onDecrease
+ * @param {() => void} props.onIncrease
+ */
 const Adjuster = ({ label, value, onDecrease, onIncrease }) => {
   const btn = 'btn btn-ghost btn-sm flex h-8 w-8 items-center justify-center rounded-full p-0';
   return (

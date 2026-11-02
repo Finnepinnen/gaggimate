@@ -1,4 +1,7 @@
 // Shared between the settings page and the setup wizard.
+
+/** @typedef {import('./types').AutoWakeupSchedule} AutoWakeupSchedule */
+
 export const CHECKBOX_KEYS = [
   'tankLevelEnabled',
   'steamLevelEnabled',
@@ -20,6 +23,10 @@ export const CHECKBOX_KEYS = [
   'smartGrindToggle',
 ];
 
+/**
+ * @param {string} pidString "p,i,d[,kf]"
+ * @returns {{ pid: string, kf: string }}
+ */
 export function splitPidString(pidString) {
   if (!pidString) return { pid: pidString, kf: '0.000' };
   const parts = pidString.split(',');
@@ -29,11 +36,16 @@ export function splitPidString(pidString) {
   return { pid: pidString, kf: '0.000' };
 }
 
+/**
+ * @param {unknown} autowakeupSchedules
+ * @returns {AutoWakeupSchedule[]}
+ */
 export function parseAutoWakeupSchedules(autowakeupSchedules) {
   const defaultSchedule = [{ time: '07:00', days: [true, true, true, true, true, true, true] }];
   if (!autowakeupSchedules) {
     return defaultSchedule;
   }
+  /** @type {AutoWakeupSchedule[]} */
   const schedules = [];
   if (typeof autowakeupSchedules === 'string' && autowakeupSchedules.trim()) {
     const scheduleStrings = autowakeupSchedules.split(';');
@@ -48,6 +60,7 @@ export function parseAutoWakeupSchedules(autowakeupSchedules) {
   return schedules.length > 0 ? schedules : defaultSchedule;
 }
 
+/** @param {AutoWakeupSchedule[]} autowakeupSchedules */
 export function serializeAutoWakeupSchedules(autowakeupSchedules) {
   return autowakeupSchedules
     .map(schedule => `${schedule.time}|${schedule.days.map(d => (d ? '1' : '0')).join('')}`)

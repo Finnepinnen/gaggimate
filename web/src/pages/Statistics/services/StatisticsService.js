@@ -8,6 +8,29 @@
  */
 import { t } from '@lingui/core/macro';
 
+/**
+ * @typedef {import('../types').StatisticsServiceEntry} StatisticsServiceEntry
+ * @typedef {import('../types').StatisticsResult} StatisticsResult
+ * @typedef {import('../types').StatisticsSummary} StatisticsSummary
+ * @typedef {import('../types').StatisticsMetrics} StatisticsMetrics
+ * @typedef {import('../types').StatisticsMetricKey} StatisticsMetricKey
+ * @typedef {import('../types').AggregatedMetricKey} AggregatedMetricKey
+ * @typedef {import('../types').MetricStatsMap} MetricStatsMap
+ * @typedef {import('../types').LooseTarget} LooseTarget
+ * @typedef {import('../../ShotAnalyzer/types').TotalStats} TotalStats
+ * @typedef {import('../../ShotAnalyzer/types').AnalyzedPhase} AnalyzedPhase
+ * @typedef {import('../types').AggregatedStat} AggregatedStat
+ * @typedef {import('../types').PhaseMetricStat} PhaseMetricStat
+ * @typedef {import('../types').ProfileGroupStats} ProfileGroupStats
+ * @typedef {import('../types').PhaseStatsRow} PhaseStatsRow
+ * @typedef {import('../types').TargetDeltaKey} TargetDeltaKey
+ * @typedef {import('../types').TargetDelta} TargetDelta
+ * @typedef {import('../types').TrendEntry} TrendEntry
+ * @typedef {Record<TargetDeltaKey, number[]>} TargetDeltaValues
+ * @typedef {{ phase: AnalyzedPhase, actuals: TargetDeltaValues, targets: TargetDeltaValues }} TargetDeltaContext
+ */
+
+/** @param {number[]} values */
 function averageOf(values) {
   if (!values.length) return 0;
   let sum = 0;
@@ -17,6 +40,10 @@ function averageOf(values) {
 
 // Population standard deviation (not sample): we treat the loaded shots as the full
 // dataset, not a sample drawn from a larger population.
+/**
+ * @param {number[]} values
+ * @param {number} mean
+ */
 function stdDevOf(values, mean) {
   if (values.length < 2) return 0;
   let sumSq = 0;
@@ -27,6 +54,11 @@ function stdDevOf(values, mean) {
   return Math.sqrt(sumSq / values.length);
 }
 
+/**
+ * @param {MetricStatsMap[]} totals
+ * @param {AggregatedMetricKey} key
+ * @returns {AggregatedStat}
+ */
 function aggregateMetricStats(totals, key) {
   const avgs = [];
   const mins = [];
@@ -50,8 +82,12 @@ function aggregateMetricStats(totals, key) {
   };
 }
 
+/**
+ * @param {(number | null | undefined)[]} values
+ * @returns {AggregatedStat}
+ */
 function aggregateValueStats(values) {
-  const finiteValues = values.filter(Number.isFinite);
+  const finiteValues = /** @type {number[]} */ (values.filter(Number.isFinite));
   const avg = averageOf(finiteValues);
   return {
     count: finiteValues.length,
@@ -62,6 +98,7 @@ function aggregateValueStats(values) {
   };
 }
 
+/** @param {TotalStats | undefined} total */
 function getTotalTempTargetDeviation(total) {
   const actualAvg = Number(total?.t?.avg);
   const targetAvg = Number(total?.tt?.avg);
@@ -78,11 +115,17 @@ function createSummaryAccumulator() {
     latest: -Infinity,
     gmCount: 0,
     browserCount: 0,
-    tempAvgs: [],
-    tempTargetDeviations: [],
+    tempAvgs: /** @type {number[]} */ ([]),
+    tempTargetDeviations: /** @type {number[]} */ ([]),
   };
 }
 
+/** @typedef {ReturnType<typeof createSummaryAccumulator>} SummaryAccumulator */
+
+/**
+ * @param {SummaryAccumulator} acc
+ * @param {TotalStats | undefined} total
+ */
 function addTotalSummaryValues(acc, total) {
   if (!total) return;
   if (Number.isFinite(total.duration)) acc.totalDuration += total.duration;
@@ -93,6 +136,10 @@ function addTotalSummaryValues(acc, total) {
   if (Number.isFinite(tempTargetDeviation)) acc.tempTargetDeviations.push(tempTargetDeviation);
 }
 
+/**
+ * @param {SummaryAccumulator} acc
+ * @param {StatisticsServiceEntry['meta']} meta
+ */
 function addMetaSummaryValues(acc, meta) {
   if (Number.isFinite(meta.timestamp)) {
     acc.earliest = Math.min(acc.earliest, meta.timestamp);
@@ -102,6 +149,10 @@ function addMetaSummaryValues(acc, meta) {
   else acc.browserCount += 1;
 }
 
+/**
+ * @param {StatisticsServiceEntry[]} entries
+ * @returns {StatisticsSummary}
+ */
 function computeSummary(entries) {
   const totalShots = entries.length;
   const acc = createSummaryAccumulator();
@@ -132,9 +183,15 @@ function computeSummary(entries) {
   };
 }
 
+/**
+ * @param {StatisticsServiceEntry[]} entries
+ * @returns {StatisticsMetrics}
+ */
 function computeMetricAverages(entries) {
   const totals = entries.map(e => e.analysis.total).filter(Boolean);
+  /** @type {AggregatedMetricKey[]} */
   const keys = ['p', 'f', 'pf', 'tt', 't', 'w', 'pr', 'lr'];
+  /** @type {StatisticsMetrics} */
   const metrics = {};
   for (const key of keys) {
     metrics[key] =
@@ -149,7 +206,12 @@ function computeMetricAverages(entries) {
   return metrics;
 }
 
+/**
+ * @param {StatisticsServiceEntry[]} entries
+ * @returns {ProfileGroupStats[]}
+ */
 function computeProfileGroups(entries) {
+  /** @type {Map<string, StatisticsServiceEntry[]>} */
   const groups = new Map();
 
   for (const entry of entries) {
@@ -160,6 +222,7 @@ function computeProfileGroups(entries) {
     groups.get(name).push(entry);
   }
 
+  /** @type {ProfileGroupStats[]} */
   const result = [];
   for (const [profileName, groupEntries] of groups) {
     const totals = groupEntries.map(e => e.analysis.total).filter(Boolean);
@@ -167,7 +230,9 @@ function computeProfileGroups(entries) {
     const weights = totals.map(t => t.weight).filter(Number.isFinite);
     const waters = totals.map(t => t.water).filter(Number.isFinite);
 
+    /** @type {AggregatedMetricKey[]} */
     const keys = ['p', 'f', 'pf', 't', 'w'];
+    /** @type {ProfileGroupStats['metrics']} */
     const metrics = {};
     for (const key of keys) {
       metrics[key] =
@@ -194,11 +259,15 @@ function computeProfileGroups(entries) {
  * For a group of same-name phases across shots, compute the average
  * deviation from profile targets (duration, water/pumped, pressure, flow, weight, temp).
  * Uses the measured values from the analyzed shot.
+ *
+ * @param {AnalyzedPhase[]} phases
+ * @returns {NonNullable<PhaseStatsRow['targetDeltas']>}
  */
 function computePhaseTargetDeltas(phases) {
+  /** @type {TargetDeltaKey[]} */
   const keys = ['duration', 'water', 'p', 'f', 't', 'w'];
-  const actuals = {};
-  const targets = {};
+  const actuals = /** @type {TargetDeltaValues} */ ({});
+  const targets = /** @type {TargetDeltaValues} */ ({});
   for (const k of keys) {
     actuals[k] = [];
     targets[k] = [];
@@ -208,6 +277,7 @@ function computePhaseTargetDeltas(phases) {
     addPhaseTargetDeltaValues({ phase, actuals, targets });
   }
 
+  /** @type {NonNullable<PhaseStatsRow['targetDeltas']>} */
   const result = {};
   for (const key of keys) {
     if (actuals[key].length > 0) {
@@ -219,17 +289,30 @@ function computePhaseTargetDeltas(phases) {
   return result;
 }
 
+/**
+ * @param {object} args
+ * @param {TargetDeltaValues} args.actuals
+ * @param {TargetDeltaValues} args.targets
+ * @param {TargetDeltaKey} args.key
+ * @param {number | undefined} args.actual
+ * @param {number | undefined} args.target
+ */
 function pushTargetDeltaValues({ actuals, targets, key, actual, target }) {
   if (!Number.isFinite(actual) || !Number.isFinite(target)) return;
   actuals[key].push(actual);
   targets[key].push(target);
 }
 
+/**
+ * @param {AnalyzedPhase} phase
+ * @param {(target: LooseTarget) => boolean} predicate
+ */
 function findPhaseTarget(phase, predicate) {
   const targets = Array.isArray(phase?.profilePhase?.targets) ? phase.profilePhase.targets : [];
   return targets.find(predicate);
 }
 
+/** @param {TargetDeltaContext} context */
 function addDurationTargetDelta({ phase, actuals, targets }) {
   pushTargetDeltaValues({
     actuals,
@@ -240,6 +323,7 @@ function addDurationTargetDelta({ phase, actuals, targets }) {
   });
 }
 
+/** @param {TargetDeltaContext} context */
 function addPumpedTargetDelta({ phase, actuals, targets }) {
   const pumpedTarget = findPhaseTarget(phase, target => target.type === 'pumped');
   pushTargetDeltaValues({
@@ -251,6 +335,7 @@ function addPumpedTargetDelta({ phase, actuals, targets }) {
   });
 }
 
+/** @param {TargetDeltaContext} context */
 function addWeightTargetDelta({ phase, actuals, targets }) {
   const weightTarget = findPhaseTarget(
     phase,
@@ -265,6 +350,7 @@ function addWeightTargetDelta({ phase, actuals, targets }) {
   });
 }
 
+/** @param {TargetDeltaContext & { key: 'p' | 'f', targetType: string }} context */
 function addMetricTargetDelta({ phase, actuals, targets, key, targetType }) {
   const target = findPhaseTarget(phase, candidate => candidate.type === targetType);
   pushTargetDeltaValues({
@@ -276,6 +362,7 @@ function addMetricTargetDelta({ phase, actuals, targets, key, targetType }) {
   });
 }
 
+/** @param {TargetDeltaContext} context */
 function addTemperatureTargetDelta({ phase, actuals, targets }) {
   pushTargetDeltaValues({
     actuals,
@@ -286,6 +373,7 @@ function addTemperatureTargetDelta({ phase, actuals, targets }) {
   });
 }
 
+/** @param {TargetDeltaContext} context */
 function addPhaseTargetDeltaValues({ phase, actuals, targets }) {
   if (!phase.profilePhase) return;
   addDurationTargetDelta({ phase, actuals, targets });
@@ -308,13 +396,16 @@ function addPhaseTargetDeltaValues({ phase, actuals, targets }) {
   addTemperatureTargetDelta({ phase, actuals, targets });
 }
 
+/** @param {StatisticsServiceEntry[]} entries */
 function buildPhaseMap(entries) {
+  /** @type {Map<string, AnalyzedPhase[]>} */
   const phaseMap = new Map();
 
   for (const { analysis } of entries) {
     if (!analysis.phases) continue;
     for (const phase of analysis.phases) {
-      const phaseNumber = phase.number + 1;
+      // Executed phases carry a string `number` (sample phaseNumber key), so this can concatenate.
+      const phaseNumber = /** @type {number} */ (phase.number) + 1;
       const name = phase.displayName || phase.name || t`Phase ${phaseNumber}`;
       if (!phaseMap.has(name)) {
         phaseMap.set(name, []);
@@ -326,6 +417,12 @@ function buildPhaseMap(entries) {
   return phaseMap;
 }
 
+/**
+ * @param {object} args
+ * @param {AnalyzedPhase[]} args.phases
+ * @param {Record<string, number>} args.phaseCounts
+ * @param {Record<string, number>} args.totalCounts
+ */
 function addExitReasonCounts({ phases, phaseCounts, totalCounts }) {
   for (const phase of phases) {
     const reason = phase.exit?.reason || 'Unknown';
@@ -334,7 +431,14 @@ function addExitReasonCounts({ phases, phaseCounts, totalCounts }) {
   }
 }
 
+/**
+ * @param {object} args
+ * @param {MetricStatsMap[]} args.statsArray
+ * @param {AggregatedMetricKey[]} args.metricKeys
+ * @param {Partial<Record<AggregatedMetricKey, MetricStatsMap[]>>} args.allStatsArrays
+ */
 function aggregatePhaseMetrics({ statsArray, metricKeys, allStatsArrays }) {
+  /** @type {PhaseStatsRow['metrics']} */
   const metrics = {};
   for (const key of metricKeys) {
     metrics[key] = aggregateMetricStats(statsArray, key);
@@ -344,7 +448,13 @@ function aggregatePhaseMetrics({ statsArray, metricKeys, allStatsArrays }) {
   return metrics;
 }
 
+/**
+ * @param {object} args
+ * @param {AggregatedMetricKey[]} args.metricKeys
+ * @param {Partial<Record<AggregatedMetricKey, MetricStatsMap[]>>} args.allStatsArrays
+ */
 function buildTotalPhaseMetrics({ metricKeys, allStatsArrays }) {
+  /** @type {PhaseStatsRow['metrics']} */
   const totalMetrics = {};
   for (const key of metricKeys) {
     totalMetrics[key] = allStatsArrays[key]
@@ -354,19 +464,28 @@ function buildTotalPhaseMetrics({ metricKeys, allStatsArrays }) {
   return totalMetrics;
 }
 
+/**
+ * @param {StatisticsServiceEntry[]} entries
+ * @returns {PhaseStatsRow[]}
+ */
 function computePhaseStats(entries) {
   const phaseMap = buildPhaseMap(entries);
+  /** @type {PhaseStatsRow[]} */
   const result = [];
   let totalDuration = 0;
   let totalWater = 0;
   let totalShotCount = 0;
+  /** @type {Record<string, number>} */
   const totalExitReasons = {};
+  /** @type {Partial<Record<AggregatedMetricKey, MetricStatsMap[]>>} */
   const allStatsArrays = {};
+  /** @type {AggregatedMetricKey[]} */
   const metricKeys = ['p', 'f', 'pf', 't', 'w'];
 
   for (const [phaseName, phases] of phaseMap) {
     const durations = phases.map(p => p.duration).filter(Number.isFinite);
     const waters = phases.map(p => p.water).filter(Number.isFinite);
+    /** @type {Record<string, number>} */
     const exitReasonDistribution = {};
     const statsArray = phases.map(p => p.stats).filter(Boolean);
     addExitReasonCounts({
@@ -411,11 +530,15 @@ function computePhaseStats(entries) {
   return result;
 }
 
+/**
+ * @param {StatisticsServiceEntry[]} entries
+ * @returns {TrendEntry[]}
+ */
 function computeTrends(entries) {
   const sorted = [...entries].sort((a, b) => (a.meta.timestamp || 0) - (b.meta.timestamp || 0));
 
   return sorted.map(({ analysis, meta }) => {
-    const total = analysis.total || {};
+    const total = analysis.total || /** @type {Partial<TotalStats>} */ ({});
     return {
       timestamp: meta.timestamp,
       shotId: meta.id,
@@ -431,6 +554,10 @@ function computeTrends(entries) {
   });
 }
 
+/**
+ * @param {StatisticsServiceEntry[] | null | undefined} entries
+ * @returns {StatisticsResult}
+ */
 export function computeStatistics(entries) {
   if (!entries || entries.length === 0) {
     return {

@@ -10,6 +10,46 @@ import { AnalysisTable } from '../components/AnalysisTable';
 import { ShotChart } from '../components/ShotChart';
 import { ShotDetailsPanel, ShotMobilePrimaryCards } from '../components/ShotDetailsPanel';
 
+/** @typedef {import('../types').AnalysisCompareEntry} AnalysisCompareEntry */
+/** @typedef {import('../types').AnalyzerProfile} AnalyzerProfile */
+/** @typedef {import('../types').AnalyzerShot} AnalyzerShot */
+/** @typedef {import('../types').ShotAnalysisResult} ShotAnalysisResult */
+/** @typedef {import('../utils/constants').CompareTargetDisplayMode} CompareTargetDisplayMode */
+/** @typedef {'analysis' | 'notes'} MobileSubpage */
+/**
+ * @template T
+ * @typedef {import('preact/hooks').Dispatch<import('preact/hooks').StateUpdater<T>>} SetState
+ */
+/** @typedef {{ container: Element, top: number }} SavedScrollPosition */
+
+/**
+ * @typedef {object} ActiveAnalysisViewProps
+ * @property {Set<string>} activeColumns
+ * @property {ShotAnalysisResult | null} analysisResults
+ * @property {import('preact').RefObject<HTMLDivElement>} analysisSectionRef
+ * @property {string} chartMountKey
+ * @property {AnalysisCompareEntry[]} compareCollectionWithAccents
+ * @property {CompareTargetDisplayMode} compareTargetDisplayMode
+ * @property {AnalyzerShot} currentShot
+ * @property {AnalyzerProfile | null} currentProfile
+ * @property {() => void} handleSwapCompareSlots
+ * @property {boolean} isCompareActive
+ * @property {{ closeMobileSubpage: () => void, mobileSubpage: MobileSubpage | null, openMobileSubpage: (page: MobileSubpage) => void }} mobileSubpageNavigation
+ * @property {SetState<Set<string>>} setActiveColumns
+ * @property {SetState<CompareTargetDisplayMode>} setCompareTargetDisplayMode
+ * @property {import('preact').RefObject<HTMLDivElement>} shotDetailsColumnRef
+ * @property {AnalysisCompareEntry[]} shotDetailsEntries
+ * @property {{ height: string } | undefined} singleDesktopChartStyle
+ * @property {number} singleDesktopDetailsHeight
+ */
+
+/**
+ * @param {object} options
+ * @param {boolean} options.isCompareActive
+ * @param {AnalysisCompareEntry[]} options.compareCollectionWithAccents
+ * @param {AnalysisCompareEntry | null} options.referenceCompareEntry
+ * @returns {AnalysisCompareEntry[]}
+ */
 export function buildShotDetailsEntries({
   isCompareActive,
   compareCollectionWithAccents,
@@ -27,15 +67,21 @@ export function buildShotDetailsEntries({
   ];
 }
 
+/** @param {SetState<number>} setDesktopSingleDetailsHeight */
 export function resetMeasuredDesktopDetailsHeight(setDesktopSingleDetailsHeight) {
   setDesktopSingleDetailsHeight(prev => (prev === 0 ? prev : 0));
 }
 
+/**
+ * @param {number} singleDesktopDetailsHeight px
+ * @returns {{ height: string } | undefined}
+ */
 export function getDesktopSingleChartStyle(singleDesktopDetailsHeight) {
   if (!singleDesktopDetailsHeight) return undefined;
   return { height: `${singleDesktopDetailsHeight}px` };
 }
 
+/** @param {boolean} isCompareActive */
 function getActiveAnalysisViewClasses(isCompareActive) {
   return {
     desktopStickyDetailsClass: isCompareActive ? 'analyzer-shot-details-sticky' : '',
@@ -55,6 +101,11 @@ function getActiveAnalysisViewClasses(isCompareActive) {
   };
 }
 
+/**
+ * @param {boolean} isCompareActive
+ * @param {AnalysisCompareEntry[]} shotDetailsEntries
+ * @returns {string} '' outside compare mode
+ */
 export function getCompareDetailsKey(isCompareActive, shotDetailsEntries) {
   if (!isCompareActive) return '';
   return shotDetailsEntries
@@ -62,6 +113,7 @@ export function getCompareDetailsKey(isCompareActive, shotDetailsEntries) {
     .join('|');
 }
 
+/** @param {{ onBack: () => void, subtitle: string, title: string }} props */
 function MobileAnalyzerSubpageHeader({ onBack, subtitle, title }) {
   const { t } = useLingui();
   return (
@@ -82,6 +134,7 @@ function MobileAnalyzerSubpageHeader({ onBack, subtitle, title }) {
   );
 }
 
+/** @param {{ label: string, onClick: () => void }} props */
 function MobileAnalyzerSubpageAction({ label, onClick }) {
   return (
     <button
@@ -99,6 +152,10 @@ function MobileAnalyzerSubpageAction({ label, onClick }) {
   );
 }
 
+/**
+ * @param {{ isCompareActive: boolean, showMobileAnalysisPage: boolean }} options
+ * @returns {{ subtitle: import('@lingui/core').MessageDescriptor, title: import('@lingui/core').MessageDescriptor }}
+ */
 function getMobileAnalyzerSubpageMeta({ isCompareActive, showMobileAnalysisPage }) {
   if (!showMobileAnalysisPage) {
     return { subtitle: msg`Compare shot details`, title: msg`Notes` };
@@ -109,6 +166,10 @@ function getMobileAnalyzerSubpageMeta({ isCompareActive, showMobileAnalysisPage 
   };
 }
 
+/**
+ * @param {Element | null} element
+ * @returns {Element | null} Nearest vertically scrollable ancestor, else the document scroller
+ */
 function getVerticalScrollContainer(element) {
   const browserWindow = globalThis.window;
   if (!browserWindow || !element) return null;
@@ -125,6 +186,10 @@ function getVerticalScrollContainer(element) {
   return browserWindow.document.scrollingElement;
 }
 
+/**
+ * @param {() => void} callback
+ * @returns {() => void} Cancel
+ */
 function scheduleAfterLayout(callback) {
   const browserWindow = globalThis.window;
   if (!browserWindow) {
@@ -136,6 +201,10 @@ function scheduleAfterLayout(callback) {
   return () => browserWindow.cancelAnimationFrame(frameId);
 }
 
+/**
+ * @param {() => void} callback
+ * @returns {() => void} Cancel
+ */
 function scheduleAcrossLayoutFrames(callback) {
   let cancelFinalFrame = () => {};
   const cancelInitialFrame = scheduleAfterLayout(() => {
@@ -149,6 +218,7 @@ function scheduleAcrossLayoutFrames(callback) {
   };
 }
 
+/** @param {Pick<ActiveAnalysisViewProps, 'activeColumns' | 'analysisResults' | 'compareCollectionWithAccents' | 'isCompareActive' | 'setActiveColumns'>} props */
 function AnalyzerTable({
   activeColumns,
   analysisResults,
@@ -167,6 +237,7 @@ function AnalyzerTable({
   );
 }
 
+/** @param {ActiveAnalysisViewProps} props */
 export function ActiveAnalysisView({
   activeColumns,
   analysisResults,
@@ -197,8 +268,8 @@ export function ActiveAnalysisView({
     mobileDetailsShellClass,
   } = getActiveAnalysisViewClasses(isCompareActive);
   const [activeCompareDetailsIndex, setActiveCompareDetailsIndex] = useState(0);
-  const mobileSubpageRef = useRef(null);
-  const mobileSubpageReturnScrollRef = useRef(null);
+  const mobileSubpageRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const mobileSubpageReturnScrollRef = useRef(/** @type {SavedScrollPosition | null} */ (null));
   const wasMobileSubpageOpenRef = useRef(false);
   const compareDetailsKey = getCompareDetailsKey(isCompareActive, shotDetailsEntries);
   const { closeMobileSubpage, mobileSubpage, openMobileSubpage } = mobileSubpageNavigation;
@@ -233,6 +304,7 @@ export function ActiveAnalysisView({
   }, [showMobileSubpage]);
 
   const handleOpenMobileSubpage = useCallback(
+    /** @param {MobileSubpage} page */
     page => {
       const scrollContainer = getVerticalScrollContainer(analysisSectionRef.current);
       mobileSubpageReturnScrollRef.current = scrollContainer

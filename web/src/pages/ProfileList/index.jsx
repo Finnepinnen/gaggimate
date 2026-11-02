@@ -61,14 +61,50 @@ Chart.register(
   Legend,
 );
 
+/** @typedef {import('../../services/hooks.js').ProfileSummary} ProfileSummary */
+/** @typedef {import('../../types').ProfilePhase} ProfilePhase */
+/** @typedef {import('../../types').PhaseTarget} PhaseTarget */
+/** @typedef {import('./utils.js').ImportedProfile} ImportedProfile */
+/** @typedef {import('sortablejs').SortableEvent} SortableEvent */
+
+/** @typedef {'delete' | 'select' | 'favorite' | 'duplicate'} PendingKind */
+
+/**
+ * @typedef {{
+ *   data: ProfileSummary,
+ *   onDelete: (id: string) => Promise<void>,
+ *   onSelect: (id: string, alreadySelected?: boolean) => Promise<void>,
+ *   onSetFavorite: (id: string, favorite: boolean) => Promise<void>,
+ *   onDuplicate: (id: string) => Promise<void>,
+ *   pending: PendingKind | undefined,
+ *   favoriteDisabled: boolean,
+ *   unfavoriteDisabled: boolean,
+ *   disabledDrag: boolean,
+ *   isDragging: boolean,
+ *   onMoveTop: (id: string) => void,
+ *   onMoveBottom: (id: string) => void,
+ *   isFirst: boolean,
+ *   isLast: boolean,
+ * }} ProfileCardProps
+ */
+
+/** @type {Record<import('../../types').PhaseType, import('@lingui/core').MessageDescriptor>} */
 const PhaseLabels = {
   preinfusion: msg`Pre-Infusion`,
   brew: msg({ message: 'Brew', context: 'phase type' }),
 };
 
 // Delay function for turning icons into spinners while awaiting response
+/**
+ * @template T
+ * @param {T} value
+ * @param {number} delayMs
+ * @returns {T | undefined}
+ */
 function useDelayedValue(value, delayMs) {
-  const [delayed, setDelayed] = useState();
+  const [delayed, setDelayed] = /** @type {[T | undefined, (value: T | undefined) => void]} */ (
+    useState()
+  );
   useEffect(() => {
     if (!value) {
       setDelayed(undefined);
@@ -82,6 +118,7 @@ function useDelayedValue(value, delayMs) {
 
 const PENDING_VISUAL_DELAY_MS = 200;
 
+/** @param {ProfileCardProps} props */
 function ProfileCard({
   data,
   onDelete,
@@ -151,14 +188,17 @@ function ProfileCard({
 
   // Sum total duration from phases (in seconds)
   const totalDurationSeconds = phases.reduce(
-    (sum, p) => sum + (Number.isFinite(p?.duration) ? p.duration : 0),
+    (/** @type {number} */ sum, /** @type {ProfilePhase} */ p) =>
+      sum + (Number.isFinite(p?.duration) ? p.duration : 0),
     0,
   );
 
   // Mobile actions menu — state-driven (was using the Popover API which isn't
   // supported in Safari <17 / Firefox <125, leaving the menu broken on most
   // iPads and many phones).
+  /** @type {import('preact').RefObject<HTMLButtonElement>} */
   const kebabRef = useRef(null);
+  /** @type {import('preact').RefObject<HTMLDivElement>} */
   const popoverRef = useRef(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -186,7 +226,7 @@ function ProfileCard({
 
   const closeMenu = useCallback(() => setMenuOpen(false), []);
 
-  const toggleMenu = useCallback(e => {
+  const toggleMenu = useCallback((/** @type {Event | undefined} */ e) => {
     e?.preventDefault?.();
     setMenuOpen(v => !v);
   }, []);
@@ -197,13 +237,16 @@ function ProfileCard({
     // in the tree this tick) and then re-position on resize/scroll.
     positionPopover();
     const onResize = () => positionPopover();
+    /** @param {MouseEvent | TouchEvent} e */
     const onDocClick = e => {
       const pop = popoverRef.current;
       const btn = kebabRef.current;
       if (!pop || !btn) return;
-      if (pop.contains(e.target) || btn.contains(e.target)) return;
+      const target = /** @type {Node | null} */ (e.target);
+      if (pop.contains(target) || btn.contains(target)) return;
       setMenuOpen(false);
     };
+    /** @param {KeyboardEvent} e */
     const onKey = e => {
       if (e.key === 'Escape') setMenuOpen(false);
     };
@@ -552,10 +595,12 @@ function ProfileCard({
                     {totalDurationSeconds}s
                   </span>
                   {phases.length > 0 &&
-                    phases[phases.length - 1]?.targets?.some(tg => tg.type === 'volumetric') && (
+                    phases[phases.length - 1]?.targets?.some(
+                      (/** @type {PhaseTarget} */ tg) => tg.type === 'volumetric',
+                    ) && (
                       <span className='text-base-content/60 badge badge-xs md:badge-sm badge-outline'>
                         <FontAwesomeIcon icon={faScaleBalanced} />
-                        {`${phases[phases.length - 1].targets.find(tg => tg.type === 'volumetric').value}g`}
+                        {`${phases[phases.length - 1].targets.find((/** @type {PhaseTarget} */ tg) => tg.type === 'volumetric').value}g`}
                       </span>
                     )}
                   {phases.length > 0 && (
@@ -616,6 +661,7 @@ function ProfileCard({
   );
 }
 
+/** @param {{ phases: ProfilePhase[] }} props */
 function SimpleContent({ phases }) {
   const { t } = useLingui();
   if (phases.length === 0) {
@@ -628,7 +674,7 @@ function SimpleContent({ phases }) {
 
   return (
     <div className='flex flex-row items-center gap-2' role='list' aria-label={t`Brew phases`}>
-      {phases.map((phase, i) => (
+      {phases.map((/** @type {ProfilePhase} */ phase, /** @type {number} */ i) => (
         <div key={i} className='flex flex-row items-center gap-2' role='listitem'>
           {i > 0 && <SimpleDivider />}
           <SimpleStep
@@ -649,6 +695,14 @@ function SimpleDivider() {
   );
 }
 
+/**
+ * @param {{
+ *   phase: import('../../types').PhaseType,
+ *   type: string,
+ *   duration: number,
+ *   targets: PhaseTarget[],
+ * }} props
+ */
 function SimpleStep(props) {
   const { i18n } = useLingui();
   const duration = props.duration;
@@ -682,11 +736,18 @@ function SimpleStep(props) {
 }
 
 // Profile images only exist with an SD card; without one the export carries no "image" field.
+/**
+ * @param {ProfileSummary} profile
+ * @returns {Promise<ImportedProfile>}
+ */
 async function withExportedImage(profile) {
+  /** @type {ImportedProfile} */
   const copy = { ...profile };
   delete copy.image;
   if (machine.value.capabilities.sdCard) {
-    const image = await exportProfileImage(profile.id).catch(() => null);
+    const image = await exportProfileImage(profile.id).catch(
+      () => /** @type {string | null} */ (null),
+    );
     if (image) copy.image = image;
   }
   return copy;
@@ -705,6 +766,7 @@ export function ProfileList() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('extraction');
   const [isDragging, setIsDragging] = useState(false);
+  /** @type {import('preact').RefObject<HTMLDivElement>} */
   const containerRef = useRef(null);
   const favoriteCount = profiles.map(p => (p.favorite ? 1 : 0)).reduce((a, b) => a + b, 0);
   const unfavoriteDisabled = favoriteCount <= 1;
@@ -719,9 +781,12 @@ export function ProfileList() {
 
   // Placeholder for future persistence of order (intentionally empty)
   // Debounced persistence of profile order (300ms)
+  /** @type {import('preact').RefObject<ReturnType<typeof setTimeout>>} */
   const orderDebounceRef = useRef(null);
+  /** @type {import('preact').RefObject<string[]>} */
   const pendingOrderRef = useRef(null);
   const persistProfileOrder = useCallback(
+    /** @param {ProfileSummary[]} orderedProfiles */
     orderedProfiles => {
       pendingOrderRef.current = orderedProfiles.map(p => p.id);
       if (orderDebounceRef.current) {
@@ -772,12 +837,13 @@ export function ProfileList() {
   const clearDropHighlights = useCallback(() => {
     if (!containerRef.current) return;
     const highlighted = containerRef.current.querySelectorAll('.drop-highlight');
-    highlighted.forEach(el => {
+    highlighted.forEach((/** @type {Element} */ el) => {
       el.classList.remove('drop-highlight');
     });
   }, []);
 
   const moveProfileTop = useCallback(
+    /** @param {string} id */
     id => {
       setProfiles(prev => {
         const idx = prev.findIndex(p => p.id === id);
@@ -799,6 +865,7 @@ export function ProfileList() {
   );
 
   const moveProfileBottom = useCallback(
+    /** @param {string} id */
     id => {
       setProfiles(prev => {
         const idx = prev.findIndex(p => p.id === id);
@@ -830,6 +897,7 @@ export function ProfileList() {
   }, [clearDropHighlights]);
 
   const onDragChange = useCallback(
+    /** @param {SortableEvent} evt */
     evt => {
       const { newIndex, oldIndex } = evt;
       if (newIndex == null || oldIndex == null) return;
@@ -850,6 +918,7 @@ export function ProfileList() {
   );
 
   const onDragEnd = useCallback(
+    /** @param {SortableEvent} evt */
     evt => {
       setIsDragging(false);
 
@@ -916,20 +985,29 @@ export function ProfileList() {
     };
   }, [loading, searchTerm, onDragStart, onDragChange, onDragEnd]);
 
-  const [pendingById, setPendingById] = useState(/** @type {Record<string, string>} */ ({}));
-  const withPending = useCallback(async (/** @type {string} */ id, kind, task) => {
-    setPendingById(prev => ({ ...prev, [id]: kind }));
-    try {
-      await task();
-    } finally {
-      setPendingById(prev => {
-        const { [id]: _done, ...rest } = prev;
-        return rest;
-      });
-    }
-  }, []);
+  const [pendingById, setPendingById] = useState(/** @type {Record<string, PendingKind>} */ ({}));
+  const withPending = useCallback(
+    /**
+     * @param {string} id
+     * @param {PendingKind} kind
+     * @param {() => Promise<void>} task
+     */
+    async (id, kind, task) => {
+      setPendingById(prev => ({ ...prev, [id]: kind }));
+      try {
+        await task();
+      } finally {
+        setPendingById(prev => {
+          const { [id]: _done, ...rest } = prev;
+          return rest;
+        });
+      }
+    },
+    [],
+  );
 
   const onDelete = useCallback(
+    /** @param {string} id */
     id =>
       withPending(id, 'delete', async () => {
         try {
@@ -950,6 +1028,10 @@ export function ProfileList() {
   // or if there is no pending selection and the requested id is already selected
   const pendingSelectionRef = useRef(null);
   const onSelect = useCallback(
+    /**
+     * @param {string} id
+     * @param {boolean} [alreadySelected]
+     */
     async (id, alreadySelected) => {
       if (pendingSelectionRef.current === id) return;
       if (alreadySelected && pendingSelectionRef.current === null) return;
@@ -968,7 +1050,12 @@ export function ProfileList() {
   );
 
   const setFavorite = useCallback(
+    /**
+     * @param {string} id
+     * @param {boolean} favorite
+     */
     (id, favorite) => {
+      /** @param {boolean} value */
       const apply = value =>
         setProfiles(prev => prev.map(p => (p.id === id ? { ...p, favorite: value } : p)));
       apply(favorite);
@@ -996,6 +1083,7 @@ export function ProfileList() {
   // The machine assigns the new id and may favorite the copy on its own, so the list is reloaded
   // quietly (no page spinner) once the copy is saved, while the source card shows a spinner.
   const onDuplicate = useCallback(
+    /** @param {string} id */
     id =>
       withPending(id, 'duplicate', async () => {
         const original = profiles.find(p => p.id === id);
@@ -1029,9 +1117,10 @@ export function ProfileList() {
     downloadJson(exportedProfiles, 'profiles.json');
   }, [profiles]);
 
+  /** @param {import('preact').JSX.TargetedEvent<HTMLInputElement, Event>} evt */
   const onUpload = function (evt) {
-    if (evt.target.files.length) {
-      const file = evt.target.files[0];
+    if (/** @type {HTMLInputElement} */ (evt.target).files.length) {
+      const file = /** @type {HTMLInputElement} */ (evt.target).files[0];
       const reader = new FileReader();
       reader.onload = async e => {
         const result = e.target.result;

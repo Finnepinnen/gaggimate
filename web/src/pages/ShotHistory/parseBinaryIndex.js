@@ -15,6 +15,28 @@ const TEMP_SCALE = 10;
 const PRESSURE_SCALE = 10;
 const FLOW_SCALE = 100;
 
+/** @typedef {import('../../types').ShotIndexEntry} ShotIndexEntry */
+/** @typedef {import('../../types').Shot} Shot */
+
+/**
+ * @typedef {object} ShotIndexHeader
+ * @property {number} magic
+ * @property {number} version
+ * @property {number} entrySize
+ * @property {number} entryCount
+ * @property {number} nextId
+ */
+
+/**
+ * @typedef {object} ShotIndex
+ * @property {ShotIndexHeader} header
+ * @property {ShotIndexEntry[]} entries
+ */
+
+/**
+ * @param {Uint8Array} bytes
+ * @returns {string}
+ */
 function decodeCString(bytes) {
   // Bytes are a null-terminated UTF-8 C string. Decode as UTF-8 — appending
   // String.fromCharCode(byte) treats each byte as a Latin-1 code point, which
@@ -32,7 +54,7 @@ function decodeCString(bytes) {
 /**
  * Parse binary shot index file
  * @param {ArrayBuffer} arrayBuffer - The binary index file data
- * @returns {Object} Parsed index with header and entries
+ * @returns {ShotIndex} Parsed index with header and entries
  */
 export function parseBinaryIndex(arrayBuffer) {
   const view = new DataView(arrayBuffer);
@@ -64,6 +86,7 @@ export function parseBinaryIndex(arrayBuffer) {
   }
 
   // Parse entries
+  /** @type {ShotIndexEntry[]} */
   const entries = [];
   for (let i = 0; i < entryCount; i++) {
     const base = INDEX_HEADER_SIZE + i * INDEX_ENTRY_SIZE;
@@ -123,28 +146,31 @@ export function parseBinaryIndex(arrayBuffer) {
 
 /**
  * Filter out deleted entries and convert to frontend format
- * @param {Object} indexData - Parsed index data from parseBinaryIndex
- * @returns {Array} Array of shot objects for frontend use
+ * @param {ShotIndex} indexData - Parsed index data from parseBinaryIndex
+ * @returns {Shot[]} Array of shot objects for frontend use
  */
 export function indexToShotList(indexData) {
   return indexData.entries
     .filter(entry => !entry.deleted)
-    .map(entry => ({
-      id: entry.id.toString(),
-      profile: entry.profileName,
-      profileId: entry.profileId,
-      timestamp: entry.timestamp,
-      duration: entry.duration,
-      samples: 0, // Not available in index, filled when loading full shot
-      volume: entry.volume,
-      rating: entry.rating > 0 ? entry.rating : null, // Only include rating if > 0
-      incomplete: entry.incomplete,
-      avgTemp: entry.avgTemp,
-      maxPressure: entry.maxPressure,
-      avgFlow: entry.avgFlow,
-      notes: null,
-      loaded: false,
-      data: null,
-    }))
+    .map(
+      /** @returns {Shot} */
+      entry => ({
+        id: entry.id.toString(),
+        profile: entry.profileName,
+        profileId: entry.profileId,
+        timestamp: entry.timestamp,
+        duration: entry.duration,
+        samples: 0, // Not available in index, filled when loading full shot
+        volume: entry.volume,
+        rating: entry.rating > 0 ? entry.rating : null, // Only include rating if > 0
+        incomplete: entry.incomplete,
+        avgTemp: entry.avgTemp,
+        maxPressure: entry.maxPressure,
+        avgFlow: entry.avgFlow,
+        notes: null,
+        loaded: false,
+        data: null,
+      }),
+    )
     .sort((a, b) => b.timestamp - a.timestamp); // Most recent first
 }

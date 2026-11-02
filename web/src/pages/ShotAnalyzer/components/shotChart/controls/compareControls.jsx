@@ -11,6 +11,23 @@ import {
   getAnalyzerTextButtonClasses,
 } from '../../analyzerControlStyles';
 
+/**
+ * @typedef {object} CompareShotLegendItem
+ * @property {string} label
+ * @property {string | null} [color]
+ * @property {string | null} [badgeColor]
+ * @property {number} [lineWidth]
+ * @property {number[]} [dash]
+ * @property {number} [shotNumber]
+ */
+
+/** @typedef {{ value: string, label: string }} CompareSelectOption */
+
+/**
+ * @param {object} props
+ * @param {CompareShotLegendItem[]} props.compareShotLegendItems
+ * @param {(() => void) | null} [props.onCompareSwap]
+ */
 function CompareShotLegend({ compareShotLegendItems, onCompareSwap }) {
   const { t } = useLingui();
   return (
@@ -54,6 +71,12 @@ function CompareShotLegend({ compareShotLegendItems, onCompareSwap }) {
   );
 }
 
+/**
+ * @param {object} props
+ * @param {boolean} [props.compareAnnotationsEnabled]
+ * @param {(() => void) | null} [props.onCompareAnnotationsToggle]
+ * @param {boolean} [props.showCompareAnnotationToggle]
+ */
 function CompareAnnotationToggle({
   compareAnnotationsEnabled,
   onCompareAnnotationsToggle,
@@ -85,6 +108,14 @@ function CompareAnnotationToggle({
   return null;
 }
 
+/**
+ * @param {object} props
+ * @param {((value: string) => void) | null} [props.onChange]
+ * @param {CompareSelectOption[]} props.options
+ * @param {string} props.title
+ * @param {string} [props.value]
+ * @param {string} [props.widthClass]
+ */
 export function CompareSelect({ onChange, options, title, value, widthClass }) {
   if (onChange && options.length > 0) {
     return (
@@ -113,6 +144,11 @@ export function CompareSelect({ onChange, options, title, value, widthClass }) {
   return null;
 }
 
+/**
+ * @param {object} props
+ * @param {string} [props.compareTargetDisplayMode]
+ * @param {((mode: string) => void) | null} [props.onCompareTargetDisplayModeChange]
+ */
 export function CompareTargetSelect({
   compareTargetDisplayMode,
   onCompareTargetDisplayModeChange,
@@ -133,6 +169,20 @@ export function CompareTargetSelect({
   );
 }
 
+/**
+ * @param {object} props
+ * @param {string} [props.compareAlignmentMode]
+ * @param {CompareSelectOption[]} props.compareAlignmentOptions
+ * @param {boolean} [props.compareAnnotationsEnabled]
+ * @param {CompareShotLegendItem[]} props.compareShotLegendItems
+ * @param {string} [props.compareTargetDisplayMode]
+ * @param {((mode: string) => void) | null} [props.onCompareAlignmentModeChange]
+ * @param {(() => void) | null} [props.onCompareAnnotationsToggle]
+ * @param {(() => void) | null} [props.onCompareSwap]
+ * @param {((mode: string) => void) | null} [props.onCompareTargetDisplayModeChange]
+ * @param {unknown} [props.shouldShowCompareControls] Truthy to render.
+ * @param {boolean} [props.showCompareAnnotationToggle]
+ */
 export function CompareControlsRow({
   compareAlignmentMode,
   compareAlignmentOptions,

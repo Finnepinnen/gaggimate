@@ -5,6 +5,15 @@ import {
   WATER_DRAWN_TOTAL_LABEL,
 } from '../constants';
 
+/**
+ * @typedef {Record<keyof typeof CHART_COLOR_FALLBACKS, string>} ShotChartColors
+ */
+
+/**
+ * @param {string} variableName
+ * @param {string} fallback
+ * @returns {string}
+ */
 export function readCssColorVar(variableName, fallback) {
   const rootElement = globalThis.window?.document?.documentElement;
   if (rootElement) {
@@ -17,15 +26,23 @@ export function readCssColorVar(variableName, fallback) {
   return fallback;
 }
 
+/** @returns {ShotChartColors} */
 export function getShotChartColors() {
   // Resolve all chart colors from CSS variables in one place so the rest of the
   // chart stack can work with concrete values instead of repeatedly touching the DOM.
-  return Object.keys(CHART_COLOR_FALLBACKS).reduce((acc, key) => {
-    acc[key] = readCssColorVar(CHART_COLOR_TOKEN_MAP[key], CHART_COLOR_FALLBACKS[key]);
-    return acc;
-  }, /** @type {Record<string, string>} */ ({}));
+  return /** @type {Array<keyof ShotChartColors>} */ (Object.keys(CHART_COLOR_FALLBACKS)).reduce(
+    (acc, key) => {
+      acc[key] = readCssColorVar(CHART_COLOR_TOKEN_MAP[key], CHART_COLOR_FALLBACKS[key]);
+      return acc;
+    },
+    /** @type {ShotChartColors} */ ({}),
+  );
 }
 
+/**
+ * @param {ShotChartColors} colors
+ * @returns {Record<string, string>}
+ */
 export function getLegendColorByLabel(colors) {
   return {
     Phases: colors.phaseLine,
@@ -44,6 +61,10 @@ export function getLegendColorByLabel(colors) {
   };
 }
 
+/**
+ * @param {ShotChartColors} colors
+ * @returns {Record<string, string>}
+ */
 export function getTooltipColorByLabel(colors) {
   return {
     ...getLegendColorByLabel(colors),
@@ -52,6 +73,12 @@ export function getTooltipColorByLabel(colors) {
   };
 }
 
+/**
+ * @param {CanvasRenderingContext2D | null | undefined} canvasCtx
+ * @param {string} color
+ * @param {{ size?: number, lineWidth?: number, baseAlpha?: number, stripeAlpha?: number }} [options]
+ * @returns {string | CanvasPattern}
+ */
 export function createStripedFillPattern(canvasCtx, color, options = {}) {
   if (!canvasCtx || globalThis.window === undefined) return color;
 

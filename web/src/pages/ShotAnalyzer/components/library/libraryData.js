@@ -6,26 +6,55 @@ import {
   loadFromStorage,
 } from '../../utils/analyzerUtils';
 
+/** @typedef {import('../types').LibraryItem} LibraryItem */
+/** @typedef {import('../types').LibraryShotItem} LibraryShotItem */
+/** @typedef {import('../types').LibraryProfileItem} LibraryProfileItem */
+/** @typedef {import('../types').LibrarySortConfig} LibrarySortConfig */
+/** @typedef {import('../types').LibraryUiSourceFilter} LibraryUiSourceFilter */
+/** @typedef {import('../types').PinnedShotsByProfile} PinnedShotsByProfile */
+/** @typedef {import('../../types').LibrarySourceFilter} LibrarySourceFilter */
+
+/**
+ * @param {string} storageKey
+ * @returns {LibraryUiSourceFilter}
+ */
+
 export function getStoredLibrarySourceFilter(storageKey) {
-  const storedValue = loadFromStorage(storageKey, 'all');
+  const storedValue = loadFromStorage(storageKey, /** @type {string} */ ('all'));
   return storedValue === 'gaggimate' || storedValue === 'browser' || storedValue === 'all'
     ? storedValue
     : 'all';
 }
 
+/**
+ * @param {LibraryUiSourceFilter} sourceFilter
+ * @returns {LibrarySourceFilter}
+ */
 export function getLibraryRequestSource(sourceFilter) {
   return sourceFilter === 'all' ? 'both' : sourceFilter;
 }
 
+/**
+ * @param {LibraryItem} item
+ * @param {string} query
+ */
 function getLibraryShotSearchPriority(item, query) {
   const normalizedId = String(item?.id || '').toLowerCase();
   const normalizedName = (item?.name || item?.label || item?.title || '').toLowerCase();
   return normalizedName.includes(query) || normalizedId.includes(query) ? 0 : 1;
 }
 
+/**
+ * @template {LibraryItem} T
+ * @param {T[]} items
+ * @param {LibrarySortConfig} cfg
+ * @returns {T[]}
+ */
 function applyLibrarySort(items, cfg) {
   return [...items].sort((a, b) => {
+    /** @type {any} */
     let valA;
+    /** @type {any} */
     let valB;
 
     switch (cfg.key) {
@@ -42,12 +71,13 @@ function applyLibrarySort(items, cfg) {
         valB = b.rating || 0;
         break;
       case 'duration':
-        valA = Number.parseFloat(a.duration) || 0;
-        valB = Number.parseFloat(b.duration) || 0;
+        // parseFloat also takes the numeric durations as-is.
+        valA = Number.parseFloat(/** @type {string} */ (/** @type {unknown} */ (a.duration))) || 0;
+        valB = Number.parseFloat(/** @type {string} */ (/** @type {unknown} */ (b.duration))) || 0;
         break;
       default:
-        valA = a[cfg.key];
-        valB = b[cfg.key];
+        valA = /** @type {Record<string, unknown>} */ (a)[cfg.key];
+        valB = /** @type {Record<string, unknown>} */ (b)[cfg.key];
     }
 
     if (valA < valB) return cfg.order === 'asc' ? -1 : 1;
@@ -56,8 +86,16 @@ function applyLibrarySort(items, cfg) {
   });
 }
 
+/**
+ * @template {LibraryItem} T
+ * @param {T[]} items
+ * @param {(item: T) => unknown} predicate
+ * @returns {T[]}
+ */
 function promoteLibraryItems(items, predicate) {
+  /** @type {T[]} */
   const promoted = [];
+  /** @type {T[]} */
   const remaining = [];
 
   items.forEach(item => {
@@ -68,6 +106,11 @@ function promoteLibraryItems(items, predicate) {
   return [...promoted, ...remaining];
 }
 
+/**
+ * @param {LibraryShotItem[]} shotsData
+ * @param {string} shotSearch
+ * @param {string} profileSearch
+ */
 function filterLibraryShots(shotsData, shotSearch, profileSearch) {
   let filteredShots = shotsData;
 
@@ -105,6 +148,10 @@ function filterLibraryShots(shotsData, shotSearch, profileSearch) {
   );
 }
 
+/**
+ * @param {LibraryProfileItem[]} profilesData
+ * @param {string} profileSearch
+ */
 function filterLibraryProfiles(profilesData, profileSearch) {
   if (!profileSearch) return profilesData;
   const normalizedProfileSearch = profileSearch.toLowerCase();
@@ -113,12 +160,18 @@ function filterLibraryProfiles(profilesData, profileSearch) {
   );
 }
 
+/** @param {LibraryItem | null | undefined} profile */
 function getProfileIdentityId(profile) {
   return String(
     profile?.profileId || profile?.id || profile?.data?.profileId || profile?.data?.id || '',
   ).trim();
 }
 
+/**
+ * @param {LibraryItem | null | undefined} profile
+ * @param {LibraryItem | null | undefined} shot
+ * @param {string} [fallbackProfileName]
+ */
 function doesProfileMatchShot(profile, shot, fallbackProfileName = '') {
   if (!profile || !shot) return false;
 
@@ -134,6 +187,12 @@ function doesProfileMatchShot(profile, shot, fallbackProfileName = '') {
   return getProfileDisplayLabel(profile, fallbackProfileName).toLowerCase() === expectedProfileName;
 }
 
+/**
+ * @param {LibraryItem | null | undefined} profile
+ * @param {LibraryItem | null | undefined} shot
+ * @param {string} [fallbackProfileName]
+ * @returns {boolean}
+ */
 export function doesProfileLabelMatchShot(profile, shot, fallbackProfileName = '') {
   if (!profile || !shot) return false;
 
@@ -146,6 +205,12 @@ export function doesProfileLabelMatchShot(profile, shot, fallbackProfileName = '
   return profileLabel === expectedProfileName;
 }
 
+/**
+ * @param {LibraryItem | null | undefined} profile
+ * @param {LibraryItem | null | undefined} selectedProfile
+ * @param {string} [selectedProfileName]
+ * @returns {boolean}
+ */
 export function doesProfileMatchProfile(profile, selectedProfile, selectedProfileName = '') {
   if (!profile || !selectedProfile) return false;
 
@@ -159,10 +224,31 @@ export function doesProfileMatchProfile(profile, selectedProfile, selectedProfil
   return getProfileDisplayLabel(profile, '').toLowerCase() === selectedLabel;
 }
 
+/**
+ * @param {LibraryItem | null | undefined} shot
+ * @param {LibraryItem | null | undefined} profile
+ * @param {string} [fallbackProfileName]
+ */
 export function hasLoadedProfileMismatch(shot, profile, fallbackProfileName = '') {
   return Boolean(shot && profile && !doesProfileLabelMatchShot(profile, shot, fallbackProfileName));
 }
 
+/**
+ * @param {object} options
+ * @param {LibraryShotItem[]} options.shotsData
+ * @param {LibraryProfileItem[]} options.profilesData
+ * @param {string} options.shotSearch
+ * @param {string} options.profileSearch
+ * @param {LibrarySortConfig} options.shotsSort
+ * @param {LibrarySortConfig} options.profilesSort
+ * @param {string} options.normalizedCurrentProfileName
+ * @param {string} options.normalizedCurrentShotProfileName
+ * @param {string[]} options.pinnedProfiles
+ * @param {PinnedShotsByProfile} options.pinnedShotsByProfile
+ * @param {boolean} options.shotsPinnedFirst
+ * @param {boolean} options.profilesPinnedFirst
+ * @param {boolean} [options.selectionPromotionsEnabled]
+ */
 export function buildPromotedLibraryItems({
   shotsData,
   profilesData,
@@ -188,9 +274,11 @@ export function buildPromotedLibraryItems({
     selectionPromotionsEnabled &&
     normalizedCurrentShotProfileName &&
     normalizedCurrentShotProfileName !== 'no profile loaded';
+  /** @param {LibraryShotItem} item */
   const promoteMatchedShots = item =>
     hasActiveProfileMatch &&
     cleanName(item.profile || '').toLowerCase() === normalizedCurrentProfileName;
+  /** @param {LibraryProfileItem} item */
   const promoteMatchedProfiles = item =>
     hasActiveShotProfileMatch &&
     doesProfileLabelMatchShot(item, { profile: normalizedCurrentShotProfileName });
@@ -215,6 +303,13 @@ export function buildPromotedLibraryItems({
   return { nextShots, nextProfiles };
 }
 
+/**
+ * @param {object} options
+ * @param {LibraryShotItem[]} options.shotsData
+ * @param {LibrarySortConfig} options.shotsSort
+ * @param {boolean} options.shotsPinnedFirst
+ * @param {PinnedShotsByProfile} options.pinnedShotsByProfile
+ */
 export function buildShotNavigationItems({
   shotsData,
   shotsSort,

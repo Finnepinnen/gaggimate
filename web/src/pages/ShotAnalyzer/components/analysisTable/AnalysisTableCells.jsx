@@ -5,11 +5,29 @@ import { faExclamationTriangle, faCheck, faTimes } from '@fortawesome/free-solid
 import { getDisplayStopReasonParts, utilityColors } from '../../utils/analyzerUtils';
 import { isSafetyExitReason, isWeightType } from '../../services/analyzer/exitReasons.js';
 
+/** @typedef {import('../../types').AnalyzedPhase} AnalyzedPhase */
+/** @typedef {import('../../types').ShotAnalysisResult} ShotAnalysisResult */
+/** @typedef {import('../../types').PhaseStats} PhaseStats */
+/** @typedef {import('../../types').TotalStats} TotalStats */
+/** @typedef {import('../../types').MetricStats} MetricStats */
+/** @typedef {import('../../types').SysAnomaly} SysAnomaly */
+/** @typedef {import('../../utils/columns.js').AnalyzerColumn} AnalyzerColumn */
+/** @typedef {import('preact').JSX.CSSProperties} CSSProperties */
+/** @typedef {import('preact').JSX.Element} JSXElement */
+
+/**
+ * @typedef {object} ResolvedCellValue
+ * @property {string | number} mainValue
+ * @property {string} unit
+ * @property {boolean} isBoolean
+ * @property {JSXElement | null} booleanContent
+ */
+
 /**
  * @param {object} props
- * @param {any} props.phase
+ * @param {AnalyzedPhase | null} props.phase
  * @param {number} [props.phaseIndex]
- * @param {any} props.results
+ * @param {ShotAnalysisResult | null | undefined} props.results
  */
 export function ComparePhaseLabel({ phase, results }) {
   if (!phase) {
@@ -58,12 +76,14 @@ export function ComparePhaseLabel({ phase, results }) {
   );
 }
 
+/** @type {Record<string, { path: 'duration' | 'water' | 'weight', unit: string }>} */
 const DIRECT_CELL_FIELDS = {
   duration: { path: 'duration', unit: 's' },
   water: { path: 'water', unit: 'ml' },
   weight: { path: 'weight', unit: 'g' },
 };
 
+/** @type {Record<string, string>} */
 const CELL_METRIC_UNITS = {
   p: 'bar',
   tp: 'bar',
@@ -78,12 +98,14 @@ const CELL_METRIC_UNITS = {
   wf: 'g/s',
 };
 
+/** @type {Record<string, (keyof MetricStats)[]>} */
 const CELL_METRIC_PARTS = {
   se: ['start', 'end'],
   mm: ['min', 'max'],
   avg: ['avg'],
 };
 
+/** @type {Record<string, import('../../types').SysStatKey>} */
 const BOOLEAN_CELL_FIELDS = {
   sys_shot_vol: 'sys_shot_vol',
   sys_curr_vol: 'sys_curr_vol',
@@ -92,17 +114,23 @@ const BOOLEAN_CELL_FIELDS = {
   sys_ext: 'sys_ext',
 };
 
+/** @type {Record<string, { unit: string }>} */
 const SYSTEM_VALUE_CELL_FIELDS = {
   sys_brew_mode: { unit: '' },
   sys_recorded_stop_reason: { unit: '' },
   sys_scale_delay: { unit: 'ms' },
 };
 
+/**
+ * @param {unknown} value
+ * @param {number} [digits]
+ */
 function formatCellNumber(value, digits = 1) {
   const numericValue = Number(value);
   return value != null && Number.isFinite(numericValue) ? numericValue.toFixed(digits) : '-';
 }
 
+/** @param {boolean | undefined} value */
 function renderCellBoolean(value) {
   if (value === true) {
     return <FontAwesomeIcon icon={faCheck} className='text-success text-[1em]' />;
@@ -113,6 +141,10 @@ function renderCellBoolean(value) {
   return <span className='text-base-content/55 font-medium'>-</span>;
 }
 
+/**
+ * @param {string} colId
+ * @param {unknown} value
+ */
 function formatSystemCellValue(colId, value) {
   if (colId === 'sys_scale_delay') {
     return formatCellNumber(value, 0);
@@ -123,11 +155,17 @@ function formatSystemCellValue(colId, value) {
   return String(value);
 }
 
+/**
+ * @param {PhaseStats | undefined} stats
+ * @param {string} metricKey
+ * @param {string} partKey
+ */
 function getMetricCellValue(stats, metricKey, partKey) {
-  const metric = stats?.[metricKey];
+  const metric = stats?.[/** @type {import('../../types').MetricStatKey} */ (metricKey)];
   const parts = CELL_METRIC_PARTS[partKey];
   if (!parts) return '-';
 
+  /** @param {keyof MetricStats} part */
   const formatPart = part => {
     const value = metric?.[part];
     return metricKey === 'wf' ? formatCellNumber(Math.max(0, value ?? 0)) : formatCellNumber(value);
@@ -138,6 +176,14 @@ function getMetricCellValue(stats, metricKey, partKey) {
     : `${formatPart(parts[0])}/${formatPart(parts[1])}`;
 }
 
+/**
+ * @param {object} options
+ * @param {AnalyzedPhase | TotalStats} options.data
+ * @param {PhaseStats | undefined} options.stats
+ * @param {AnalyzerColumn} options.col
+ * @param {boolean} [options.isSkipped]
+ * @returns {ResolvedCellValue}
+ */
 function resolveCellValue({ data, stats, col, isSkipped = false }) {
   if (
     isSkipped &&
@@ -177,7 +223,7 @@ function resolveCellValue({ data, stats, col, isSkipped = false }) {
 
   const systemValueField = SYSTEM_VALUE_CELL_FIELDS[col.id];
   if (systemValueField) {
-    const value = stats?.[col.id];
+    const value = stats?.[/** @type {keyof PhaseStats} */ (col.id)];
     return {
       mainValue: formatSystemCellValue(col.id, value),
       unit: systemValueField.unit,
@@ -215,6 +261,12 @@ function resolveCellValue({ data, stats, col, isSkipped = false }) {
   };
 }
 
+/**
+ * @param {object} props
+ * @param {number} props.targetVal
+ * @param {string} props.unit
+ * @param {CSSProperties} props.subTextSize
+ */
 function TargetDeltaDisplay({ targetVal, unit, subTextSize }) {
   return (
     <div
@@ -226,6 +278,10 @@ function TargetDeltaDisplay({ targetVal, unit, subTextSize }) {
   );
 }
 
+/**
+ * @param {AnalyzedPhase | null} phase
+ * @param {AnalyzerColumn} col
+ */
 function findPhaseTarget(phase, col) {
   const targets = Array.isArray(phase?.profilePhase?.targets) ? phase.profilePhase.targets : [];
   return targets.find(target => {
@@ -234,6 +290,13 @@ function findPhaseTarget(phase, col) {
   });
 }
 
+/**
+ * @param {object} options
+ * @param {AnalyzedPhase | null} options.phase
+ * @param {AnalyzerColumn} options.col
+ * @param {string} options.unit
+ * @param {CSSProperties} options.subTextSize
+ */
 function getTargetDisplay({ phase, col, unit, subTextSize }) {
   if (col.id === 'duration' && phase?.profilePhase?.duration > 0) {
     return (
@@ -253,6 +316,10 @@ function getTargetDisplay({ phase, col, unit, subTextSize }) {
   return <TargetDeltaDisplay targetVal={target.value} unit={unit} subTextSize={subTextSize} />;
 }
 
+/**
+ * @param {AnalyzedPhase | null} phase
+ * @param {AnalyzerColumn} col
+ */
 function getTargetCalcEntry(phase, col) {
   if (!col.targetType || !phase?.targetCalcValues) return null;
   return col.id === 'weight'
@@ -262,6 +329,12 @@ function getTargetCalcEntry(phase, col) {
     : phase.targetCalcValues[col.targetType];
 }
 
+/**
+ * @param {object} options
+ * @param {string | number} options.mainValue
+ * @param {{ value: number, isStopReason: boolean } | null | undefined} options.calcEntry
+ * @param {AnalyzerColumn} options.col
+ */
 function replaceCellValueWithCalc({ mainValue, calcEntry, col }) {
   if (!calcEntry) return mainValue;
 
@@ -278,9 +351,17 @@ function replaceCellValueWithCalc({ mainValue, calcEntry, col }) {
   return calcValue;
 }
 
+/**
+ * @param {object} options
+ * @param {AnalyzedPhase} options.phase
+ * @param {boolean} options.isWeightCol
+ * @param {CSSProperties} options.subTextSize
+ * @returns {JSXElement[]}
+ */
 function getWeightWarnings({ phase, isWeightCol, subTextSize }) {
   if (!isWeightCol) return [];
 
+  /** @type {JSXElement[]} */
   const warnings = [];
   if (phase.scaleLost) {
     warnings.push(
@@ -316,6 +397,9 @@ function getWeightWarnings({ phase, isWeightCol, subTextSize }) {
   return warnings;
 }
 
+/**
+ * @param {ResolvedCellValue & { warning?: boolean }} options
+ */
 function renderTotalCellContent({ isBoolean, booleanContent, mainValue, unit, warning = false }) {
   if (isBoolean) return <div className='flex justify-end'>{booleanContent}</div>;
   return (
@@ -328,6 +412,11 @@ function renderTotalCellContent({ isBoolean, booleanContent, mainValue, unit, wa
   );
 }
 
+/**
+ * @param {object} options
+ * @param {AnalyzedPhase} options.phase
+ * @param {AnalyzerColumn} options.col
+ */
 function getCellHitState({ phase, col }) {
   if (col.id === 'weight') {
     return isWeightType(phase.exit?.type);
@@ -336,6 +425,12 @@ function getCellHitState({ phase, col }) {
   return phase.exit?.type === col.targetType;
 }
 
+/**
+ * @param {object} options
+ * @param {JSXElement | null} options.booleanContent
+ * @param {SysAnomaly | null | undefined} options.booleanAnomaly
+ * @param {CSSProperties} options.subTextSize
+ */
 function renderBooleanCellContent({ booleanContent, booleanAnomaly, subTextSize }) {
   const sampleNumber = booleanAnomaly?.sampleInPhase;
   const sampleValue = String(booleanAnomaly?.value);
@@ -361,6 +456,15 @@ function renderBooleanCellContent({ booleanContent, booleanAnomaly, subTextSize 
   );
 }
 
+/**
+ * @param {object} options
+ * @param {boolean} options.isHit
+ * @param {boolean} options.calcIsStopReason
+ * @param {string | number} options.mainValue
+ * @param {string} options.unit
+ * @param {boolean} options.mainValueIsCalculated
+ * @param {boolean} [options.warning]
+ */
 function renderMetricCellValue({
   isHit,
   calcIsStopReason,
@@ -388,6 +492,13 @@ function renderMetricCellValue({
   );
 }
 
+/**
+ * @param {object} props
+ * @param {AnalyzedPhase | null} props.phase
+ * @param {AnalyzerColumn} props.col
+ * @param {ShotAnalysisResult | null | undefined} props.results
+ * @param {boolean} [props.isTotal]
+ */
 export function CellContent({ phase, col, results, isTotal = false }) {
   const data = isTotal ? results?.total : phase;
   const stats = isTotal ? results?.total : phase?.stats;
@@ -419,7 +530,9 @@ export function CellContent({ phase, col, results, isTotal = false }) {
 
   // Keep secondary text proportional to the table text.
   const subTextSize = { fontSize: '0.85em' };
-  const booleanAnomaly = isBoolean ? stats?.sys_anomalies?.[col.id] : null;
+  const booleanAnomaly = isBoolean
+    ? stats?.sys_anomalies?.[/** @type {import('../../types').SysStatKey} */ (col.id)]
+    : null;
   const calcEntry = getTargetCalcEntry(phase, col);
   const displayMainValue = isBoolean
     ? mainValue

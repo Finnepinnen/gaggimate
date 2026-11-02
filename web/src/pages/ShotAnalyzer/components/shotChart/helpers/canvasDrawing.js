@@ -1,6 +1,10 @@
 export const CHART_LABEL_FONT_FAMILY =
   'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 
+/**
+ * @param {{ width?: number } | null | undefined} chart
+ * @returns {number}
+ */
 export function getChartLabelScale(chart) {
   const width = Number(chart?.width) || 0;
   if (width > 0 && width < 420) return 0.82;
@@ -8,6 +12,10 @@ export function getChartLabelScale(chart) {
   return 1;
 }
 
+/**
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {{ iconDef: import('@fortawesome/fontawesome-svg-core').IconDefinition | null | undefined, x: number, y: number, size: number, color: string }} options
+ */
 export function drawFontAwesomeIcon(ctx, { iconDef, x, y, size, color }) {
   const icon = iconDef?.icon;
   const pathData = icon?.[4];
@@ -21,10 +29,14 @@ export function drawFontAwesomeIcon(ctx, { iconDef, x, y, size, color }) {
   ctx.fillStyle = color;
   ctx.translate(x - (width * scale) / 2, y - (height * scale) / 2);
   ctx.scale(scale, scale);
-  ctx.fill(new Path2D(pathData));
+  ctx.fill(new Path2D(/** @type {string} */ (pathData)));
   ctx.restore();
 }
 
+/**
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {{ x: number, y: number, width: number, height: number, radius: number }} rect
+ */
 export function drawRoundedRect(ctx, { x, y, width, height, radius }) {
   if (typeof ctx.roundRect === 'function') {
     ctx.roundRect(x, y, width, height, radius);

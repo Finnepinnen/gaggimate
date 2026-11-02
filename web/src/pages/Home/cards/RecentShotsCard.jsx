@@ -16,8 +16,17 @@ import { msg, t } from '@lingui/core/macro';
 import { i18n } from '../../../i18n.js';
 import { SkeletonBlock } from '../../../components/SkeletonBlock.jsx';
 
+/** @typedef {import('../../../types').Shot} Shot */
+/**
+ * @typedef {object} ShotMetricDef
+ * @property {import('@lingui/core').MessageDescriptor} labelMsg
+ * @property {string} unit
+ * @property {(shot: Shot) => string | null} getValue
+ */
+
 // Compares calendar dates, not raw milliseconds, so 11:59 PM yesterday
 // correctly reads as "Yesterday" even if less than 24 h ago.
+/** @param {number} timestamp Epoch seconds. */
 function getRelativeDayLabel(timestamp) {
   if (!timestamp || timestamp < 10000) return '';
   const d = new Date(timestamp * 1000);
@@ -30,6 +39,10 @@ function getRelativeDayLabel(timestamp) {
   return d.toLocaleDateString([], { weekday: 'long' });
 }
 
+/**
+ * @param {number} timestamp Epoch seconds.
+ * @param {boolean} hour12
+ */
 function formatShotDateTime(timestamp, hour12) {
   if (!timestamp || timestamp < 10000) return '';
   return new Date(timestamp * 1000).toLocaleString([], {
@@ -42,6 +55,10 @@ function formatShotDateTime(timestamp, hour12) {
   });
 }
 
+/**
+ * @param {number} recentShotCount
+ * @returns {Promise<Shot[]>}
+ */
 async function loadRecentShots(recentShotCount) {
   // Same binary format as index.bin, truncated server-side to the newest entries.
   const resp = await fetch(`/api/history/recent.bin?limit=${recentShotCount}`);
@@ -50,6 +67,7 @@ async function loadRecentShots(recentShotCount) {
   return indexToShotList(parseBinaryIndex(buf)).slice(0, recentShotCount);
 }
 
+/** @type {Record<string, ShotMetricDef>} */
 const METRIC_DEFS = {
   duration: {
     labelMsg: msg`Duration`,
@@ -78,6 +96,11 @@ const METRIC_DEFS = {
   },
 };
 
+/**
+ * @param {object} props
+ * @param {Shot} props.shot
+ * @param {string[]} props.slots Metric ids (keys of METRIC_DEFS).
+ */
 function ShotMiniCard({ shot, slots }) {
   const { t } = useLingui();
   const analyzerUrl = `/analyzer/internal/${shot.id}`;
@@ -147,6 +170,10 @@ ShotMiniCard.propTypes = {
   slots: PropTypes.arrayOf(PropTypes.string).isRequired,
 };
 
+/**
+ * @param {object} props
+ * @param {string[]} props.slots
+ */
 function ShotMiniCardSkeleton({ slots }) {
   return (
     <div className='bg-base-200 flex min-w-0 flex-col gap-2 rounded-xl p-3'>
@@ -171,7 +198,7 @@ ShotMiniCardSkeleton.propTypes = {
 
 export function RecentShotsCard() {
   const apiService = useContext(ApiServiceContext);
-  const [shots, setShots] = useState([]);
+  const [shots, setShots] = useState(/** @type {Shot[]} */ ([]));
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const countMountedRef = useRef(false);

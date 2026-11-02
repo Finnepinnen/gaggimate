@@ -54,6 +54,25 @@ import '../../ShotChart.css';
 
 Chart.register(annotationPlugin);
 
+/**
+ * @param {object} props
+ * @param {import('./types').CompareEntry[]} props.compareEntries
+ * @param {(() => void) | null} [props.onCompareSwap]
+ * @param {string} props.compareTargetDisplayMode
+ * @param {((mode: import('../../../utils/constants.js').CompareTargetDisplayMode) => void) | null} [props.onCompareTargetDisplayModeChange]
+ * @param {boolean} [props.showPhaseAnnotations]
+ * @param {boolean} [props.showStopAnnotations]
+ * @param {boolean} [props.showBrewModeAnnotation]
+ * @param {boolean} [props.enableDualMainChartAnnotations]
+ * @param {boolean} [props.showMainChartTitle]
+ * @param {string} [props.detailChartTitleVariant]
+ * @param {boolean} [props.enableHoverInfo]
+ * @param {import('./types').CompareTooltipMode} [props.compareTooltipMode]
+ * @param {boolean} [props.showCompareShotLegend]
+ * @param {import('./types').ShotStylePreset} [props.shotStylePreset]
+ * @param {boolean} [props.showWeightInMainChart]
+ * @param {boolean} [props.showWeightFlowInMainChart]
+ */
 export function CompareShotCharts({
   compareEntries,
   onCompareSwap = null,
@@ -72,7 +91,9 @@ export function CompareShotCharts({
   showWeightInMainChart = true,
   showWeightFlowInMainChart = true,
 }) {
+  /** @type {import('preact').RefObject<HTMLDivElement>} */
   const exportMenuRef = useRef(null);
+  /** @type {import('preact').RefObject<HTMLDivElement>} */
   const mainChartCardRef = useRef(null);
   const { setVisibility, visibility } = useCompareVisibilityState({
     enableDualMainChartAnnotations,
@@ -88,7 +109,9 @@ export function CompareShotCharts({
     shotStylePreset,
   });
   const [isFullDisplay, setIsFullDisplay] = useState(false);
-  const [detailMetricPageByChartId, setDetailMetricPageByChartId] = useState({});
+  const [detailMetricPageByChartId, setDetailMetricPageByChartId] = useState(
+    /** @type {Record<string, string>} */ ({}),
+  );
   const { isMobileCompareLayout, standardChartWidth } = useCompareViewportState({
     isFullDisplay,
     mainChartCardRef,
@@ -122,16 +145,23 @@ export function CompareShotCharts({
     showCompareShotLegend,
   });
   const compareEntriesKey = getCompareEntriesKey(compareEntries);
-  const handleDetailMetricPageChange = useCallback((chartId, pageKey) => {
-    setDetailMetricPageByChartId(previousPages =>
-      previousPages[chartId] === pageKey
-        ? previousPages
-        : {
-            ...previousPages,
-            [chartId]: pageKey,
-          },
-    );
-  }, []);
+  const handleDetailMetricPageChange = useCallback(
+    /**
+     * @param {string} chartId
+     * @param {string} pageKey
+     */
+    (chartId, pageKey) => {
+      setDetailMetricPageByChartId(previousPages =>
+        previousPages[chartId] === pageKey
+          ? previousPages
+          : {
+              ...previousPages,
+              [chartId]: pageKey,
+            },
+      );
+    },
+    [],
+  );
   const hiddenLegendLabels = getHiddenLegendLabels({ showPhaseAnnotations, showStopAnnotations });
   const hasWeightData = hasCompareSampleValue(compareEntries, 'v');
   const hasWeightFlowData = hasCompareSampleValue(compareEntries, 'vf');

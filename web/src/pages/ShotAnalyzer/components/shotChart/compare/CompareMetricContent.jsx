@@ -24,6 +24,25 @@ import {
   MOBILE_COMPARE_FIXED_SERIES_LABELS,
 } from './compareConstants';
 
+/** @typedef {import('@fortawesome/fontawesome-svg-core').IconDefinition} IconDefinition */
+/** @typedef {import('../model/types').ChartVisibility} ChartVisibility */
+/** @typedef {import('./types').AnalyzerTotals} AnalyzerTotals */
+/** @typedef {import('./types').CompareEntry} CompareEntry */
+/** @typedef {import('./types').CompareLegendItem} CompareLegendItem */
+/** @typedef {import('./types').CompareMetricPage} CompareMetricPage */
+/** @typedef {import('./types').CompareMetricRow} CompareMetricRow */
+/** @typedef {import('./types').CompareMetricRowDef} CompareMetricRowDef */
+/** @typedef {import('./types').ComparePreviewEntry} ComparePreviewEntry */
+/** @typedef {import('./types').DetailChartDef} DetailChartDef */
+/** @typedef {{ key: string, label?: string, icon: IconDefinition | null, color: string | null }} CompareTitleIcon */
+
+/**
+ * @param {{
+ *   legendColorByLabel: Record<string, string>,
+ *   shotStylePreset: import('./types').ShotStylePreset,
+ *   showMainChartTitle: boolean,
+ * }} params
+ */
 export function getMainChartTitleContent({
   legendColorByLabel,
   shotStylePreset,
@@ -54,6 +73,13 @@ export function getMainChartTitleContent({
   return null;
 }
 
+/**
+ * @param {{
+ *   compareEntries: CompareEntry[],
+ *   shouldUseAnalyzerMobileCompareLayout: boolean,
+ *   shouldUseStatisticsMobileCompactLayout: boolean,
+ * }} params
+ */
 export function getMainEmptyStaticTooltipContent({
   compareEntries,
   shouldUseAnalyzerMobileCompareLayout,
@@ -68,6 +94,16 @@ export function getMainEmptyStaticTooltipContent({
   return null;
 }
 
+/**
+ * @param {{
+ *   activeMetricPageKey?: string | null,
+ *   chart: DetailChartDef,
+ *   compareEntries: CompareEntry[],
+ *   onMetricPageChange?: ((pageKey: string) => void) | null,
+ *   shouldUseAnalyzerMobileCompareLayout: boolean,
+ *   shouldUseStatisticsMobileCompactLayout: boolean,
+ * }} params
+ */
 export function getDetailEmptyStaticTooltipContent({
   activeMetricPageKey = null,
   chart,
@@ -100,6 +136,18 @@ export function getDetailEmptyStaticTooltipContent({
   return null;
 }
 
+/**
+ * @param {{
+ *   hiddenLegendLabels: string[],
+ *   isExpanded: boolean,
+ *   hasWeightData: boolean,
+ *   hasWeightFlowData: boolean,
+ *   legendColorByLabel: Record<string, string>,
+ *   onLegendToggle: (label: string) => void,
+ *   onToggleExpanded: () => void,
+ *   visibility: ChartVisibility,
+ * }} props
+ */
 export function CompareMobileLegend({
   hiddenLegendLabels,
   isExpanded,
@@ -110,6 +158,7 @@ export function CompareMobileLegend({
   onToggleExpanded,
   visibility,
 }) {
+  /** @param {string} label */
   const handleMobileLegendToggle = label => {
     if (
       MOBILE_COMPARE_CONTEXT_LABEL_SET.has(label) ||
@@ -163,6 +212,12 @@ export function CompareMobileLegend({
   );
 }
 
+/**
+ * @param {{
+ *   compareShotLegendItems: CompareLegendItem[],
+ *   onCompareSwap?: (() => void) | null,
+ * }} props
+ */
 export function CompareMobileShotSwitcher({ compareShotLegendItems, onCompareSwap }) {
   if (!Array.isArray(compareShotLegendItems) || compareShotLegendItems.length === 0) return null;
 
@@ -193,6 +248,7 @@ export function CompareMobileShotSwitcher({ compareShotLegendItems, onCompareSwa
   );
 }
 
+/** @param {{ item: CompareLegendItem | undefined }} props */
 function CompareMobileShotSwitcherItem({ item }) {
   if (!item) return null;
 
@@ -219,6 +275,15 @@ function CompareMobileShotSwitcherItem({ item }) {
   );
 }
 
+/**
+ * @param {{
+ *   compareAlignmentMode: string,
+ *   compareAlignmentOptions: import('./types').CompareAlignmentOption[],
+ *   compareTargetDisplayMode: string,
+ *   onCompareAlignmentModeChange: ((mode: string) => void) | null,
+ *   onCompareTargetDisplayModeChange: ((mode: import('../../../utils/constants.js').CompareTargetDisplayMode) => void) | null,
+ * }} props
+ */
 export function CompareMobileChartControls({
   compareAlignmentMode,
   compareAlignmentOptions,
@@ -255,16 +320,31 @@ export function CompareMobileChartControls({
   );
 }
 
+/**
+ * @param {Pick<DetailChartDef, 'tooltipBaseLabel' | 'title'>} chart
+ * @returns {string}
+ */
 export function getDetailChartUnitLabel(chart) {
   return UNIT_BY_LABEL[chart.tooltipBaseLabel] || UNIT_BY_LABEL[chart.title] || '';
 }
 
+/** @param {unknown} title */
 function formatCompareChartTitle(title) {
   if (typeof title !== 'string' || title.length === 0) return '';
   if (title.includes(' ')) return title;
   return `${title.charAt(0).toUpperCase()}${title.slice(1).toLowerCase()}`;
 }
 
+/**
+ * @param {{
+ *   iconColor: string | null,
+ *   icons: CompareTitleIcon[] | null,
+ *   labelKey: string | undefined,
+ *   title: string,
+ *   variant: string,
+ * }} params
+ * @returns {{ displayLabel: string, titleIcons: CompareTitleIcon[] }}
+ */
 function getCompareChartLegendTitleData({ iconColor, icons, labelKey, title, variant }) {
   if (variant === 'statisticsMain') {
     return {
@@ -287,7 +367,7 @@ function getCompareChartLegendTitleData({ iconColor, icons, labelKey, title, var
  * @param {string} [props.labelKey] Legend label used to resolve the icon; defaults to the title.
  * @param {string} [props.variant]
  * @param {string | null} [props.iconColor]
- * @param {Array<{ key: string, icon: any, color: string | null }> | null} [props.icons]
+ * @param {CompareTitleIcon[] | null} [props.icons]
  */
 export function CompareChartTitle({
   title,
@@ -330,21 +410,32 @@ export function CompareChartTitle({
   );
 }
 
+/** @returns {null} */
 function CompareMobileTooltipPlaceholder() {
   return null;
 }
 
+/** @returns {null} */
 function CompareMobileTitleOnlyPlaceholder() {
   return null;
 }
 
+/**
+ * @param {unknown[]} values
+ * @returns {number | null}
+ */
 function averageFiniteValues(values) {
   const finiteValues = values.map(Number).filter(Number.isFinite);
   if (finiteValues.length === 0) return null;
   return finiteValues.reduce((sum, value) => sum + value, 0) / finiteValues.length;
 }
 
+/**
+ * @param {string | null} [metricLabel]
+ * @returns {CompareMetricRowDef[]}
+ */
 function getStatisticsMetricDefinitions(metricLabel = null) {
+  /** @type {Record<string, CompareMetricRowDef[] | undefined>} */
   const metricDefinitionsByLabel = {
     Pressure: [
       {
@@ -450,6 +541,11 @@ function getStatisticsMetricDefinitions(metricLabel = null) {
   ];
 }
 
+/**
+ * @param {CompareEntry[]} compareEntries
+ * @param {string | null} [metricLabel]
+ * @returns {CompareMetricRow[]}
+ */
 function getStatisticsMetricSummaryRows(compareEntries, metricLabel = null) {
   const totals = compareEntries.map(entry => entry?.results?.total).filter(Boolean);
   if (totals.length === 0) return [];
@@ -462,6 +558,13 @@ function getStatisticsMetricSummaryRows(compareEntries, metricLabel = null) {
     .filter(row => Number.isFinite(Number(row.value)));
 }
 
+/**
+ * @param {{
+ *   compareEntries: CompareEntry[],
+ *   metricLabel?: string | null,
+ *   variant?: 'desktop' | 'mobileCompact',
+ * }} props
+ */
 export function StatisticsChartMetricSummary({
   compareEntries,
   metricLabel = null,
@@ -499,9 +602,13 @@ export function StatisticsChartMetricSummary({
   );
 }
 
+/**
+ * @param {CompareEntry} entry
+ * @returns {CompareMetricRow[]}
+ */
 function getCompareMobileMetricRows(entry) {
   const total = entry?.results?.total;
-  return [
+  return /** @type {CompareMetricRowDef[]} */ ([
     {
       key: 'duration',
       label: t`Duration`,
@@ -520,7 +627,7 @@ function getCompareMobileMetricRows(entry) {
       unit: '\u2103',
       getValue: nextTotal => nextTotal?.tt?.avg,
     },
-  ]
+  ])
     .map(row => ({
       ...row,
       value: row.getValue(total),
@@ -528,13 +635,24 @@ function getCompareMobileMetricRows(entry) {
     .filter(row => Number.isFinite(Number(row.value)));
 }
 
+/**
+ * @param {CompareEntry} entry
+ * @param {CompareMetricRowDef} row
+ * @returns {CompareMetricRow | null}
+ */
 function resolveCompareMobileMetricRow(entry, row) {
   const value = row.getValue(entry?.results?.total);
   return Number.isFinite(Number(value)) ? { ...row, value } : null;
 }
 
+/**
+ * @param {string} labelKey
+ * @param {string | null} [pageKey]
+ * @returns {CompareMetricRowDef[]}
+ */
 function getCompareMobileDetailMetricDefinitions(labelKey, pageKey = null) {
   if (labelKey === 'Pump Flow') {
+    /** @type {CompareMetricRowDef} */
     const pumpFlowRow = {
       key: 'flow',
       label: t`Avg. Pump Flow`,
@@ -543,6 +661,7 @@ function getCompareMobileDetailMetricDefinitions(labelKey, pageKey = null) {
       icon: getShotChartLabelIcon('Pump Flow'),
       getValue: total => total?.f?.avg,
     };
+    /** @type {CompareMetricRowDef} */
     const pumpedWaterRow = {
       key: 'pumpedWater',
       label: t`Pumped Water`,
@@ -556,6 +675,7 @@ function getCompareMobileDetailMetricDefinitions(labelKey, pageKey = null) {
     return [pumpFlowRow];
   }
 
+  /** @type {Record<string, CompareMetricRowDef | undefined>} */
   const detailRowsByLabel = {
     Pressure: {
       key: 'pressure',
@@ -618,12 +738,23 @@ function getCompareMobileDetailMetricDefinitions(labelKey, pageKey = null) {
   return row ? [row] : [];
 }
 
+/**
+ * @param {CompareEntry} entry
+ * @param {string} labelKey
+ * @param {string | null} [pageKey]
+ * @returns {CompareMetricRow[]}
+ */
 function getCompareMobileDetailMetricRows(entry, labelKey, pageKey = null) {
   return getCompareMobileDetailMetricDefinitions(labelKey, pageKey)
     .map(row => resolveCompareMobileMetricRow(entry, row))
     .filter(Boolean);
 }
 
+/**
+ * @param {CompareEntry[]} compareEntries
+ * @param {string} metricLabel
+ * @returns {CompareMetricPage[]}
+ */
 function getCompareMobileDetailMetricPages(compareEntries, metricLabel) {
   if (metricLabel !== 'Pump Flow') return [];
 
@@ -638,6 +769,9 @@ function getCompareMobileDetailMetricPages(compareEntries, metricLabel) {
     .filter(page => page.previewEntries.some(previewEntry => previewEntry.rows.length > 0));
 }
 
+/**
+ * @param {{ metricLabel?: string | null, previewEntries: ComparePreviewEntry[] }} props
+ */
 function CompareMobileMetricGrid({ metricLabel = null, previewEntries }) {
   const hasMetrics = previewEntries.some(previewEntry => previewEntry.rows.length > 0);
 
@@ -657,6 +791,14 @@ function CompareMobileMetricGrid({ metricLabel = null, previewEntries }) {
   );
 }
 
+/**
+ * @param {{
+ *   activePageKey?: string | null,
+ *   compareEntries: CompareEntry[],
+ *   metricLabel?: string | null,
+ *   onPageChange?: ((pageKey: string) => void) | null,
+ * }} props
+ */
 function CompareMobileMetricPreview({
   activePageKey = null,
   compareEntries,

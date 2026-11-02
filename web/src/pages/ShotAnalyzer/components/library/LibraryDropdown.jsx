@@ -17,6 +17,20 @@ import {
   getShotCompareBadgeNumber,
 } from './libraryDisplay';
 
+/** @typedef {import('../types').LibraryItem} LibraryItem */
+/** @typedef {import('../types').LibraryMobileSection} LibraryMobileSection */
+/** @typedef {import('../types').LibrarySortConfig} LibrarySortConfig */
+/** @typedef {import('../types').LibrarySortOrder} LibrarySortOrder */
+/** @typedef {import('../types').LibraryUiSourceFilter} LibraryUiSourceFilter */
+/** @typedef {import('../types').PinnedShotsByProfile} PinnedShotsByProfile */
+/** @template T @typedef {import('preact/hooks').Dispatch<import('preact/hooks').StateUpdater<T>>} SetState */
+
+/**
+ * @param {LibrarySortConfig} currentSort
+ * @param {string} key
+ * @param {LibrarySortOrder} [order]
+ * @returns {LibrarySortConfig}
+ */
 function getNextLibrarySortState(currentSort, key, order) {
   return {
     key,
@@ -24,11 +38,21 @@ function getNextLibrarySortState(currentSort, key, order) {
   };
 }
 
+/**
+ * @param {LibraryMobileSection} activeSection
+ * @param {LibraryMobileSection} section
+ */
 function getLibrarySectionVisibilityClass(activeSection, section) {
   return activeSection === section ? 'block lg:block' : 'hidden lg:block';
 }
 
+/**
+ * @param {object} props
+ * @param {LibraryMobileSection} props.activeSection
+ * @param {(section: LibraryMobileSection) => void} props.onSectionChange
+ */
 function LibraryMobileSectionTabs({ activeSection, onSectionChange }) {
+  /** @param {LibraryMobileSection} section */
   const getTabClassName = section =>
     `flex-1 rounded-md px-3 py-1.5 text-xs font-semibold transition-all ${
       activeSection === section
@@ -60,6 +84,14 @@ function LibraryMobileSectionTabs({ activeSection, onSectionChange }) {
   );
 }
 
+/**
+ * @param {object} props
+ * @param {import('preact').ComponentChildren} [props.children]
+ * @param {import('preact').JSX.CSSProperties} props.dropdownStyle
+ * @param {LibraryMobileSection} props.mobileActiveSection
+ * @param {() => void} props.onClose
+ * @param {(section: LibraryMobileSection) => void} props.onMobileSectionChange
+ */
 export function LibraryDropdown({
   children,
   dropdownStyle,
@@ -93,6 +125,39 @@ export function LibraryDropdown({
   );
 }
 
+/**
+ * @param {object} props
+ * @param {boolean} props.compareMode
+ * @param {string[]} props.comparePendingKeys
+ * @param {string} props.compareSecondaryShotKey
+ * @param {number} props.compareSelectedCount
+ * @param {Set<string>} props.compareSelectionKeys
+ * @param {string | undefined} props.desktopSectionHeight
+ * @param {(item: LibraryItem) => string} props.getEffectiveShotPinBucketKey
+ * @param {(item: LibraryItem) => string} props.getPinnedShotBucketKey
+ * @param {(item: LibraryItem) => string} props.getShotPinDisabledReason
+ * @param {(item: LibraryItem) => void} props.handleDelete
+ * @param {(item: LibraryItem, isShot: boolean) => unknown} props.handleExport
+ * @param {(item: LibraryItem) => void} props.handleShotPinToggle
+ * @param {(item: LibraryItem) => void} props.handleShotRowAction
+ * @param {boolean} props.loading
+ * @param {LibraryMobileSection} props.mobileActiveSection
+ * @param {string} props.normalizedCurrentProfileName
+ * @param {import('../types').OnCompareShotToggle} [props.onCompareShotToggle]
+ * @param {PinnedShotsByProfile} props.pinnedShotsByProfile
+ * @param {LibraryItem | null | undefined} props.primaryDisplayProfile
+ * @param {LibraryItem | null | undefined} props.primaryDisplayShot
+ * @param {() => unknown} props.refreshLibraries
+ * @param {SetState<boolean>} props.setShotsPinnedFirst
+ * @param {(value: string) => void} props.setShotsSearch
+ * @param {(sort: LibrarySortConfig) => void} props.setShotsSort
+ * @param {(value: LibraryUiSourceFilter) => void} props.setShotsSourceFilter
+ * @param {LibraryItem[]} props.shots
+ * @param {boolean} props.shotsPinnedFirst
+ * @param {string} props.shotsSearch
+ * @param {LibrarySortConfig} props.shotsSort
+ * @param {LibraryUiSourceFilter} props.shotsSourceFilter
+ */
 export function LibraryShotsPanelSection({
   compareMode,
   comparePendingKeys,
@@ -207,6 +272,37 @@ export function LibraryShotsPanelSection({
   );
 }
 
+/**
+ * @param {object} props
+ * @param {boolean} props.compareMode
+ * @param {string | undefined} props.desktopSectionHeight
+ * @param {(item: LibraryItem) => string} props.getProfilePinDisabledReason
+ * @param {(item: LibraryItem) => void} props.handleDelete
+ * @param {(item: LibraryItem, isShot: boolean) => unknown} props.handleExport
+ * @param {(item: LibraryItem) => void} props.handleLibraryProfileStatsOpen
+ * @param {(item: LibraryItem) => void} props.handleProfilePinToggle
+ * @param {(item: LibraryItem) => void} props.handleProfileRowAction
+ * @param {boolean} props.loading
+ * @param {LibraryMobileSection} props.mobileActiveSection
+ * @param {string} props.normalizedCompareSecondaryProfileName
+ * @param {string[]} props.pinnedProfiles
+ * @param {LibraryItem | null | undefined} props.primaryDisplayProfile
+ * @param {string} props.primaryDisplayProfileName
+ * @param {LibraryItem | null | undefined} props.primaryDisplayShot
+ * @param {import('../types').LibraryProfileItem[]} props.profiles
+ * @param {boolean} props.profilesPinnedFirst
+ * @param {string} props.profilesSearch
+ * @param {LibrarySortConfig} props.profilesSort
+ * @param {LibraryUiSourceFilter} props.profilesSourceFilter
+ * @param {() => unknown} props.refreshLibraries
+ * @param {LibraryItem | null | undefined} props.secondaryDisplayProfile
+ * @param {string} props.secondaryDisplayProfileName
+ * @param {LibraryItem | null | undefined} props.secondaryDisplayShot
+ * @param {SetState<boolean>} props.setProfilesPinnedFirst
+ * @param {(value: string) => void} props.setProfilesSearch
+ * @param {(sort: LibrarySortConfig) => void} props.setProfilesSort
+ * @param {(value: LibraryUiSourceFilter) => void} props.setProfilesSourceFilter
+ */
 export function LibraryProfilesPanelSection({
   compareMode,
   desktopSectionHeight,

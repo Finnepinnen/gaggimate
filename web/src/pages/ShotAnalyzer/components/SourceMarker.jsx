@@ -31,7 +31,9 @@ const SOURCE_MARKER_VARIANTS = {
  */
 export function SourceMarker({ source, variant = 'compact' }) {
   // Central size map for the GM/Web source markers.
-  const resolvedVariant = SOURCE_MARKER_VARIANTS[variant] || SOURCE_MARKER_VARIANTS.compact;
+  const resolvedVariant =
+    SOURCE_MARKER_VARIANTS[/** @type {keyof typeof SOURCE_MARKER_VARIANTS} */ (variant)] ||
+    SOURCE_MARKER_VARIANTS.compact;
   const isGaggiMate = source === 'gaggimate';
 
   return (

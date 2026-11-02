@@ -5,6 +5,10 @@ import { ApiServiceContext, machine } from '../../services/ApiService.js';
 import { Spinner } from '../../components/Spinner.jsx';
 import { InfoNote } from './InfoNote.jsx';
 
+/** @typedef {import('./types').SetupTestStatus} SetupTestStatus */
+/** @typedef {import('@lingui/core').MessageDescriptor} MessageDescriptor */
+
+/** @type {Record<string, MessageDescriptor>} */
 const REASONS = {
   sensor: msg`The temperature sensor returned an invalid reading. Check the thermocouple and its wiring.`,
   alreadyHot: msg`The boiler is already hot, so the heater works.`,
@@ -15,6 +19,7 @@ const REASONS = {
   highPressure: msg`Pressure peaked above 12.5 bar. That works, but you may want to adjust the OPV to around 10–11 bar.`,
 };
 
+/** @type {Record<string, MessageDescriptor>} */
 const REQUEST_ERRORS = {
   busy: msg`The machine is busy. Stop the running process and try again.`,
   notReady: msg`The controller is not connected yet.`,
@@ -22,14 +27,16 @@ const REQUEST_ERRORS = {
   ackRequired: msg`Please confirm the safety notice first.`,
 };
 
+/** @param {'heater' | 'pressure'} name */
 function useSetupTest(name) {
   const apiService = useContext(ApiServiceContext);
-  const [status, setStatus] = useState(null);
-  const [error, setError] = useState(null);
+  const [status, setStatus] = useState(/** @type {SetupTestStatus | null} */ (null));
+  const [error, setError] = useState(/** @type {string | null} */ (null));
 
   useEffect(() => {
     const id = apiService.on('evt:setup:test', event => {
-      if (event.test === name) setStatus(event);
+      if (event.test === name)
+        setStatus(/** @type {SetupTestStatus} */ (/** @type {unknown} */ (event)));
     });
     return () => apiService.off('evt:setup:test', id);
   }, [apiService, name]);
@@ -59,6 +66,11 @@ function useSetupTest(name) {
   return { status, error, start, abort };
 }
 
+/**
+ * @param {object} props
+ * @param {SetupTestStatus | null} props.status
+ * @param {string | null} props.error Request error key, or the firmware's error text.
+ */
 function ResultAlert({ status, error }) {
   const { t, i18n } = useLingui();
   if (error) {

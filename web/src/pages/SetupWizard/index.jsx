@@ -19,6 +19,16 @@ import {
   savedSetupStep,
 } from './setupState.js';
 
+/** @typedef {import('./types').SetupSettings} SetupSettings */
+/** @typedef {import('./types').WifiChoice} WifiChoice */
+/** @typedef {import('../../utils/machineProfiles.js').MachineProfile} MachineProfile */
+
+/**
+ * @param {object} props
+ * @param {string | null} props.joinSsid Network the machine joins on finish, if any.
+ * @param {boolean} props.pluginsPending
+ * @param {boolean} props.configureLater
+ */
 function FinishStep({ joinSsid, pluginsPending, configureLater }) {
   const { t } = useLingui();
   const { profiles } = useProfileList();
@@ -79,6 +89,10 @@ function FinishStep({ joinSsid, pluginsPending, configureLater }) {
   );
 }
 
+/**
+ * @param {object} props
+ * @param {boolean} [props.reconnect]
+ */
 function MachineSetupReminder({ reconnect }) {
   return (
     <InfoNote tone='warning' title={<Trans>Machine configuration required</Trans>}>
@@ -95,6 +109,11 @@ function MachineSetupReminder({ reconnect }) {
 }
 
 // Shown after saving Wi-Fi: the machine restarts onto the home network and this page loses its connection.
+/**
+ * @param {object} props
+ * @param {string} props.ssid
+ * @param {boolean} props.configureLater
+ */
 function JoiningWifi({ ssid, configureLater }) {
   const host = `${getCachedSettings()?.mdnsName || 'gaggimate'}.local`;
   return (
@@ -124,12 +143,16 @@ export function SetupWizard() {
   const { t } = useLingui();
   const location = useLocation();
   const pluginForm = usePluginForm();
-  const [offerWifi] = useState(() => getCachedSettings()?.apMode === true);
+  const [offerWifi] = useState(
+    () => /** @type {SetupSettings | null} */ (getCachedSettings())?.apMode === true,
+  );
   const [configureLater, setConfigureLater] = useState(
-    () => parseSetupStep(getCachedSettings()?.setupStep).configureLater,
+    () =>
+      parseSetupStep(/** @type {SetupSettings | null} */ (getCachedSettings())?.setupStep)
+        .configureLater,
   );
   const [step, setStep] = useState(() => {
-    const saved = getCachedSettings();
+    const saved = /** @type {SetupSettings | null} */ (getCachedSettings());
     const progress = parseSetupStep(saved?.setupStep);
     const order = setupSteps(offerWifi, progress.configureLater);
     return saved?.machineHardwareReady === false && !progress.configureLater
@@ -138,17 +161,20 @@ export function SetupWizard() {
   });
   const [machineSaved, setMachineSaved] = useState(
     () =>
-      !!getCachedSettings()?.setupStep &&
-      getCachedSettings()?.setupStep !== 'machine' &&
-      getCachedSettings()?.machineHardwareReady !== false,
+      !!(/** @type {SetupSettings | null} */ (getCachedSettings())?.setupStep) &&
+      /** @type {SetupSettings | null} */ (getCachedSettings())?.setupStep !== 'machine' &&
+      /** @type {SetupSettings | null} */ (getCachedSettings())?.machineHardwareReady !== false,
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
-  const [wifi, setWifi] = useState({ selected: null, ssid: '', secure: false, password: '' });
+  const [wifi, setWifi] = useState(
+    /** @type {WifiChoice} */ ({ selected: null, ssid: '', secure: false, password: '' }),
+  );
   const [joining, setJoining] = useState(null);
 
   // Plugins switched on by the last applied preset; another preset (or a custom machine) resets them first
-  const [presetPlugins, setPresetPlugins] = useState([]);
+  const [presetPlugins, setPresetPlugins] = useState(/** @type {string[]} */ ([]));
+  /** @param {MachineProfile | null | undefined} preset */
   const applyPresetPlugins = preset => {
     setConfigureLater(false);
     setMachineSaved(true);
@@ -162,6 +188,7 @@ export function SetupWizard() {
   };
 
   const stepIds = setupSteps(offerWifi, configureLater);
+  /** @type {Record<string, string>} */
   const stepLabels = {
     tests: t`Testing`,
     machine: t`Machine`,

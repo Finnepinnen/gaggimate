@@ -1,4 +1,10 @@
 // Save only the changed Smart Dose setting; other Settings edits remain drafts.
+/**
+ * @param {string} key
+ * @param {unknown} value
+ * @param {typeof fetch} [fetcher]
+ * @returns {Promise<import('./settingsRequest.js').SettingsResponse>}
+ */
 export async function saveSmartDoseSetting(key, value, fetcher = fetch) {
   if (
     ![
@@ -25,6 +31,10 @@ export async function saveSmartDoseSetting(key, value, fetcher = fetch) {
 
 // Match the coordinator's configuration rules. Derive from saved settings so
 // availability updates after autosave even with the plugin disabled or offline.
+/**
+ * @param {Record<string, any>} settings
+ * @param {boolean} [hardwareSupported]
+ */
 export function smartDoseModes(settings, hardwareSupported = true) {
   const cup = Number(settings.dosingCupWeight || 0);
   const pf = Number(settings.portafilterWeight || 0);
@@ -46,6 +56,7 @@ export function smartDoseModes(settings, hardwareSupported = true) {
     cupConfigured &&
     portafilterConfigured &&
     (cupHardware !== pfHardware || (cup < pf && cup + 1.2 < pf + 5 - 0.2));
+  /** @type {Record<string, boolean>} */
   const allowed = {
     cup: cupConfigured,
     portafilter: portafilterConfigured,

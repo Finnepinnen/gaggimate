@@ -8,10 +8,25 @@ import {
   getAnalyzerTextButtonClasses,
 } from '../analyzerControlStyles';
 
+/**
+ * @typedef {object} LibraryAction
+ * @property {string} label
+ * @property {import('@fortawesome/fontawesome-svg-core').IconDefinition} icon
+ * @property {import('../analyzerControlStyles').AnalyzerControlTone} [tone]
+ * @property {string} [href] Renders the action as a link.
+ * @property {() => void} [onSelect]
+ */
+
 const MENU_WIDTH = 176;
 const MENU_GAP = 8;
 const VIEWPORT_MARGIN = 12;
 
+/**
+ * @param {Element | null} anchor
+ * @param {number} actionCount
+ * @param {'top' | 'bottom'} preferredPlacement
+ * @returns {import('../types').MenuPosition}
+ */
 function getMenuPosition(anchor, actionCount, preferredPlacement) {
   if (!anchor) return { top: VIEWPORT_MARGIN, left: VIEWPORT_MARGIN, width: MENU_WIDTH };
 
@@ -40,6 +55,13 @@ function getMenuPosition(anchor, actionCount, preferredPlacement) {
   };
 }
 
+/**
+ * @param {object} props
+ * @param {LibraryAction[]} props.actions
+ * @param {string} props.ariaLabel
+ * @param {string} [props.buttonClassName]
+ * @param {'top' | 'bottom'} [props.placement]
+ */
 export function LibraryActionsMenu({ actions, ariaLabel, buttonClassName, placement = 'bottom' }) {
   const { t } = useLingui();
   const [isOpen, setIsOpen] = useState(false);
@@ -48,7 +70,9 @@ export function LibraryActionsMenu({ actions, ariaLabel, buttonClassName, placem
     left: VIEWPORT_MARGIN,
     width: MENU_WIDTH,
   });
+  /** @type {import('preact').RefObject<HTMLDetailsElement>} */
   const detailsRef = useRef(null);
+  /** @type {import('preact').RefObject<HTMLDivElement>} */
   const menuRef = useRef(null);
 
   const closeMenu = useCallback(() => {
@@ -62,12 +86,15 @@ export function LibraryActionsMenu({ actions, ariaLabel, buttonClassName, placem
   useEffect(() => {
     if (!isOpen) return;
 
+    /** @param {PointerEvent} event */
     const handlePointerDown = event => {
-      if (detailsRef.current?.contains(event.target) || menuRef.current?.contains(event.target)) {
+      const target = /** @type {Node | null} */ (event.target);
+      if (detailsRef.current?.contains(target) || menuRef.current?.contains(target)) {
         return;
       }
       closeMenu();
     };
+    /** @param {KeyboardEvent} event */
     const handleKeyDown = event => {
       if (event.key === 'Escape') closeMenu();
     };
@@ -85,6 +112,10 @@ export function LibraryActionsMenu({ actions, ariaLabel, buttonClassName, placem
     };
   }, [closeMenu, isOpen, updateMenuPosition]);
 
+  /**
+   * @param {Event} event
+   * @param {(() => void) | undefined} onSelect
+   */
   const handleAction = (event, onSelect) => {
     event.stopPropagation();
     closeMenu();
@@ -146,11 +177,13 @@ export function LibraryActionsMenu({ actions, ariaLabel, buttonClassName, placem
   return (
     <details
       ref={detailsRef}
-      onToggle={event => {
-        const open = event.currentTarget.open;
-        if (open) updateMenuPosition();
-        setIsOpen(open);
-      }}
+      onToggle={
+        /** @param {import('preact').JSX.TargetedEvent<HTMLDetailsElement, Event>} event */ event => {
+          const open = event.currentTarget.open;
+          if (open) updateMenuPosition();
+          setIsOpen(open);
+        }
+      }
     >
       <summary
         onClick={event => event.stopPropagation()}

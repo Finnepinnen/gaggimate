@@ -4,6 +4,14 @@ import { STATISTICS_SECTION_TITLE_CLASS } from './statisticsUi';
 
 const STATISTICS_COMPARE_PANEL_CLASS = 'app-card-surface rounded-xl';
 
+/**
+ * @param {object} props
+ * @param {import('../types').StatisticsCompareEntry[]} props.compareEntries
+ * @param {import('../../ShotAnalyzer/utils/constants').CompareTargetDisplayMode} props.compareTargetDisplayMode
+ * @param {(mode: import('../../ShotAnalyzer/utils/constants').CompareTargetDisplayMode) => void} props.onCompareTargetDisplayModeChange
+ * @param {boolean} [props.showTitle]
+ * @param {boolean} [props.embedded]
+ */
 export function StatisticsShotCompareSection({
   compareEntries,
   compareTargetDisplayMode,

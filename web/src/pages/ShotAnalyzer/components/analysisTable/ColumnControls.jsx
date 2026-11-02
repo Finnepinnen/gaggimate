@@ -32,6 +32,14 @@ import {
   getAnalyzerTextButtonClasses,
 } from '../analyzerControlStyles';
 
+/**
+ * @typedef {object} ColumnPreset
+ * @property {string} id
+ * @property {string} name
+ * @property {string[]} columns
+ */
+
+/** @type {Record<string, string>} */
 const BUILT_IN_PRESET_IDS = {
   ALL_METRICS: 'ALL_METRICS',
   SYSTEM_INFO: 'SYSTEM_INFO',
@@ -45,6 +53,13 @@ const COLUMN_GROUP_HEADER_CLASS =
   'border-base-content/10 text-base-content col-span-2 mb-1.5 border-b pb-1 text-xs leading-tight font-medium tracking-normal normal-case';
 const COLUMN_OPTION_TEXT_CLASS = 'text-base-content/90 leading-tight font-medium tracking-normal';
 
+/**
+ * @param {object} props
+ * @param {Set<string>} props.activeColumns
+ * @param {(columns: Set<string>) => void} props.onColumnsChange
+ * @param {boolean} [props.isIntegrated]
+ * @param {import('preact').ComponentChildren} [props.headerChildren]
+ */
 export function ColumnControls({
   activeColumns,
   onColumnsChange,
@@ -53,7 +68,7 @@ export function ColumnControls({
 }) {
   const { t } = useLingui();
   const [expanded, setExpanded] = useState(false);
-  const [presets, setPresets] = useState([]);
+  const [presets, setPresets] = useState(/** @type {ColumnPreset[]} */ ([]));
   const [selectedPresetId, setSelectedPresetId] = useState('');
 
   // Load custom presets on mount
@@ -65,6 +80,8 @@ export function ColumnControls({
 
   /**
    * Toggle individual column visibility
+   * @param {string} columnId
+   * @param {boolean} checked
    */
   const toggleColumn = (columnId, checked) => {
     const newColumns = new Set(activeColumns);
@@ -77,6 +94,7 @@ export function ColumnControls({
 
   // --- Action Handlers ---
 
+  /** @param {Event} e */
   const applyStandard = e => {
     e.stopPropagation(); // Prevent closing if called from header
     const userStandard = loadFromStorage(ANALYZER_DB_KEYS.USER_STANDARD);
@@ -116,6 +134,7 @@ export function ColumnControls({
     setSelectedPresetId(newPreset.id);
   };
 
+  /** @param {Event} e */
   const deletePreset = e => {
     e.stopPropagation();
     if (!selectedPresetId || Object.values(BUILT_IN_PRESET_IDS).includes(selectedPresetId)) return;
@@ -128,6 +147,7 @@ export function ColumnControls({
 
   /**
    * Helper to format detailed technical labels
+   * @param {import('../../utils/columns.js').AnalyzerColumn} col
    */
   const getDetailedLabel = col => {
     let suffix = '';
@@ -202,20 +222,22 @@ export function ColumnControls({
               <div className='relative flex h-8 min-h-0 items-center'>
                 <select
                   value={selectedPresetId}
-                  onChange={e => {
-                    const val = e.currentTarget.value;
-                    if (val === BUILT_IN_PRESET_IDS.ALL_METRICS) {
-                      applyAll();
-                    } else if (val === BUILT_IN_PRESET_IDS.SYSTEM_INFO) {
-                      applySystemInfo();
-                    } else {
-                      const p = presets.find(x => x.id === val);
-                      if (p) {
-                        onColumnsChange(new Set(p.columns));
-                        setSelectedPresetId(p.id);
+                  onChange={
+                    /** @param {import('preact').JSX.TargetedEvent<HTMLSelectElement, Event>} e */ e => {
+                      const val = e.currentTarget.value;
+                      if (val === BUILT_IN_PRESET_IDS.ALL_METRICS) {
+                        applyAll();
+                      } else if (val === BUILT_IN_PRESET_IDS.SYSTEM_INFO) {
+                        applySystemInfo();
+                      } else {
+                        const p = presets.find(x => x.id === val);
+                        if (p) {
+                          onColumnsChange(new Set(p.columns));
+                          setSelectedPresetId(p.id);
+                        }
                       }
                     }
-                  }}
+                  }
                   onClick={e => e.stopPropagation()}
                   className={getAnalyzerSurfaceTriggerClasses({
                     className: TABLE_TOOLBAR_SELECT_CLASS,
@@ -278,7 +300,9 @@ export function ColumnControls({
               return (
                 <div key={groupKey} className='border-base-content/10 rounded-md border p-2.5'>
                   <div className='grid grid-cols-[minmax(0,1fr)_auto] gap-x-3'>
-                    <h4 className={COLUMN_GROUP_HEADER_CLASS}>{groups[groupKey]}</h4>
+                    <h4 className={COLUMN_GROUP_HEADER_CLASS}>
+                      {/** @type {Record<string, string>} */ (groups)[groupKey]}
+                    </h4>
 
                     <div className='min-w-0'>
                       <div className='space-y-1'>

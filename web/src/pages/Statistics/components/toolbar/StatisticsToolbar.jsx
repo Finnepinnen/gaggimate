@@ -39,6 +39,61 @@ import {
 
 export { STATISTICS_RUN_BUTTON_TONE_CLASS };
 
+/**
+ * @typedef {import('../../types').StatisticsSourceSelection} StatisticsSourceSelection
+ * @typedef {import('../../types').StatisticsMode} StatisticsMode
+ * @typedef {import('../../types').StatisticsDetailSection} StatisticsDetailSection
+ * @typedef {import('../../types').DateBasisMode} DateBasisMode
+ * @typedef {import('../../types').StatisticsQueryIssue} StatisticsQueryIssue
+ * @typedef {import('../../types').ProfileSelectionItem} ProfileSelectionItem
+ * @typedef {import('../../types').ShotSelectionItem} ShotSelectionItem
+ */
+
+/**
+ * @param {object} props
+ * @param {StatisticsSourceSelection} props.shotSource
+ * @param {(source: StatisticsSourceSelection) => void} props.onShotSourceChange
+ * @param {StatisticsSourceSelection} props.profileSource
+ * @param {(source: StatisticsSourceSelection) => void} props.onProfileSourceChange
+ * @param {StatisticsMode} props.mode
+ * @param {(mode: StatisticsMode) => void} props.onModeChange
+ * @param {(options?: { preferredDetailSection?: StatisticsDetailSection | null }) => void} props.onGo
+ * @param {boolean} [props.startLoading]
+ * @param {boolean} [props.loading]
+ * @param {boolean} [props.metadataLoading]
+ * @param {boolean} [props.canGo]
+ * @param {ProfileSelectionItem[]} props.profileSelectionItems
+ * @param {string[]} props.selectedProfileNames
+ * @param {(names: string[]) => void} props.onSelectedProfileNamesChange
+ * @param {(item: ProfileSelectionItem) => void} props.onProfilePinToggle
+ * @param {ShotSelectionItem[]} props.shotSelectionItems
+ * @param {string[]} props.selectedShotKeys
+ * @param {(keys: string[]) => void} props.onSelectedShotKeysChange
+ * @param {(item: ShotSelectionItem) => void} props.onShotPinToggle
+ * @param {string} props.query
+ * @param {(query: string) => void} props.onQueryChange
+ * @param {string} props.dateFromLocal
+ * @param {string} [props.dateFromPreviewLocal]
+ * @param {(value: string) => void} props.onDateFromChange
+ * @param {string} props.dateToLocal
+ * @param {string} [props.dateToPreviewLocal]
+ * @param {(value: string) => void} props.onDateToChange
+ * @param {DateBasisMode} props.dateBasisMode
+ * @param {(mode: DateBasisMode) => void} props.onDateBasisModeChange
+ * @param {boolean} [props.showDateBasisWarning]
+ * @param {string | null} [props.dateBasisWarningMessage]
+ * @param {number | null} props.candidateCount - null while unknown
+ * @param {StatisticsQueryIssue[]} [props.parseErrors]
+ * @param {StatisticsQueryIssue[]} [props.parseWarnings]
+ * @param {() => void} props.onClearFilters
+ * @param {string | null} [props.metadataError]
+ * @param {string | null} [props.selectionHint]
+ * @param {boolean} [props.hasBuiltStatistics]
+ * @param {number} [props.builtShotCount]
+ * @param {number} [props.builtProfileCount]
+ * @param {number | null} [props.builtDateRangeStartMs]
+ * @param {number | null} [props.builtDateRangeEndMs]
+ */
 export function StatisticsToolbar({
   shotSource,
   onShotSourceChange,
@@ -87,8 +142,8 @@ export function StatisticsToolbar({
   const [showDslSelectionPreview, setShowDslSelectionPreview] = useState(
     () => !!String(query || '').trim(),
   );
-  const dslInputRef = useRef(null);
-  const toolbarContainerRef = useRef(null);
+  const dslInputRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const toolbarContainerRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const [isCollapsedStripExpanded, setIsCollapsedStripExpanded] = useState(false);
 
   const isBusy = startLoading || loading || metadataLoading;

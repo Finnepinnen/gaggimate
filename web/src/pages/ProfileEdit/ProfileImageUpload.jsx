@@ -15,11 +15,13 @@ import { Trans, useLingui } from '@lingui/react/macro';
 
 const sdCard = computed(() => !!machine.value.capabilities.sdCard);
 
+/** @param {{ profileId: string | undefined }} props */
 export function ProfileImageUpload({ profileId }) {
   const { t } = useLingui();
-  const [preview, setPreview] = useState(null);
+  const [preview, setPreview] = useState(/** @type {string | null} */ (null));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  /** @type {import('preact').RefObject<HTMLInputElement>} */
   const inputRef = useRef(null);
   const hasSdCard = sdCard.value;
 
@@ -37,6 +39,7 @@ export function ProfileImageUpload({ profileId }) {
   }, [profileId, hasSdCard]);
 
   const onFile = useCallback(
+    /** @param {import('./types').FieldEvent} e */
     async e => {
       const file = e.target.files?.[0];
       e.target.value = '';

@@ -34,12 +34,16 @@ import { withTranslatedLabel } from './translatedLabel.js';
  * @property {boolean} required
  * @property {(ds: MetricSource) => boolean} available
  * @property {(ds: MetricSource) => string} getValue
- * @property {(ds: MetricSource) => string | null} getTarget
+ * @property {(ds: MetricSource) => string | null} [getTarget]
  * @property {string} [unit]
  * @property {(ds: MetricSource) => boolean} adjustable
  * @property {(ds: MetricSource) => boolean} [disabled]
  * @property {(ds: MetricSource) => (() => void) | undefined} [onDecrease]
  * @property {(ds: MetricSource) => (() => void) | undefined} [onIncrease]
+ * @property {(ds: MetricSource) => (() => void) | undefined} [onClick] Makes the whole cell a button.
+ * @property {(ds: MetricSource) => boolean} [active] Highlights the cell.
+ * @property {(ds: MetricSource) => string | null} [hint] Small text under the value.
+ * @property {(ds: MetricSource) => string | undefined} [ariaLabel] Accessible label of the cell button.
  */
 
 export const METRIC_DEFINITIONS = /** @type {MetricDefinition[]} */ ([

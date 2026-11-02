@@ -6,33 +6,51 @@ import { faEdit } from '@fortawesome/free-solid-svg-icons/faEdit';
 import { faSave } from '@fortawesome/free-solid-svg-icons/faSave';
 import { Trans, useLingui } from '@lingui/react/macro';
 
+/** @typedef {import('../../types').Shot} Shot */
+/** @typedef {import('../../types').ShotNotes} ShotNotes */
+
+/**
+ * @param {object} props
+ * @param {Pick<Shot, 'id' | 'volume'>} props.shot
+ * @param {(notes: ShotNotes) => void} [props.onNotesUpdate]
+ * @param {(notes: ShotNotes) => void} [props.onNotesLoaded]
+ */
 export default function ShotNotesCard({ shot, onNotesUpdate, onNotesLoaded }) {
   const { t } = useLingui();
   const apiService = useContext(ApiServiceContext);
 
-  const [notes, setNotes] = useState({
-    id: shot.id,
-    rating: 0,
-    beanType: '',
-    doseIn: '',
-    doseOut: '',
-    ratio: '',
-    grindSetting: '',
-    balanceTaste: 'balanced',
-    notes: '',
-  });
+  const [notes, setNotes] = useState(
+    /** @type {ShotNotes} */ ({
+      id: shot.id,
+      rating: 0,
+      beanType: '',
+      doseIn: '',
+      doseOut: '',
+      ratio: '',
+      grindSetting: '',
+      balanceTaste: 'balanced',
+      notes: '',
+    }),
+  );
 
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [initialLoaded, setInitialLoaded] = useState(false);
 
   // Calculate ratio function
-  const calculateRatio = useCallback((doseIn, doseOut) => {
-    if (doseIn && doseOut && parseFloat(doseIn) > 0 && parseFloat(doseOut) > 0) {
-      return (parseFloat(doseOut) / parseFloat(doseIn)).toFixed(2);
-    }
-    return '';
-  }, []);
+  const calculateRatio = useCallback(
+    /**
+     * @param {string | undefined} doseIn
+     * @param {string | undefined} doseOut
+     */
+    (doseIn, doseOut) => {
+      if (doseIn && doseOut && parseFloat(doseIn) > 0 && parseFloat(doseOut) > 0) {
+        return (parseFloat(doseOut) / parseFloat(doseIn)).toFixed(2);
+      }
+      return '';
+    },
+    [],
+  );
 
   // Load notes ONLY on component mount
   useEffect(() => {
@@ -45,6 +63,7 @@ export default function ShotNotesCard({ shot, onNotesUpdate, onNotesLoaded }) {
           id: shot.id,
         });
 
+        /** @type {ShotNotes} */
         let loadedNotes = {
           id: shot.id,
           rating: 0,
@@ -93,6 +112,7 @@ export default function ShotNotesCard({ shot, onNotesUpdate, onNotesLoaded }) {
         console.error('Failed to load notes:', error);
 
         // Even if loading fails, set up defaults
+        /** @type {ShotNotes} */
         const defaultNotes = {
           id: shot.id,
           rating: 0,
@@ -143,14 +163,18 @@ export default function ShotNotesCard({ shot, onNotesUpdate, onNotesLoaded }) {
     }
   };
 
+  /**
+   * @param {keyof ShotNotes} field
+   * @param {string | number} value
+   */
   const handleInputChange = (field, value) => {
     setNotes(prev => {
       const newNotes = { ...prev, [field]: value };
 
       // Only recalculate ratio if we're changing doseIn or doseOut
       if ((field === 'doseIn' || field === 'doseOut') && initialLoaded) {
-        const doseIn = field === 'doseIn' ? value : prev.doseIn;
-        const doseOut = field === 'doseOut' ? value : prev.doseOut;
+        const doseIn = field === 'doseIn' ? /** @type {string} */ (value) : prev.doseIn;
+        const doseOut = field === 'doseOut' ? /** @type {string} */ (value) : prev.doseOut;
         newNotes.ratio = calculateRatio(doseIn, doseOut);
       }
 
@@ -158,6 +182,10 @@ export default function ShotNotesCard({ shot, onNotesUpdate, onNotesLoaded }) {
     });
   };
 
+  /**
+   * @param {number} rating
+   * @param {boolean} [editable]
+   */
   const renderStars = (rating, editable = false) => {
     const stars = [];
     for (let i = 1; i <= 5; i++) {
@@ -178,6 +206,7 @@ export default function ShotNotesCard({ shot, onNotesUpdate, onNotesLoaded }) {
     return stars;
   };
 
+  /** @param {string | undefined} taste */
   const getTasteColor = taste => {
     switch (taste) {
       case 'bitter':
@@ -192,6 +221,7 @@ export default function ShotNotesCard({ shot, onNotesUpdate, onNotesLoaded }) {
   };
 
   const ratioLabel = notes.ratio || '—';
+  /** @type {Record<string, string>} */
   const tasteLabels = { bitter: t`Bitter`, balanced: t`Balanced`, sour: t`Sour` };
 
   // Don't render until initial load is complete

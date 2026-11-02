@@ -7,6 +7,7 @@ import SmartDoseModeSelector from '../../components/SmartDoseModeSelector.jsx';
 import { ApiServiceContext, machine, getCachedSettings } from '../../services/ApiService.js';
 
 const EXPANSION_KEY = 'smartDoseAccessoryExpansion';
+/** @returns {Record<string, boolean>} */
 function initialExpansion() {
   try {
     return {
@@ -19,15 +20,28 @@ function initialExpansion() {
   }
 }
 
+/**
+ * @param {object} props
+ * @param {import('./types').SettingsFormData} props.formData
+ * @param {import('./types').SettingSavedHandler} props.onSaved
+ * @param {(saving: boolean) => void} props.onSaving
+ * @param {boolean} [props.disabled]
+ */
 export default function SmartDoseSettings({ formData, onSaved, onSaving, disabled = false }) {
   const api = useContext(ApiServiceContext);
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
-  const [calibrating, setCalibrating] = useState(null);
-  const [feedback, setFeedback] = useState({});
+  const [calibrating, setCalibrating] = useState(/** @type {string | null} */ (null));
+  const [feedback, setFeedback] = useState(
+    /** @type {Record<string, { ok: boolean, text: string } | null>} */ ({}),
+  );
   const [expanded, setExpanded] = useState(initialExpansion);
   const hardwareSupported = !!machine.value.capabilities.hardwareScale;
   const modes = smartDoseModes(formData, hardwareSupported);
+  /**
+   * @param {string} accessory
+   * @param {boolean} value
+   */
   const changeExpansion = (accessory, value) => {
     setExpanded(previous => {
       const next = { ...previous, [accessory]: value };
@@ -39,6 +53,10 @@ export default function SmartDoseSettings({ formData, onSaved, onSaving, disable
       return next;
     });
   };
+  /**
+   * @param {string} key
+   * @param {string | boolean} value
+   */
   const saveValue = async (key, value) => {
     setBusy(true);
     onSaving(true);
@@ -46,7 +64,10 @@ export default function SmartDoseSettings({ formData, onSaved, onSaving, disable
       const settings = await saveSmartDoseSetting(key, value);
       onSaved(key, settings[key], settings);
       if (key === 'dosingCupEnabled' || key === 'portafilterEnabled')
-        changeExpansion(key === 'dosingCupEnabled' ? 'cup' : 'portafilter', value);
+        changeExpansion(
+          key === 'dosingCupEnabled' ? 'cup' : 'portafilter',
+          /** @type {boolean} */ (value),
+        );
       setMessage(key === 'smartDoseActive' ? 'Saved. Restart to apply.' : 'Saved automatically.');
     } catch {
       setMessage('Could not save. Check the connection and try again.');
@@ -55,11 +76,15 @@ export default function SmartDoseSettings({ formData, onSaved, onSaving, disable
       onSaving(false);
     }
   };
-  const save = key => e =>
-    saveValue(
-      key,
-      e.currentTarget.type === 'checkbox' ? e.currentTarget.checked : e.currentTarget.value,
-    );
+  /** @param {string} key */
+  const save =
+    key =>
+    /** @param {import('preact').JSX.TargetedEvent<HTMLInputElement | HTMLSelectElement, Event>} e */ e =>
+      saveValue(
+        key,
+        e.currentTarget.type === 'checkbox' ? e.currentTarget.checked : e.currentTarget.value,
+      );
+  /** @param {string} accessory */
   const calibrate = async accessory => {
     setBusy(true);
     setCalibrating(accessory);

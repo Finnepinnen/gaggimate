@@ -1,6 +1,10 @@
 // Water tank calibration helpers. Kept free of Lingui and DOM so they can be unit tested.
 
 // Distances are stored by the firmware as whole millimetres; 0 is valid (e.g. a full tank right at the sensor).
+/**
+ * @param {unknown} value
+ * @returns {number | null}
+ */
 export function parseTankDistance(value) {
   if (value === null || value === undefined) return null;
   if (typeof value === 'string' && value.trim() === '') return null;
@@ -9,6 +13,11 @@ export function parseTankDistance(value) {
 }
 
 // Per-field error codes: 'invalid' (blank, non-numeric, negative, fractional) or 'order' (empty must exceed full).
+/**
+ * @param {unknown} emptyDistance
+ * @param {unknown} fullDistance
+ * @returns {{ empty: 'invalid' | 'order' | null, full: 'invalid' | null }}
+ */
 export function validateTankCalibration(emptyDistance, fullDistance) {
   const empty = parseTankDistance(emptyDistance);
   const full = parseTankDistance(fullDistance);
@@ -19,6 +28,10 @@ export function validateTankCalibration(emptyDistance, fullDistance) {
 }
 
 // Returns 0-100, or null when the calibration or the reading can't produce a level.
+/**
+ * @param {{ empty: unknown, full: unknown, distance: unknown }} reading
+ * @returns {number | null}
+ */
 export function computeWaterLevel({ empty, full, distance }) {
   const errors = validateTankCalibration(empty, full);
   if (errors.empty || errors.full) return null;

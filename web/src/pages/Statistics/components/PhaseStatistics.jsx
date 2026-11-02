@@ -12,6 +12,11 @@ import {
   STATISTICS_TABLE_NUMBER_CLASS,
 } from './statisticsUi';
 
+/**
+ * @typedef {import('../types').PhaseStatsRow} PhaseStatsRow
+ * @typedef {import('../types').TargetDelta} TargetDelta
+ */
+
 const DELTA_COLOR = 'var(--analyzer-pred-info-blue)';
 const EXIT_REASON_UNKNOWN_STYLE = {
   color: 'color-mix(in srgb, var(--color-base-content) 72%, transparent)',
@@ -19,6 +24,7 @@ const EXIT_REASON_UNKNOWN_STYLE = {
   background: 'var(--statistics-summary-surface-muted)',
 };
 
+/** @param {string} reason */
 function getExitReasonAccent(reason) {
   const normalized = String(reason || '')
     .trim()
@@ -34,6 +40,7 @@ function getExitReasonAccent(reason) {
   return null;
 }
 
+/** @param {string} reason */
 function getExitReasonBadgeStyle(reason) {
   const accentColor = getExitReasonAccent(reason);
   if (!accentColor) return EXIT_REASON_UNKNOWN_STYLE;
@@ -45,12 +52,14 @@ function getExitReasonBadgeStyle(reason) {
   };
 }
 
+/** @param {number} val */
 function fmtDelta(val) {
   if (!Number.isFinite(val)) return null;
   const sign = val >= 0 ? '+' : '';
   return `${sign}${val.toFixed(1)}`;
 }
 
+/** @param {{ entry: TargetDelta | undefined, unit: string }} props */
 function TargetDeltaCell({ entry, unit }) {
   if (!entry) return <td className={STATISTICS_TABLE_NUMBER_CLASS}>-</td>;
   return (
@@ -61,9 +70,11 @@ function TargetDeltaCell({ entry, unit }) {
   );
 }
 
+/** @param {{ phase: PhaseStatsRow, hideExitReasons?: boolean }} props */
 function PhaseSection({ phase, hideExitReasons = false }) {
   const { t } = useLingui();
   const [open, setOpen] = useState(phase.isTotal || false);
+  /** @type {Partial<Record<string, TargetDelta>>} */
   const td = phase.targetDeltas || {};
   const phaseLabel = phase.isTotal ? t`Total` : phase.phaseName;
   const durationTarget = td.duration ? fmt(td.duration.target) : '';
@@ -153,31 +164,33 @@ function PhaseSection({ phase, hideExitReasons = false }) {
                 </tr>
               </thead>
               <tbody>
-                {[
-                  { key: 'p', label: t`Pressure`, unit: 'bar' },
-                  { key: 'f', label: t`Pump Flow`, unit: 'ml/s' },
-                  { key: 'pf', label: t`Puck Flow`, unit: 'ml/s' },
-                  {
-                    key: 't',
-                    label: t({ message: 'Temp', context: 'temperature' }),
-                    unit: '\u2103',
-                  },
-                  { key: 'w', label: t`Weight`, unit: 'g' },
-                ].map(row => {
-                  const m = phase.metrics[row.key];
-                  if (!m) return null;
-                  return (
-                    <tr key={row.key}>
-                      <td className='font-semibold'>
-                        {row.label} <span className='opacity-50'>({row.unit})</span>
-                      </td>
-                      <td className={STATISTICS_TABLE_NUMBER_CLASS}>{fmt(m.avg)}</td>
-                      <td className={STATISTICS_TABLE_NUMBER_CLASS}>{fmt(m.min)}</td>
-                      <td className={STATISTICS_TABLE_NUMBER_CLASS}>{fmt(m.max)}</td>
-                      <TargetDeltaCell entry={td[row.key]} unit={row.unit} />
-                    </tr>
-                  );
-                })}
+                {
+                  /** @type {{ key: 'p' | 'f' | 'pf' | 't' | 'w', label: string, unit: string }[]} */ ([
+                    { key: 'p', label: t`Pressure`, unit: 'bar' },
+                    { key: 'f', label: t`Pump Flow`, unit: 'ml/s' },
+                    { key: 'pf', label: t`Puck Flow`, unit: 'ml/s' },
+                    {
+                      key: 't',
+                      label: t({ message: 'Temp', context: 'temperature' }),
+                      unit: '\u2103',
+                    },
+                    { key: 'w', label: t`Weight`, unit: 'g' },
+                  ]).map(row => {
+                    const m = phase.metrics[row.key];
+                    if (!m) return null;
+                    return (
+                      <tr key={row.key}>
+                        <td className='font-semibold'>
+                          {row.label} <span className='opacity-50'>({row.unit})</span>
+                        </td>
+                        <td className={STATISTICS_TABLE_NUMBER_CLASS}>{fmt(m.avg)}</td>
+                        <td className={STATISTICS_TABLE_NUMBER_CLASS}>{fmt(m.min)}</td>
+                        <td className={STATISTICS_TABLE_NUMBER_CLASS}>{fmt(m.max)}</td>
+                        <TargetDeltaCell entry={td[row.key]} unit={row.unit} />
+                      </tr>
+                    );
+                  })
+                }
               </tbody>
             </table>
           </div>
@@ -208,6 +221,12 @@ function PhaseSection({ phase, hideExitReasons = false }) {
   );
 }
 
+/**
+ * @param {object} props
+ * @param {PhaseStatsRow[]} props.phaseStats
+ * @param {boolean} [props.showTitle]
+ * @param {boolean} [props.hideExitReasons]
+ */
 export function PhaseStatistics({ phaseStats, showTitle = true, hideExitReasons = false }) {
   if (!phaseStats || phaseStats.length === 0) return null;
 

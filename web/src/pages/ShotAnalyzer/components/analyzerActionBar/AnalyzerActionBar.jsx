@@ -18,6 +18,33 @@ import {
 } from './actionBarState';
 import { useAnalyzerActionBarLoadIndicator } from './useActionBarLoadIndicator';
 
+/** @typedef {import('../types').LibraryItem} LibraryItem */
+/** @typedef {import('../types').ImportMode} ImportMode */
+
+/**
+ * @typedef {object} AnalyzerActionBarProps
+ * @property {LibraryItem | null} [currentShot]
+ * @property {LibraryItem | null} [selectedShot]
+ * @property {LibraryItem[]} [shotList]
+ * @property {(request: import('../types').LibraryShotSelectRequest) => void} [onNavigate]
+ * @property {() => void} [onCompareModeToggle]
+ * @property {boolean} [compareAvailable]
+ * @property {boolean} [compareMode]
+ * @property {boolean} [showCompareButton]
+ * @property {() => void} [onShowStats]
+ * @property {string} [statsHref]
+ * @property {boolean} [statisticsAvailable]
+ * @property {(files: File[]) => void} [onImport]
+ * @property {boolean} [isImporting]
+ * @property {ImportMode} [importMode]
+ * @property {(mode: ImportMode) => void} [onImportModeChange]
+ * @property {boolean} [isSelectionPending]
+ * @property {boolean} [isProfilePending]
+ * @property {boolean} [showImportModeToggle]
+ * @property {boolean} [enableKeyboardNavigation]
+ */
+
+/** @param {AnalyzerActionBarProps} props */
 export function AnalyzerActionBar({
   currentShot,
   selectedShot = null,
@@ -39,6 +66,7 @@ export function AnalyzerActionBar({
   showImportModeToggle = true,
   enableKeyboardNavigation = true,
 }) {
+  /** @type {import('preact').RefObject<HTMLInputElement>} */
   const fileInputRef = useRef(null);
   const {
     modeButtonRef,
@@ -62,6 +90,10 @@ export function AnalyzerActionBar({
   });
 
   const handleNavigateToIndex = useCallback(
+    /**
+     * @param {number} targetIndex
+     * @param {number} direction
+     */
     (targetIndex, direction) => {
       if (targetIndex < 0 || targetIndex >= shotList.length) return;
       onNavigate?.({
@@ -87,6 +119,7 @@ export function AnalyzerActionBar({
   useEffect(() => {
     if (!displayShot || !enableKeyboardNavigation) return;
 
+    /** @param {KeyboardEvent} e */
     const handleKeyDown = e => {
       if (e.defaultPrevented) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -122,6 +155,7 @@ export function AnalyzerActionBar({
       'btn btn-sm btn-ghost h-8 min-h-0 flex-shrink-0 gap-1.5 rounded-lg px-2.5 text-sm font-medium hover:opacity-100',
   });
 
+  /** @param {Event} event */
   const handleImportClick = event => {
     event.preventDefault();
     event.stopPropagation();
@@ -132,11 +166,13 @@ export function AnalyzerActionBar({
     }
   };
 
+  /** @param {import('preact').JSX.TargetedEvent<HTMLInputElement, Event>} event */
   const handleFileSelect = event => {
-    const files = Array.from(event.target.files || []);
+    const input = /** @type {HTMLInputElement} */ (event.target);
+    const files = Array.from(input.files || []);
     if (files.length > 0) {
       onImport?.(files);
-      event.target.value = '';
+      input.value = '';
     }
   };
 

@@ -22,6 +22,8 @@ import {
   PROFILE_FIELDS,
 } from '../utils/machineProfiles.js';
 
+/** @typedef {import('../utils/machineProfiles.js').MachineProfile} MachineProfile */
+
 // The wizard and Machine tab deliberately share the same catalog and import/apply behavior.
 /**
  * @param {object} props
@@ -29,7 +31,7 @@ import {
  * @param {(values: Record<string, any>) => void} props.setFields
  * @param {boolean} [props.wizard]
  * @param {boolean} [props.disabled]
- * @param {(profile: any) => void} [props.onProfileResolved]
+ * @param {(profile: MachineProfile | null) => void} [props.onProfileResolved]
  */
 export function MachineProfileControl({
   formData,
@@ -51,9 +53,11 @@ export function MachineProfileControl({
     refreshActive();
   }, [formData.machineProfileSelection]);
   const [error, setError] = useState('');
-  const [imported, setImported] = useState([]);
-  const [definitionHashes, setDefinitionHashes] = useState({});
-  const updateCatalog = useCallback(profiles => {
+  const [imported, setImported] = useState(/** @type {MachineProfile[]} */ ([]));
+  const [definitionHashes, setDefinitionHashes] = useState(
+    /** @type {Record<string, string>} */ ({}),
+  );
+  const updateCatalog = useCallback((/** @type {MachineProfile[]} */ profiles) => {
     if (!Array.isArray(profiles)) throw new Error('Invalid machine profile library response.');
     setDefinitionHashes(Object.fromEntries(profiles.map(profile => [profile.id, profile.hash])));
     setImported(
@@ -125,7 +129,9 @@ export function MachineProfileControl({
     profiles.push(selected || { id: selection.id, name: selection.id });
   // @ts-expect-error machine state has no hardware field, so this fallback is always undefined
   const controllerKnown = !!(formData.machineProfileBoard || machine.value.hardware);
+  /** @type {MachineProfile[]} */
   const compatibleProfiles = [];
+  /** @type {MachineProfile[]} */
   const incompatibleProfiles = [];
   profiles.sort((a, b) => a.name.localeCompare(b.name));
   for (const profile of profiles) {
@@ -148,6 +154,10 @@ export function MachineProfileControl({
     selected ? changedProfileValues(selected, currentValues).map(([key]) => key) : [],
   );
   const modified = selected && problems.length === 0 && !updated && changedKeys.size > 0;
+  /**
+   * @param {string} key
+   * @param {any} value
+   */
   const formatValue = (key, value) => {
     if (typeof value === 'boolean') return value ? t`Enabled` : t`Disabled`;
     if (PROFILE_FIELDS[key]?.options?.[value]) return PROFILE_FIELDS[key].options[value];
@@ -156,6 +166,7 @@ export function MachineProfileControl({
     return String(value);
   };
 
+  /** @param {string} id */
   const selectProfile = async id => {
     setBusy(true);
     try {
@@ -175,7 +186,7 @@ export function MachineProfileControl({
                 !!formData.machineHardwareConfiguration,
               ),
           )
-          .map(key => [key, undefined]),
+          .map(key => /** @type {[string, undefined]} */ ([key, undefined])),
       );
       setFields({
         ...unsupported,
@@ -187,6 +198,7 @@ export function MachineProfileControl({
       setBusy(false);
     }
   };
+  /** @param {import('preact').JSX.TargetedEvent<HTMLInputElement, Event>} event */
   const importProfile = async event => {
     const file = event.currentTarget.files?.[0];
     event.currentTarget.value = '';

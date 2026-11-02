@@ -1,18 +1,31 @@
 // Constants for StatisticsToolbar: source/mode/date options and run button tone class
 import { msg } from '@lingui/core/macro';
 
+/**
+ * @template {string} V
+ * @typedef {{ value: V, label: import('@lingui/core').MessageDescriptor }} ToolbarOption
+ */
+
 export const SOURCE_OPTIONS = [
-  { value: 'gaggimate', label: 'GM' },
-  { value: 'browser', label: msg({ message: 'WEB', context: 'shot source: browser storage' }) },
-  { value: 'both', label: msg({ message: 'ALL', context: 'shot source: all sources' }) },
+  { value: /** @type {const} */ ('gaggimate'), label: 'GM' },
+  {
+    value: /** @type {const} */ ('browser'),
+    label: msg({ message: 'WEB', context: 'shot source: browser storage' }),
+  },
+  {
+    value: /** @type {const} */ ('both'),
+    label: msg({ message: 'ALL', context: 'shot source: all sources' }),
+  },
 ];
 
+/** @type {ToolbarOption<import('../../types').StatisticsMode>[]} */
 export const MODE_OPTIONS = [
   { value: 'all', label: msg({ message: 'All', context: 'statistics mode' }) },
   { value: 'profile', label: msg`By Profile` },
   { value: 'shots', label: msg`By Shots` },
 ];
 
+/** @type {ToolbarOption<import('../../types').DateBasisMode>[]} */
 export const DATE_BASIS_OPTIONS = [
   { value: 'shot', label: msg({ message: 'Shot', context: 'date basis' }) },
   { value: 'auto', label: msg({ message: 'Auto', context: 'date basis' }) },
