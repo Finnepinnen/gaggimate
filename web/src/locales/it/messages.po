@@ -2965,6 +2965,10 @@ msgstr "Apri nell'analizzatore"
 msgid "Open library"
 msgstr "Apri libreria"
 
+#: src/index.jsx
+msgid "Open menu"
+msgstr ""
+
 #: src/pages/ShotAnalyzer/components/EmptyState.jsx
 msgid "Open or close the library."
 msgstr "Apri o chiudi la libreria."
@@ -3455,6 +3459,7 @@ msgid "Profile: {profileLabel}"
 msgstr "Profilo: {profileLabel}"
 
 #: src/components/Navigation.jsx
+#: src/pages/Home/cards/ProfileCard.jsx
 #: src/pages/ProfileList/index.jsx
 #: src/pages/ShotAnalyzer/components/library/LibraryDropdown.jsx
 #: src/pages/Statistics/components/toolbar/subcomponents.jsx

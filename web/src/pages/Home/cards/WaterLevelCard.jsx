@@ -16,7 +16,7 @@ export function WaterLevelCard({ waterLevelPercent, inCard = false }) {
       }
     >
       <div className='flex items-center justify-between'>
-        <div className='text-base-content/50 text-[0.6rem] font-semibold tracking-wider uppercase'>
+        <div className='text-base-content/70 text-[0.6rem] font-semibold tracking-wider uppercase'>
           <Trans>Water Tank</Trans>
         </div>
         <div className='text-info text-xs font-bold tabular-nums'>{pct}%</div>

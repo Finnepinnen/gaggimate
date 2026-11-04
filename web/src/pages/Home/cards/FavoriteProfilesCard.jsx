@@ -111,7 +111,7 @@ export function FavoriteProfilesCard({ selectedProfileId, inCard = false, compac
   if (favorites.length === 0) {
     return (
       <div className={wrapperClass}>
-        <div className='text-base-content/50 text-[0.6rem] tracking-wider uppercase'>
+        <div className='text-base-content/70 text-[0.6rem] tracking-wider uppercase'>
           <Trans>Quick Select</Trans>
         </div>
         <div className='text-base-content/50 flex flex-col items-center gap-1 py-3 text-center text-sm'>
@@ -156,7 +156,7 @@ export function FavoriteProfilesCard({ selectedProfileId, inCard = false, compac
 
   return (
     <div className={wrapperClass}>
-      <div className='text-base-content/50 text-[0.6rem] tracking-wider uppercase'>
+      <div className='text-base-content/70 text-[0.6rem] tracking-wider uppercase'>
         <Trans>Quick Select</Trans>
       </div>
       {content}
