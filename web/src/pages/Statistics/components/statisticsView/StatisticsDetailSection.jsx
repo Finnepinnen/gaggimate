@@ -1,6 +1,6 @@
 // Sub-components for the Statistics view detail section: header bar and panel body with metrics, profile groups, phase stats, trend chart, and compare
 import { useLingui } from '@lingui/react/macro';
-import { STATISTICS_PANEL_CLASS } from './constants';
+import { StatisticsPanel } from '../statisticsSurfaces.jsx';
 import { StatisticsShotCompareSection } from '../StatisticsShotCompareSection';
 import { MetricsTable } from '../MetricsTable';
 import { ProfileGroupTable } from '../ProfileGroupTable';
@@ -8,8 +8,22 @@ import { PhaseStatistics } from '../PhaseStatistics';
 import { TrendChart } from '../TrendChart';
 import { ActivityHeatmap } from '../ActivityHeatmap';
 
-const STATISTICS_SECTION_TITLE_CLASS = 'text-xs font-semibold uppercase tracking-widest opacity-90';
+/**
+ * @typedef {import('../../types').StatisticsDetailSection} StatisticsDetailSection
+ * @typedef {import('../../types').StatisticsResult} StatisticsResult
+ * @typedef {import('../../types').StatisticsCompareEntry} StatisticsCompareEntry
+ * @typedef {import('../../../ShotAnalyzer/utils/constants').CompareTargetDisplayMode} CompareTargetDisplayMode
+ * @typedef {{
+ *   hasMetricStatistics: boolean,
+ *   hasTrendStatistics: boolean,
+ *   hasPhaseStatistics: boolean,
+ *   hasProfileGroupStatistics: boolean,
+ *   resolvedStatisticsDetailSection: StatisticsDetailSection,
+ *   setStatisticsDetailSection: (section: StatisticsDetailSection) => void,
+ * }} DetailSectionState
+ */
 
+/** @param {DetailSectionState & { hasCompareStatistics: boolean }} props */
 function StatisticsDetailHeader({
   hasCompareStatistics,
   hasMetricStatistics,
@@ -20,13 +34,15 @@ function StatisticsDetailHeader({
   setStatisticsDetailSection,
 }) {
   const { t } = useLingui();
-  const availableTabs = [
-    hasMetricStatistics ? { id: 'metrics', label: t`Global metric averages` } : null,
-    hasTrendStatistics ? { id: 'trends', label: t`Trends` } : null,
-    hasCompareStatistics ? { id: 'compare', label: t`Shot Charts` } : null,
-    hasProfileGroupStatistics ? { id: 'profile', label: t`Per-profile statistics` } : null,
-    hasPhaseStatistics ? { id: 'phase', label: t`Per-phase statistics` } : null,
-  ].filter(Boolean);
+  const availableTabs = /** @type {{ id: StatisticsDetailSection, label: string }[]} */ (
+    [
+      hasMetricStatistics ? { id: 'metrics', label: t`Global metric averages` } : null,
+      hasTrendStatistics ? { id: 'trends', label: t`Trends` } : null,
+      hasCompareStatistics ? { id: 'compare', label: t`Shot Charts` } : null,
+      hasProfileGroupStatistics ? { id: 'profile', label: t`Per-profile statistics` } : null,
+      hasPhaseStatistics ? { id: 'phase', label: t`Per-phase statistics` } : null,
+    ].filter(Boolean)
+  );
 
   if (availableTabs.length > 1) {
     return (
@@ -48,9 +64,19 @@ function StatisticsDetailHeader({
   }
 
   const title = availableTabs[0]?.label || t`Statistics`;
-  return <h3 className={STATISTICS_SECTION_TITLE_CLASS}>{title}</h3>;
+  return <h3 className='text-xs font-semibold tracking-widest uppercase opacity-90'>{title}</h3>;
 }
 
+/**
+ * @param {DetailSectionState & {
+ *   compareEntries: StatisticsCompareEntry[],
+ *   compareTargetDisplayMode: CompareTargetDisplayMode,
+ *   onCompareTargetDisplayModeChange: (mode: CompareTargetDisplayMode) => void,
+ *   result: StatisticsResult | null,
+ *   hidePhaseExitReasons?: boolean,
+ *   chartRunKey?: string,
+ * }} props
+ */
 export function StatisticsDetailSectionPanel({
   compareEntries,
   compareTargetDisplayMode,
@@ -77,6 +103,9 @@ export function StatisticsDetailSectionPanel({
     return null;
   }
 
+  // Every has*Statistics flag except compare is derived from a non-null result.
+  const stats = /** @type {StatisticsResult} */ (result);
+
   const shouldUsePanelSurface =
     resolvedStatisticsDetailSection !== 'metrics' &&
     resolvedStatisticsDetailSection !== 'compare' &&
@@ -97,23 +126,23 @@ export function StatisticsDetailSectionPanel({
       )}
 
       {hasMetricStatistics && resolvedStatisticsDetailSection === 'metrics' && (
-        <MetricsTable metrics={result.metrics} />
+        <MetricsTable metrics={stats.metrics} />
       )}
 
       {hasTrendStatistics && resolvedStatisticsDetailSection === 'trends' && (
         <div className='space-y-4'>
-          <TrendChart key={`statistics-trends-${chartRunKey}`} trends={result.trends} />
-          <ActivityHeatmap trends={result.trends} />
+          <TrendChart key={`statistics-trends-${chartRunKey}`} trends={stats.trends} />
+          <ActivityHeatmap trends={stats.trends} />
         </div>
       )}
 
       {hasProfileGroupStatistics && resolvedStatisticsDetailSection === 'profile' && (
-        <ProfileGroupTable profileGroups={result.profileGroups} showTitle={false} />
+        <ProfileGroupTable profileGroups={stats.profileGroups} showTitle={false} />
       )}
 
       {hasPhaseStatistics && resolvedStatisticsDetailSection === 'phase' && (
         <PhaseStatistics
-          phaseStats={result.phaseStats}
+          phaseStats={stats.phaseStats}
           showTitle={false}
           hideExitReasons={hidePhaseExitReasons}
         />
@@ -133,13 +162,9 @@ export function StatisticsDetailSectionPanel({
         setStatisticsDetailSection={setStatisticsDetailSection}
       />
       {shouldUsePanelSurface ? (
-        <div
-          className={`${STATISTICS_PANEL_CLASS} ${
-            shouldUseCompactChartPadding ? 'px-1.5 py-2 sm:px-2' : 'p-4'
-          }`}
-        >
+        <StatisticsPanel className={shouldUseCompactChartPadding ? 'px-1.5 py-2 sm:px-2' : 'p-4'}>
           {sectionContent}
-        </div>
+        </StatisticsPanel>
       ) : (
         sectionContent
       )}

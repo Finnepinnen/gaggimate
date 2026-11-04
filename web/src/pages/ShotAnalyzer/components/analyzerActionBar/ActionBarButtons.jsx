@@ -10,9 +10,49 @@ import { faEquals } from '@fortawesome/free-solid-svg-icons/faEquals';
 import { faFileImport } from '@fortawesome/free-solid-svg-icons/faFileImport';
 import { faLaptopFile } from '@fortawesome/free-solid-svg-icons/faLaptopFile';
 import { analyzerUiColors } from '../../utils/analyzerUtils';
+import { AnalyzerControl } from '../AnalyzerControl.jsx';
+import { cx } from '../../../../utils/cx.js';
 
+/**
+ * Labelled button (or link, via `as`) in the analyzer action bar. Extra props
+ * are passed to the AnalyzerControl.
+ *
+ * @param {{ className?: string } & Record<string, any>} props
+ */
+export function ActionBarButton({ className, ...props }) {
+  return (
+    <AnalyzerControl
+      {...props}
+      className={cx(
+        'btn btn-sm btn-ghost h-8 min-h-0 shrink-0 gap-1.5 rounded-lg px-2.5 text-sm font-medium hover:opacity-100',
+        className,
+      )}
+    />
+  );
+}
+
+/**
+ * Square previous/next button in the analyzer action bar.
+ *
+ * @param {Record<string, any>} props Passed to the AnalyzerControl.
+ */
+function ActionBarNavButton(props) {
+  return (
+    <AnalyzerControl
+      {...props}
+      className='btn btn-sm btn-ghost h-8 min-h-0 w-8 shrink-0 rounded-lg p-0 text-sm'
+    />
+  );
+}
+
+/**
+ * @param {object} props
+ * @param {boolean} props.canGoPrev
+ * @param {boolean} props.canGoNext
+ * @param {number} props.currentIndex
+ * @param {(targetIndex: number, direction: number) => void} props.onNavigateToIndex
+ */
 export function ActionBarNavigationButtons({
-  navButtonClasses,
   canGoPrev,
   canGoNext,
   currentIndex,
@@ -21,58 +61,65 @@ export function ActionBarNavigationButtons({
   const { t } = useLingui();
   return (
     <div className='flex shrink-0 items-center gap-1'>
-      <button
+      <ActionBarNavButton
         type='button'
-        className={navButtonClasses}
         disabled={!canGoPrev}
         onClick={() => canGoPrev && onNavigateToIndex(currentIndex - 1, -1)}
         title={t`Previous shot`}
       >
         <FontAwesomeIcon icon={faChevronLeft} />
-      </button>
+      </ActionBarNavButton>
 
-      <button
+      <ActionBarNavButton
         type='button'
-        className={navButtonClasses}
         disabled={!canGoNext}
         onClick={() => canGoNext && onNavigateToIndex(currentIndex + 1, 1)}
         title={t`Next shot`}
       >
         <FontAwesomeIcon icon={faChevronRight} />
-      </button>
+      </ActionBarNavButton>
     </div>
   );
 }
 
-export function ActionBarCompareButton({
-  actionButtonClasses,
-  compareAvailable,
-  compareMode,
-  onCompareModeToggle,
-}) {
+/**
+ * @param {object} props
+ * @param {boolean} props.compareAvailable
+ * @param {boolean} props.compareMode
+ * @param {() => void} [props.onCompareModeToggle]
+ */
+export function ActionBarCompareButton({ compareAvailable, compareMode, onCompareModeToggle }) {
   const { t } = useLingui();
   return (
-    <button
+    <ActionBarButton
       type='button'
-      className={`${actionButtonClasses} ${compareMode ? 'text-primary opacity-100' : ''}`}
+      className={compareMode ? 'text-primary opacity-100' : undefined}
       disabled={!compareAvailable}
-      onClick={event => {
-        event.preventDefault();
-        event.stopPropagation();
-        onCompareModeToggle?.();
-      }}
+      onClick={
+        /** @param {Event} event */ event => {
+          event.preventDefault();
+          event.stopPropagation();
+          onCompareModeToggle?.();
+        }
+      }
       title={compareMode ? t`Disable compare mode` : t`Enable compare mode`}
     >
       <FontAwesomeIcon icon={faEquals} className='text-sm' />
       <span>
         <Trans context='compare mode'>Compare</Trans>
       </span>
-    </button>
+    </ActionBarButton>
   );
 }
 
+/**
+ * @param {object} props
+ * @param {boolean} props.compareMode
+ * @param {boolean} props.statisticsAvailable
+ * @param {string} props.statsHref
+ * @param {() => void} [props.onShowStats]
+ */
 export function ActionBarStatisticsAction({
-  actionButtonClasses,
   compareMode,
   statisticsAvailable,
   statsHref,
@@ -89,46 +136,46 @@ export function ActionBarStatisticsAction({
 
   if (statisticsAvailable) {
     return (
-      <a
+      <ActionBarButton
+        as='a'
         href={statsHref || '/statistics'}
-        className={actionButtonClasses}
-        onClick={event => {
-          event.stopPropagation();
-          onShowStats?.();
-        }}
+        onClick={
+          /** @param {Event} event */ event => {
+            event.stopPropagation();
+            onShowStats?.();
+          }
+        }
         title={t`Open statistics`}
       >
         {content}
-      </a>
+      </ActionBarButton>
     );
   }
 
   return (
-    <button
-      type='button'
-      className={actionButtonClasses}
-      disabled
-      title={t`Load a profile to open statistics`}
-    >
+    <ActionBarButton type='button' disabled title={t`Load a profile to open statistics`}>
       {content}
-    </button>
+    </ActionBarButton>
   );
 }
 
-function ActionBarImportModeToggle({
-  actionButtonClasses,
-  importMode,
-  modeButtonRef,
-  handleModeToggle,
-}) {
+/** @typedef {(event: import('preact').JSX.TargetedMouseEvent<HTMLElement>) => void} ActionBarClickHandler */
+
+/**
+ * @param {object} props
+ * @param {import('../types').ImportMode} props.importMode
+ * @param {import('preact').Ref<HTMLElement>} props.modeButtonRef
+ * @param {ActionBarClickHandler} props.handleModeToggle
+ */
+function ActionBarImportModeToggle({ importMode, modeButtonRef, handleModeToggle }) {
   const { t } = useLingui();
   const isBrowserImportMode = importMode === 'browser';
 
   return (
-    <button
-      ref={modeButtonRef}
+    <ActionBarButton
+      controlRef={modeButtonRef}
       type='button'
-      className={`${actionButtonClasses} ${isBrowserImportMode ? 'opacity-100' : ''}`}
+      className={isBrowserImportMode ? 'opacity-100' : undefined}
       style={isBrowserImportMode ? { color: analyzerUiColors.sourceBadgeWebText } : undefined}
       onClick={handleModeToggle}
       title={
@@ -150,12 +197,20 @@ function ActionBarImportModeToggle({
           <Trans context='import mode'>View</Trans>
         )}
       </span>
-    </button>
+    </ActionBarButton>
   );
 }
 
+/**
+ * @param {object} props
+ * @param {ActionBarClickHandler} props.handleImportClick
+ * @param {ActionBarClickHandler} props.handleModeToggle
+ * @param {import('../types').ImportMode} props.importMode
+ * @param {boolean} props.isImporting
+ * @param {import('preact').Ref<HTMLElement>} props.modeButtonRef
+ * @param {boolean} props.showImportModeToggle
+ */
 export function ActionBarImportActions({
-  actionButtonClasses,
   handleImportClick,
   handleModeToggle,
   importMode,
@@ -166,9 +221,8 @@ export function ActionBarImportActions({
   const { t } = useLingui();
   return (
     <div className='hidden shrink-0 items-center gap-1 sm:ml-auto sm:flex'>
-      <button
+      <ActionBarButton
         type='button'
-        className={actionButtonClasses}
         onClick={handleImportClick}
         disabled={isImporting}
         title={t`Import shot or profile`}
@@ -182,11 +236,10 @@ export function ActionBarImportActions({
         <span>
           <Trans>Import</Trans>
         </span>
-      </button>
+      </ActionBarButton>
 
       {showImportModeToggle ? (
         <ActionBarImportModeToggle
-          actionButtonClasses={actionButtonClasses}
           importMode={importMode}
           modeButtonRef={modeButtonRef}
           handleModeToggle={handleModeToggle}

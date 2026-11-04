@@ -1,16 +1,48 @@
+/** @typedef {import('../../types').Profile} Profile */
+/** @typedef {import('../../types').ProfilePhase} ProfilePhase */
+/** @typedef {import('../../types').PhaseTarget} PhaseTarget */
+/** @typedef {import('../../types').TransitionType} TransitionType */
+/**
+ * @typedef {{
+ *   parser: string,
+ *   sourceProfileType: string,
+ *   phasesCount: number,
+ *   totalMaxDuration: number,
+ *   brewingMaxDuration: number,
+ *   phaseSummary: { name: string, maxDuration: number, targets: string }[],
+ * }} TclDebugInfo
+ */
+/** @typedef {Profile & { debug?: TclDebugInfo, ok?: void }} TclProfile */
+/** @typedef {{ ok: false, reason: string }} TclFailure */
+/** @typedef {{ ok: true, json: TclProfile }} TclSuccess */
+
 export class TclConverter {
   /**
    * @type {number} Set to 1 to include a 'debug' object in the output JSON.
    */
   static debug = 0;
 
+  /**
+   * @param {string} reason
+   * @returns {TclFailure}
+   */
   static _fail(reason) {
     return { ok: false, reason };
   }
+  /**
+   * @param {TclProfile} json
+   * @returns {TclSuccess}
+   */
   static _succeed(json) {
     return { ok: true, json };
   }
 
+  /**
+   * @param {string} tclText
+   * @param {string} key
+   * @param {number} [defaultValue]
+   * @returns {number}
+   */
   static _getTclVal(tclText, key, defaultValue = 0) {
     const match = tclText.match(new RegExp(`^${key}\\s+([\\d.]+)`, 'm'));
     if (!match) return defaultValue;
@@ -18,6 +50,11 @@ export class TclConverter {
     return Number.isFinite(parsed) ? parsed : defaultValue;
   }
 
+  /**
+   * @param {string} tclText
+   * @param {string} key
+   * @returns {string | null}
+   */
   static _getTclString(tclText, key) {
     const braced = tclText.match(new RegExp(`^${key}\\s+\\{([^}]*)\\}`, 'm'));
     if (braced) return braced[1].trim();
@@ -27,6 +64,8 @@ export class TclConverter {
 
   /**
    * Mirrors `fix_profile_type` in DE's `de1plus/profile.tcl`.
+   * @param {string | null} rawType
+   * @returns {string}
    */
   static _normalizeProfileType(rawType) {
     if (!rawType) return 'settings_2a';
@@ -47,17 +86,29 @@ export class TclConverter {
     }
   }
 
+  /**
+   * @param {string | undefined} value
+   * @param {number} fallback
+   * @returns {number}
+   */
   static _toSafeFloat(value, fallback) {
     if (value === undefined || value === null || value === '') return fallback;
     const parsed = parseFloat(value);
     return Number.isFinite(parsed) ? parsed : fallback;
   }
 
+  /** @param {number} seconds */
   static _clampDuration(seconds) {
     if (!Number.isFinite(seconds) || seconds <= 0) return 0.5;
     return Math.max(0.5, Math.min(300, seconds));
   }
 
+  /**
+   * @param {TclProfile} profile
+   * @param {string} tclText
+   * @param {string} parserType
+   * @returns {TclDebugInfo}
+   */
   static _generateDebugInfo(profile, tclText, parserType) {
     const sourceProfileType = this._getTclString(tclText, 'settings_profile_type') || 'unknown';
 
@@ -88,7 +139,13 @@ export class TclConverter {
     };
   }
 
+  /**
+   * @param {string} tclText
+   * @param {TclProfile} profile
+   * @returns {TclProfile}
+   */
   static _generatePhasesFromPressureProfile(tclText, profile) {
+    /** @param {string} key */
     const get = key => this._getTclVal(tclText, key);
     const preinfusionTime = get('preinfusion_time');
     const preinfusionFlow = get('preinfusion_flow_rate');
@@ -99,6 +156,7 @@ export class TclConverter {
     const declineEndPressure = get('pressure_end');
 
     if (preinfusionTime > 0) {
+      /** @type {ProfilePhase} */
       const phase = {
         name: 'Pre-infusion',
         phase: 'preinfusion',
@@ -134,7 +192,13 @@ export class TclConverter {
     return profile;
   }
 
+  /**
+   * @param {string} tclText
+   * @param {TclProfile} profile
+   * @returns {TclProfile}
+   */
   static _generatePhasesFromFlowProfile(tclText, profile) {
+    /** @param {string} key */
     const get = key => this._getTclVal(tclText, key);
     const preinfusionTime = get('flow_profile_preinfusion_time') || get('preinfusion_time');
     const preinfusionFlow = get('flow_profile_preinfusion') || get('preinfusion_flow_rate');
@@ -145,6 +209,7 @@ export class TclConverter {
     const declineEndFlow = get('flow_profile_decline');
 
     if (preinfusionTime > 0 && preinfusionFlow > 0) {
+      /** @type {ProfilePhase} */
       const phase = {
         name: 'Pre-infusion',
         phase: 'preinfusion',
@@ -180,11 +245,20 @@ export class TclConverter {
     return profile;
   }
 
+  /**
+   * @param {string | undefined} value
+   * @returns {TransitionType}
+   */
   static _mapTransitionType(value) {
     if (value === 'smooth') return 'linear';
     return 'instant';
   }
 
+  /**
+   * @param {string} tclText
+   * @param {TclProfile} profile
+   * @returns {TclProfile | TclFailure}
+   */
   static _parseAdvancedProfile(tclText, profile) {
     const advancedShotMatch = tclText.match(/advanced_shot\s+{{(.*)}}/s);
     if (!advancedShotMatch) return this._fail("Could not find 'advanced_shot' block in TCL input.");
@@ -201,6 +275,7 @@ export class TclConverter {
 
     for (let index = 0; index < phaseBlocks.length; index++) {
       const block = phaseBlocks[index];
+      /** @type {Record<string, string>} */
       const phaseData = {};
       const kvRegex = /(\w+|\{[^}]+\})\s+([^{}\s]+|{[^}]+})/g;
       let match;
@@ -221,6 +296,7 @@ export class TclConverter {
           : this._toSafeFloat(phaseData.flow, -1);
       const limitRaw = this._toSafeFloat(phaseData.max_flow_or_pressure, 0);
 
+      /** @type {ProfilePhase} */
       const newPhase = {
         name: phaseData.name,
         phase: isPreinfusion ? 'preinfusion' : 'brew',
@@ -246,6 +322,7 @@ export class TclConverter {
       const temperatureValue = this._toSafeFloat(phaseData.temperature, 0);
       if (temperatureValue > 0) newPhase.temperature = temperatureValue;
 
+      /** @type {PhaseTarget[]} */
       const targets = [];
       const pumpedVolume = this._toSafeFloat(phaseData.volume, 0);
       if (pumpedVolume > 0) {
@@ -258,10 +335,13 @@ export class TclConverter {
 
       const exitType = phaseData.exit_type;
       if (exitType && phaseData.exit_if === '1') {
+        /** @type {'pressure' | 'flow' | undefined} */
         let targetType;
         if (exitType.includes('pressure')) targetType = 'pressure';
         else if (exitType.includes('flow')) targetType = 'flow';
+        /** @type {'gte' | 'lte' | undefined} */
         let operator;
+        /** @type {string | undefined} */
         let valueKey;
         if (exitType.includes('over')) {
           operator = 'gte';
@@ -270,7 +350,7 @@ export class TclConverter {
           operator = 'lte';
           valueKey = `exit_${targetType}_under`;
         }
-        if (targetType && operator) {
+        if (targetType && operator && valueKey) {
           const exitValue = this._toSafeFloat(phaseData[valueKey], NaN);
           if (Number.isFinite(exitValue) && exitValue >= 0) {
             targets.push({ type: targetType, operator, value: exitValue });
@@ -284,7 +364,12 @@ export class TclConverter {
     return profile;
   }
 
+  /**
+   * @param {string} tclText
+   * @returns {TclProfile | TclFailure}
+   */
   static _parseTcl(tclText) {
+    /** @type {TclProfile} */
     const profile = {
       label: 'Converted Profile',
       type: 'pro',
@@ -350,6 +435,10 @@ export class TclConverter {
     return resultProfile;
   }
 
+  /**
+   * @param {unknown} text
+   * @returns {TclSuccess | TclFailure}
+   */
   static toGaggiMate(text) {
     if (!text || typeof text !== 'string' || text.trim().length === 0)
       return this._fail('Input is empty or invalid.');

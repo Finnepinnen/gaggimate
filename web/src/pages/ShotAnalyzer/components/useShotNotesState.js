@@ -3,12 +3,21 @@ import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { notesService } from '../services/NotesService';
 import { cleanName, detectDoseFromProfileName, getShotStorageKey } from '../utils/analyzerUtils';
 
+/** @typedef {import('../types').AnalyzerShot} AnalyzerShot */
+/** @typedef {import('../types').AnalyzerNotes} AnalyzerNotes */
+/** @typedef {'rating' | 'beanType' | 'doseIn' | 'doseOut' | 'ratio' | 'grindSetting' | 'balanceTaste' | 'notes'} NotesField */
+
 let notesStateOriginCounter = 0;
 
+/**
+ * @param {AnalyzerShot | null | undefined} shot
+ * @returns {string}
+ */
 export function getShotNotesKey(shot) {
   return String(getShotStorageKey(shot) || '');
 }
 
+/** @param {number | null | undefined} timestamp Unix epoch seconds */
 export function getShotDateTimeLabel(timestamp) {
   if (!timestamp) return '-';
   const date = new Date(timestamp * 1000);
@@ -20,6 +29,11 @@ export function getShotDateTimeLabel(timestamp) {
   return `${day}.${month}.${year} ${hours}:${minutes}`;
 }
 
+/**
+ * @param {AnalyzerShot | null | undefined} currentShot
+ * @param {string} [currentShotName]
+ * @returns {string}
+ */
 export function getAnalyzerShotDisplayName(currentShot, currentShotName = '') {
   if (!currentShot) return t`No Shot Loaded`;
   if (currentShot.source === 'gaggimate') return `#${currentShot.id || currentShotName || '-'}`;
@@ -28,6 +42,10 @@ export function getAnalyzerShotDisplayName(currentShot, currentShotName = '') {
   );
 }
 
+/**
+ * @param {string | undefined} doseIn
+ * @param {string | undefined} doseOut
+ */
 function calculateRatio(doseIn, doseOut) {
   if (doseIn && doseOut && Number.parseFloat(doseIn) > 0 && Number.parseFloat(doseOut) > 0) {
     return (Number.parseFloat(doseOut) / Number.parseFloat(doseIn)).toFixed(2);
@@ -35,6 +53,11 @@ function calculateRatio(doseIn, doseOut) {
   return '';
 }
 
+/**
+ * @param {object} options
+ * @param {AnalyzerNotes} options.loaded
+ * @param {AnalyzerShot} options.currentShot
+ */
 function hydrateLoadedShotNotes({ loaded, currentShot }) {
   const nextNotes = { ...loaded };
   let autoSave = false;
@@ -59,17 +82,27 @@ function hydrateLoadedShotNotes({ loaded, currentShot }) {
   return { nextNotes, autoSave };
 }
 
+/**
+ * @param {AnalyzerNotes} notes
+ * @param {NotesField} field
+ * @param {string | number} value
+ * @returns {AnalyzerNotes}
+ */
 function updateNotesValue(notes, field, value) {
   const updated = { ...notes, [field]: value };
   if (field === 'doseIn' || field === 'doseOut') {
-    const dIn = field === 'doseIn' ? value : notes.doseIn;
-    const dOut = field === 'doseOut' ? value : notes.doseOut;
+    const dIn = field === 'doseIn' ? /** @type {string} */ (value) : notes.doseIn;
+    const dOut = field === 'doseOut' ? /** @type {string} */ (value) : notes.doseOut;
     updated.ratio = calculateRatio(dIn, dOut);
   } else if (field === 'ratio') {
     if (updated.doseOut) {
-      updated.doseIn = (Number.parseFloat(updated.doseOut) / Number.parseFloat(value)).toFixed(1);
+      updated.doseIn = (
+        Number.parseFloat(updated.doseOut) / Number.parseFloat(/** @type {string} */ (value))
+      ).toFixed(1);
     } else if (updated.doseIn) {
-      updated.doseOut = (Number.parseFloat(updated.doseIn) * Number.parseFloat(value)).toFixed(1);
+      updated.doseOut = (
+        Number.parseFloat(updated.doseIn) * Number.parseFloat(/** @type {string} */ (value))
+      ).toFixed(1);
     }
   }
   return updated;
@@ -77,7 +110,7 @@ function updateNotesValue(notes, field, value) {
 
 /**
  * @param {object} [options]
- * @param {any} [options.currentShot]
+ * @param {AnalyzerShot | null} [options.currentShot]
  * @param {boolean} [options.isSelectionPending]
  */
 export function useShotNotesState({ currentShot, isSelectionPending = false } = {}) {
@@ -86,7 +119,9 @@ export function useShotNotesState({ currentShot, isSelectionPending = false } = 
   const [loading, setLoading] = useState(false);
   const notesRef = useRef(notes);
   const localUpdateVersionRef = useRef(0);
+  /** @type {import('preact/hooks').MutableRef<string | null>} */
   const originIdRef = useRef(null);
+  /** @type {import('preact/hooks').MutableRef<ReturnType<typeof setTimeout> | null>} */
   const saveTimerRef = useRef(null);
 
   if (!originIdRef.current) {
@@ -99,6 +134,7 @@ export function useShotNotesState({ currentShot, isSelectionPending = false } = 
   }, [notes]);
 
   const publishNotes = useCallback(
+    /** @param {AnalyzerNotes} notesToPublish */
     notesToPublish => {
       if (!currentShot) return;
       notesService.publishNotesUpdate(
@@ -128,6 +164,10 @@ export function useShotNotesState({ currentShot, isSelectionPending = false } = 
     const unsubscribeNotes = notesService.subscribeNotes(
       notesKey,
       currentShot.source,
+      /**
+       * @param {AnalyzerNotes} nextNotes
+       * @param {{ originId?: string | null }} [meta]
+       */
       (nextNotes, meta = {}) => {
         if (meta.originId === originIdRef.current) return;
         localUpdateVersionRef.current += 1;
@@ -177,6 +217,10 @@ export function useShotNotesState({ currentShot, isSelectionPending = false } = 
   ]);
 
   const handleInputChange = useCallback(
+    /**
+     * @param {NotesField} field
+     * @param {string | number} value
+     */
     (field, value) => {
       setNotes(prev => {
         const updated = updateNotesValue(prev, field, value);
@@ -225,6 +269,10 @@ export function useShotNotesState({ currentShot, isSelectionPending = false } = 
   }, [clearSaveTimer, saveNotes]);
 
   const handleFieldChange = useCallback(
+    /**
+     * @param {NotesField} field
+     * @param {string | number} value
+     */
     (field, value) => {
       handleInputChange(field, value);
       scheduleSave();
@@ -240,6 +288,10 @@ export function useShotNotesState({ currentShot, isSelectionPending = false } = 
   );
 
   const updateAndSave = useCallback(
+    /**
+     * @param {NotesField} field
+     * @param {string | number} value
+     */
     async (field, value) => {
       const updated = updateNotesValue(notesRef.current, field, value);
       localUpdateVersionRef.current += 1;

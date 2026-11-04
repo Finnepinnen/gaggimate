@@ -4,6 +4,10 @@ import {
   EXTERNAL_TOOLTIP_VERTICAL_OFFSET,
 } from '../constants';
 
+/**
+ * @param {{ dataset?: { borderColor?: unknown } } | null | undefined} context
+ * @returns {string}
+ */
 export function resolveHoverPointColor(context) {
   const datasetColor = context?.dataset?.borderColor;
   return typeof datasetColor === 'string' && datasetColor.length > 0 ? datasetColor : '#94a3b8';
@@ -23,6 +27,27 @@ export function createChartPointElementConfig() {
   };
 }
 
+/**
+ * @typedef {object} ExternalTooltipPositionInput
+ * @property {number} anchorX
+ * @property {number} anchorY
+ * @property {number} chartWidth
+ * @property {number} chartHeight
+ * @property {number} tooltipWidth
+ * @property {number} tooltipHeight
+ * @property {number} [boundsPadding]
+ * @property {number} [pointerGap]
+ * @property {number} [verticalOffset]
+ * @property {number} [boundsLeft]
+ * @property {number} [boundsRight]
+ * @property {number} [boundsTop]
+ * @property {number} [boundsBottom]
+ */
+
+/**
+ * @param {ExternalTooltipPositionInput} input
+ * @returns {{ visible: true, x: number, y: number }}
+ */
 export function computeExternalTooltipPosition({
   anchorX,
   anchorY,
@@ -38,13 +63,17 @@ export function computeExternalTooltipPosition({
   boundsTop,
   boundsBottom,
 }) {
-  const resolvedBoundsLeft = Number.isFinite(boundsLeft) ? boundsLeft : boundsPadding;
+  const resolvedBoundsLeft = Number.isFinite(boundsLeft)
+    ? /** @type {number} */ (boundsLeft)
+    : boundsPadding;
   const resolvedBoundsRight = Number.isFinite(boundsRight)
-    ? boundsRight
+    ? /** @type {number} */ (boundsRight)
     : chartWidth - boundsPadding;
-  const resolvedBoundsTop = Number.isFinite(boundsTop) ? boundsTop : boundsPadding;
+  const resolvedBoundsTop = Number.isFinite(boundsTop)
+    ? /** @type {number} */ (boundsTop)
+    : boundsPadding;
   const resolvedBoundsBottom = Number.isFinite(boundsBottom)
-    ? boundsBottom
+    ? /** @type {number} */ (boundsBottom)
     : chartHeight - boundsPadding;
   const chartMidX = resolvedBoundsLeft + (resolvedBoundsRight - resolvedBoundsLeft) / 2;
   const showRightOfPointer = anchorX <= chartMidX;

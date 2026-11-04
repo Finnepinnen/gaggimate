@@ -1,6 +1,16 @@
 import { msg } from '@lingui/core/macro';
 import { i18n } from '../../../i18n.js';
 
+/**
+ * @typedef {object} AnalyzerColumn
+ * @property {string} id
+ * @property {string} label Translated on access.
+ * @property {string} type One of COLUMN_TYPES.
+ * @property {string} group Key of `groups` in constants.js.
+ * @property {boolean} default
+ * @property {string} [targetType] Profile target / exit type this column shows.
+ */
+
 export const COLUMN_TYPES = {
   VAL: 'val',
   SE: 'se',
@@ -18,8 +28,10 @@ export const COLUMN_TYPES = {
  * @param {string} opts.group
  * @param {boolean} [opts.default]
  * @param {string} [opts.targetType]
+ * @returns {AnalyzerColumn}
  */
 export function createColumn({ id, label, type, group, default: isDefault = false, targetType }) {
+  /** @type {AnalyzerColumn} */
   const col = {
     id,
     // Labels are message descriptors, translated on access.
@@ -34,6 +46,12 @@ export function createColumn({ id, label, type, group, default: isDefault = fals
   return col;
 }
 
+/**
+ * @param {string} prefix
+ * @param {import('@lingui/core').MessageDescriptor} label
+ * @param {string} group
+ * @returns {AnalyzerColumn[]}
+ */
 function createMetricColumns(prefix, label, group) {
   return [COLUMN_TYPES.SE, COLUMN_TYPES.MM, COLUMN_TYPES.AVG].map(type =>
     createColumn({ id: `${prefix}_${type}`, label, type, group }),
@@ -261,13 +279,20 @@ export const columnConfig = [
   }),
 ];
 
+/** @returns {Set<string>} */
 export const getAllColumns = () => {
+  /** @type {Set<string>} */
   const all = new Set();
   columnConfig.forEach(col => all.add(col.id));
   return all;
 };
 
+/**
+ * @param {string} groupKey
+ * @returns {Set<string>}
+ */
 export const getColumnsByGroup = groupKey => {
+  /** @type {Set<string>} */
   const columns = new Set();
   columnConfig.forEach(col => {
     if (col.group === groupKey) columns.add(col.id);
@@ -275,7 +300,9 @@ export const getColumnsByGroup = groupKey => {
   return columns;
 };
 
+/** @returns {Set<string>} */
 export const getDefaultColumns = () => {
+  /** @type {Set<string>} */
   const defaults = new Set();
   columnConfig.forEach(col => {
     if (col.default) defaults.add(col.id);
@@ -283,7 +310,9 @@ export const getDefaultColumns = () => {
   return defaults;
 };
 
+/** @returns {Record<string, AnalyzerColumn[]>} */
 export const getGroupedColumns = () => {
+  /** @type {Record<string, AnalyzerColumn[]>} */
   const grouped = {};
   columnConfig.forEach(col => {
     if (!grouped[col.group]) {

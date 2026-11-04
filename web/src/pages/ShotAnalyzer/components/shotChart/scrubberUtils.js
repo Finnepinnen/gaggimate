@@ -1,3 +1,9 @@
+/**
+ * @param {unknown} value
+ * @param {unknown} min
+ * @param {unknown} max
+ * @returns {number | null}
+ */
 function clampScrubberValue(value, min, max) {
   const numericValue = Number(value);
   const numericMin = Number(min);
@@ -14,11 +20,19 @@ function clampScrubberValue(value, min, max) {
   return Math.min(numericMax, Math.max(numericMin, numericValue));
 }
 
+/**
+ * @param {unknown} value
+ * @returns {number | null}
+ */
 function roundScrubberValue(value) {
   const numericValue = Number(value);
   return Number.isFinite(numericValue) ? Number(numericValue.toFixed(1)) : null;
 }
 
+/**
+ * @param {import('chart.js').Chart | null | undefined} chart
+ * @returns {{ left: number, right: number } | null}
+ */
 export function getChartScrubberInsets(chart) {
   const chartArea = chart?.chartArea;
   if (!chart || !chartArea) return null;
@@ -34,6 +48,11 @@ export function isStaticMobileTooltipViewport() {
   return globalThis.window.matchMedia('(max-width: 640px)').matches;
 }
 
+/**
+ * @param {{ clientX: number } | null | undefined} event
+ * @param {{ min: number, max: number, trackElement: Element | null | undefined }} options
+ * @returns {number | null}
+ */
 export function getScrubberValueFromPointerEvent(event, { min, max, trackElement }) {
   const numericMin = Number(min);
   const numericMax = Number(max);
@@ -49,6 +68,11 @@ export function getScrubberValueFromPointerEvent(event, { min, max, trackElement
   return roundScrubberValue(numericMin + (numericMax - numericMin) * ratio);
 }
 
+/**
+ * @param {{ currentTarget?: { value?: unknown } | null } | null | undefined} event
+ * @param {{ min: number, max: number, ignoreInputUntil?: number, lastPointerInputAt?: number }} options
+ * @returns {number | null}
+ */
 export function getScrubberValueFromNativeInputEvent(
   event,
   { min, max, ignoreInputUntil = 0, lastPointerInputAt = 0 },

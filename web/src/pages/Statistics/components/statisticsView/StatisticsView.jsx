@@ -15,10 +15,10 @@ import {
   toggleProfilePin,
   toggleShotPin,
 } from '../../../ShotAnalyzer/utils/analyzerUtils';
-import { StatisticsToolbar, STATISTICS_RUN_BUTTON_TONE_CLASS } from '../StatisticsToolbar';
+import { StatisticsToolbar, RunButtonBadge } from '../StatisticsToolbar';
 import { SummaryCards } from '../SummaryCards';
 import { normalizeStatisticsSourceSelection } from '../../utils/statisticsRoute';
-import { STATISTICS_PANEL_CLASS } from './constants';
+import { StatisticsPanel } from '../statisticsSurfaces.jsx';
 import {
   getInitialProfileName,
   getStatisticsSelectionHint,
@@ -35,9 +35,27 @@ import {
 } from './hooks';
 import { StatisticsDetailSectionPanel } from './StatisticsDetailSection';
 
+/**
+ * @typedef {import('../../types').DateBasisMode} DateBasisMode
+ * @typedef {import('../../types').StatisticsMode} StatisticsMode
+ * @typedef {import('../../types').StatisticsDetailSection} StatisticsDetailSection
+ * @typedef {import('../../types').StatisticsInitialContext} StatisticsInitialContext
+ * @typedef {import('../../types').StatisticsEntry} StatisticsEntry
+ * @typedef {import('../../types').StatisticsResult} StatisticsResult
+ * @typedef {import('../../types').StatisticsRunRequest} StatisticsRunRequest
+ * @typedef {import('../../types').StatisticsProfileMeta} StatisticsProfileMeta
+ * @typedef {import('../../types').StatisticsProgress} StatisticsProgress
+ * @typedef {import('../../types').ProfileSelectionItem} ProfileSelectionItem
+ * @typedef {import('../../types').ShotSelectionItem} ShotSelectionItem
+ */
+
+/** @param {{ initialContext: StatisticsInitialContext | null }} props */
 export function StatisticsView({ initialContext }) {
   const { t } = useLingui();
-  const apiService = useContext(ApiServiceContext);
+  // Provided at the app root, so never null here.
+  const apiService = /** @type {import('../../../../services/ApiService.js').default} */ (
+    useContext(ApiServiceContext)
+  );
   const initialProfileName = getInitialProfileName(initialContext);
 
   const [shotSource, setShotSource] = useState(() =>
@@ -53,25 +71,30 @@ export function StatisticsView({ initialContext }) {
     ),
   );
 
-  const [mode, setMode] = useState(() => (initialProfileName ? 'profile' : 'all'));
+  const [mode, setMode] = useState(
+    /** @returns {StatisticsMode} */ () => (initialProfileName ? 'profile' : 'all'),
+  );
 
   const [selectedProfileNames, setSelectedProfileNames] = useState(() =>
     initialProfileName ? [initialProfileName] : [],
   );
-  const [selectedShotKeys, setSelectedShotKeys] = useState([]);
+  const [selectedShotKeys, setSelectedShotKeys] = useState(/** @type {string[]} */ ([]));
   const [query, setQuery] = useState('');
   const [dateFromLocal, setDateFromLocal] = useState('');
   const [dateToLocal, setDateToLocal] = useState('');
-  const [dateBasisMode, setDateBasisMode] = useState('auto');
+  const [dateBasisMode, setDateBasisMode] = useState(/** @type {DateBasisMode} */ ('auto'));
 
   const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState({ current: 0, total: 0 });
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState(null);
-  const [runRequest, setRunRequest] = useState(null);
+  const [progress, setProgress] = useState(
+    /** @type {StatisticsProgress} */ ({ current: 0, total: 0 }),
+  );
+  const [result, setResult] = useState(/** @type {StatisticsResult | null} */ (null));
+  const [error, setError] = useState(/** @type {string | null} */ (null));
+  const [runRequest, setRunRequest] = useState(/** @type {StatisticsRunRequest | null} */ (null));
   const [preparingRun, setPreparingRun] = useState(false);
   const [statisticsDetailSection, setStatisticsDetailSection] = useState(
-    () => normalizeStatisticsDetailSection(initialContext?.preferredDetailSection) || 'metrics',
+    /** @returns {StatisticsDetailSection} */ () =>
+      normalizeStatisticsDetailSection(initialContext?.preferredDetailSection) || 'metrics',
   );
   const [compareTargetDisplayMode, setCompareTargetDisplayMode] = useState(() =>
     normalizeCompareTargetDisplayMode(
@@ -83,8 +106,8 @@ export function StatisticsView({ initialContext }) {
 
   const analyzeLoadIdRef = useRef(0);
   const prepareRunIdRef = useRef(0);
-  const entriesRef = useRef(null);
-  const initializedDetailSectionRunIdRef = useRef(null);
+  const entriesRef = useRef(/** @type {StatisticsEntry[] | null} */ (null));
+  const initializedDetailSectionRunIdRef = useRef(/** @type {string | null} */ (null));
 
   useEffect(() => {
     saveToStorage(
@@ -111,12 +134,15 @@ export function StatisticsView({ initialContext }) {
     setSelectedShotKeys,
   });
 
+  /** @param {ProfileSelectionItem} item */
   const handleProfilePinToggle = item => {
-    const result = toggleProfilePin(item?.id || item?.primary || item);
+    // Selection items always carry a non-empty `id`, so the object fallback is never reached.
+    const result = toggleProfilePin(/** @type {string} */ (item?.id || item?.primary || item));
     if (!result.changed) return;
     setPinnedProfiles(result.pinnedProfiles);
   };
 
+  /** @param {ShotSelectionItem} item */
   const handleShotPinToggle = item => {
     const result = toggleShotPin(item?.id || item?.shotMeta, item?.pinBucketKey || '');
     if (!result.changed) return;
@@ -198,6 +224,7 @@ export function StatisticsView({ initialContext }) {
     !isSelectionMissing;
 
   const handleGo = useCallback(
+    /** @param {{ preferredDetailSection?: StatisticsDetailSection | null }} [options] */
     ({ preferredDetailSection = null } = {}) => {
       if (!canRunStatistics) {
         return;
@@ -213,6 +240,7 @@ export function StatisticsView({ initialContext }) {
 
       async function prepareRunRequest() {
         try {
+          /** @type {StatisticsProfileMeta[]} */
           let fallbackProfiles = [];
           if (fallbackSource) {
             try {
@@ -256,6 +284,7 @@ export function StatisticsView({ initialContext }) {
   );
 
   useEffect(() => {
+    /** @param {KeyboardEvent} event */
     const handleKeyDown = event => {
       if (event.defaultPrevented || event.repeat) return;
       if (event.metaKey || event.ctrlKey || event.altKey) return;
@@ -391,7 +420,7 @@ export function StatisticsView({ initialContext }) {
       </div>
 
       {loading && (
-        <div className={`${STATISTICS_PANEL_CLASS} p-6 text-center`}>
+        <StatisticsPanel className='p-6 text-center'>
           <div className='mb-2 text-sm font-semibold opacity-70'>
             {progress.total > 0
               ? t`Analyzing shot ${progressCurrent} of ${progressTotal}...`
@@ -406,7 +435,7 @@ export function StatisticsView({ initialContext }) {
           ) : (
             <progress className='progress progress-primary w-full max-w-xs' />
           )}
-        </div>
+        </StatisticsPanel>
       )}
 
       {error && (
@@ -428,11 +457,11 @@ export function StatisticsView({ initialContext }) {
           {statisticsDetailSectionPanel}
 
           {result.summary.totalShots === 0 && (
-            <div className={`${STATISTICS_PANEL_CLASS} p-8 text-center`}>
+            <StatisticsPanel className='p-8 text-center'>
               <p className='text-sm opacity-50'>
                 <Trans>No shots found for the selected filters.</Trans>
               </p>
-            </div>
+            </StatisticsPanel>
           )}
         </div>
       )}
@@ -447,11 +476,9 @@ export function StatisticsView({ initialContext }) {
               <p className='text-base-content text-sm opacity-70'>
                 <Trans>
                   Press{' '}
-                  <span
-                    className={`inline-flex h-5 w-5 items-center justify-center rounded-md ${STATISTICS_RUN_BUTTON_TONE_CLASS}`}
-                  >
+                  <RunButtonBadge>
                     <FontAwesomeIcon icon={faPlay} className='text-[10px]' />
-                  </span>{' '}
+                  </RunButtonBadge>{' '}
                   to build a statistic.
                 </Trans>
               </p>

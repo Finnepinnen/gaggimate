@@ -4,13 +4,26 @@ import { Trans, useLingui } from '@lingui/react/macro';
 import { faArrowRightArrowLeft } from '@fortawesome/free-solid-svg-icons/faArrowRightArrowLeft';
 import { faChevronDown } from '@fortawesome/free-solid-svg-icons/faChevronDown';
 import { COMPARE_TARGET_DISPLAY_MODES } from '../../../utils/analyzerUtils';
-import {
-  ANALYZER_COMPACT_CONTROL_HEIGHT_CLASS,
-  getAnalyzerIconButtonClasses,
-  getAnalyzerSurfaceTriggerClasses,
-  getAnalyzerTextButtonClasses,
-} from '../../analyzerControlStyles';
+import { AnalyzerControl } from '../../AnalyzerControl.jsx';
+import { cx } from '../../../../../utils/cx.js';
 
+/**
+ * @typedef {object} CompareShotLegendItem
+ * @property {string} label
+ * @property {string | null} [color]
+ * @property {string | null} [badgeColor]
+ * @property {number} [lineWidth]
+ * @property {number[]} [dash]
+ * @property {number} [shotNumber]
+ */
+
+/** @typedef {{ value: string, label: string }} CompareSelectOption */
+
+/**
+ * @param {object} props
+ * @param {CompareShotLegendItem[]} props.compareShotLegendItems
+ * @param {(() => void) | null} [props.onCompareSwap]
+ */
 function CompareShotLegend({ compareShotLegendItems, onCompareSwap }) {
   const { t } = useLingui();
   return (
@@ -35,17 +48,15 @@ function CompareShotLegend({ compareShotLegendItems, onCompareSwap }) {
               <span className='truncate'>{item.label}</span>
             </div>
             {index === 0 && compareShotLegendItems.length > 1 && onCompareSwap ? (
-              <button
+              <AnalyzerControl
                 type='button'
                 onClick={onCompareSwap}
-                className={getAnalyzerIconButtonClasses({
-                  className: 'h-7 min-h-0 w-7 rounded-lg p-0 text-sm',
-                })}
+                className='h-7 min-h-0 w-7 rounded-lg p-0 text-sm'
                 title={t`Swap shot 1 and shot 2`}
                 aria-label={t`Swap shot 1 and shot 2`}
               >
                 <FontAwesomeIcon icon={faArrowRightArrowLeft} className='text-sm' />
-              </button>
+              </AnalyzerControl>
             ) : null}
           </Fragment>
         );
@@ -54,6 +65,12 @@ function CompareShotLegend({ compareShotLegendItems, onCompareSwap }) {
   );
 }
 
+/**
+ * @param {object} props
+ * @param {boolean} [props.compareAnnotationsEnabled]
+ * @param {(() => void) | null} [props.onCompareAnnotationsToggle]
+ * @param {boolean} [props.showCompareAnnotationToggle]
+ */
 function CompareAnnotationToggle({
   compareAnnotationsEnabled,
   onCompareAnnotationsToggle,
@@ -62,39 +79,54 @@ function CompareAnnotationToggle({
   const { t } = useLingui();
   if (showCompareAnnotationToggle && onCompareAnnotationsToggle) {
     return (
-      <button
+      <AnalyzerControl
         type='button'
+        variant='text'
         onClick={onCompareAnnotationsToggle}
-        className={getAnalyzerTextButtonClasses({
-          className: `h-6 min-h-0 px-2 text-xs font-medium ${
-            compareAnnotationsEnabled
-              ? 'bg-base-content/8 text-base-content/80'
-              : 'text-base-content/55'
-          }`,
-        })}
+        className={cx(
+          'h-6 min-h-0 px-2 text-xs font-medium',
+          compareAnnotationsEnabled
+            ? 'bg-base-content/8 text-base-content/80'
+            : 'text-base-content/55',
+        )}
         aria-pressed={compareAnnotationsEnabled}
         title={
           compareAnnotationsEnabled ? t`Hide compare annotations` : t`Show compare annotations`
         }
       >
         <Trans>Annotations</Trans>
-      </button>
+      </AnalyzerControl>
     );
   }
 
   return null;
 }
 
+/**
+ * @param {object} props
+ * @param {((value: string) => void) | null} [props.onChange]
+ * @param {CompareSelectOption[]} props.options
+ * @param {string} props.title
+ * @param {string} [props.value]
+ * @param {string} [props.widthClass]
+ */
 export function CompareSelect({ onChange, options, title, value, widthClass }) {
   if (onChange && options.length > 0) {
     return (
-      <div className={`relative flex ${ANALYZER_COMPACT_CONTROL_HEIGHT_CLASS} items-center`}>
-        <select
+      <div className='relative flex h-5 min-h-0 items-center'>
+        <AnalyzerControl
+          as='select'
+          variant='surface'
+          size='compact'
           value={value}
-          onChange={event => onChange(event.currentTarget.value)}
-          className={getAnalyzerSurfaceTriggerClasses({
-            className: `${ANALYZER_COMPACT_CONTROL_HEIGHT_CLASS} ${widthClass} appearance-none rounded-md border-0 bg-transparent px-2.5 pr-6 text-xs font-medium shadow-none outline-none`,
-          })}
+          onChange={
+            /** @param {import('preact').JSX.TargetedEvent<HTMLSelectElement, Event>} event */
+            event => onChange(event.currentTarget.value)
+          }
+          className={cx(
+            'appearance-none rounded-md border-0 bg-transparent px-2.5 pr-6 text-xs font-medium shadow-none outline-none',
+            widthClass,
+          )}
           title={title}
         >
           {options.map(option => (
@@ -102,7 +134,7 @@ export function CompareSelect({ onChange, options, title, value, widthClass }) {
               {option.label}
             </option>
           ))}
-        </select>
+        </AnalyzerControl>
         <span className='text-base-content/60 pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-xs'>
           <FontAwesomeIcon icon={faChevronDown} />
         </span>
@@ -113,6 +145,11 @@ export function CompareSelect({ onChange, options, title, value, widthClass }) {
   return null;
 }
 
+/**
+ * @param {object} props
+ * @param {string} [props.compareTargetDisplayMode]
+ * @param {((mode: import('../../../utils/constants.js').CompareTargetDisplayMode) => void) | null} [props.onCompareTargetDisplayModeChange]
+ */
 export function CompareTargetSelect({
   compareTargetDisplayMode,
   onCompareTargetDisplayModeChange,
@@ -120,7 +157,12 @@ export function CompareTargetSelect({
   const { t } = useLingui();
   return (
     <CompareSelect
-      onChange={onCompareTargetDisplayModeChange}
+      // Every option value below is a CompareTargetDisplayMode.
+      onChange={
+        /** @type {((value: string) => void) | null | undefined} */ (
+          onCompareTargetDisplayModeChange
+        )
+      }
       options={[
         { value: COMPARE_TARGET_DISPLAY_MODES.NONE, label: t`No Targets` },
         { value: COMPARE_TARGET_DISPLAY_MODES.PER_SHOT, label: t`Per Shot` },
@@ -133,6 +175,20 @@ export function CompareTargetSelect({
   );
 }
 
+/**
+ * @param {object} props
+ * @param {string} [props.compareAlignmentMode]
+ * @param {CompareSelectOption[]} props.compareAlignmentOptions
+ * @param {boolean} [props.compareAnnotationsEnabled]
+ * @param {CompareShotLegendItem[]} props.compareShotLegendItems
+ * @param {string} [props.compareTargetDisplayMode]
+ * @param {((mode: string) => void) | null} [props.onCompareAlignmentModeChange]
+ * @param {(() => void) | null} [props.onCompareAnnotationsToggle]
+ * @param {(() => void) | null} [props.onCompareSwap]
+ * @param {((mode: import('../../../utils/constants.js').CompareTargetDisplayMode) => void) | null} [props.onCompareTargetDisplayModeChange]
+ * @param {unknown} [props.shouldShowCompareControls] Truthy to render.
+ * @param {boolean} [props.showCompareAnnotationToggle]
+ */
 export function CompareControlsRow({
   compareAlignmentMode,
   compareAlignmentOptions,

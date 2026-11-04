@@ -18,6 +18,38 @@ import { scaleModelName } from '../../../utils/scaleModels.js';
 const DISCONNECT_BANNER_MS = 60000;
 const CONNECT_PENDING_MS = 15000;
 
+/**
+ * GET /api/scales/list entry.
+ * @typedef {object} ScanResult
+ * @property {string} uuid
+ * @property {string} name
+ */
+
+/**
+ * GET /api/scales/info.
+ * @typedef {object} ScaleInfo
+ * @property {boolean} connected
+ * @property {string} [uuid]
+ * @property {string} [name]
+ * @property {boolean} [hasBattery]
+ * @property {number} [battery] Percent.
+ * @property {string} [saved] Saved scale uuid, when not connected.
+ * @property {string} [savedName]
+ */
+
+/**
+ * A row of the scale list.
+ * @typedef {object} ScaleListEntry
+ * @property {string} uuid
+ * @property {string} name
+ * @property {boolean} saved
+ * @property {boolean} [connected]
+ * @property {boolean} [outOfRange]
+ * @property {boolean} [hasBattery]
+ * @property {number} [battery]
+ */
+
+/** @type {Record<string, import('@lingui/core').MessageDescriptor>} */
 const CONNECT_ERROR_MESSAGES = {
   not_found: msg`The scale wasn't found. Make sure it's switched on and nearby, then scan again.`,
   connect_failed: msg`The scale was found, but the Bluetooth connection failed. Try again or restart the scale.`,
@@ -25,6 +57,11 @@ const CONNECT_ERROR_MESSAGES = {
   request_failed: msg`GaggiMate didn't accept the request. Check the connection and try again.`,
 };
 
+/**
+ * @param {string} url
+ * @param {RequestInit} [options]
+ * @returns {Promise<any>} Raw JSON; callers cast it.
+ */
 async function fetchJson(url, options) {
   const response = await fetch(url, options);
   if (!response.ok) {
@@ -33,6 +70,7 @@ async function fetchJson(url, options) {
   return response.json();
 }
 
+/** @param {number} pct */
 function batteryIcon(pct) {
   if (pct >= 87) return faBatteryFull;
   if (pct >= 62) return faBatteryThreeQuarters;
@@ -41,6 +79,7 @@ function batteryIcon(pct) {
   return faBatteryEmpty;
 }
 
+/** @param {number} pct */
 function batteryColorClass(pct) {
   if (pct <= 9) return 'text-error';
   if (pct <= 29) return 'text-warning';
@@ -50,9 +89,9 @@ function batteryColorClass(pct) {
 export function BluetoothTab() {
   const { t, i18n } = useLingui();
   const [key, setKey] = useState(0);
-  const [scaleData, setScaleData] = useState([]);
-  const [connectingUuid, setConnectingUuid] = useState(null);
-  const [forgettingUuid, setForgettingUuid] = useState(null);
+  const [scaleData, setScaleData] = useState(/** @type {ScaleListEntry[]} */ ([]));
+  const [connectingUuid, setConnectingUuid] = useState(/** @type {string | null} */ (null));
+  const [forgettingUuid, setForgettingUuid] = useState(/** @type {string | null} */ (null));
   const mode = machine.value.status.mode;
   const { scanning: isScanning, connectError, disconnected } = machine.value.scale;
 
@@ -68,23 +107,30 @@ export function BluetoothTab() {
     isLoading,
     isError,
     data: fetchedScales = [],
-  } = useQuery(`scales-${key}`, () => fetchJson('/api/scales/list'));
+  } = useQuery(
+    `scales-${key}`,
+    () => /** @type {Promise<ScanResult[]>} */ (fetchJson('/api/scales/list')),
+  );
 
   const {
     isLoading: isInfoLoading,
     isError: isInfoError,
     data: connectedScale,
-  } = useQuery(`scale-info-${key}`, () => fetchJson('/api/scales/info'));
+  } = useQuery(
+    `scale-info-${key}`,
+    () => /** @type {Promise<ScaleInfo>} */ (fetchJson('/api/scales/info')),
+  );
 
   useEffect(() => {
     if (!connectedScale) {
       return;
     }
     if (connectedScale.connected) {
-      setScaleData([{ ...connectedScale, saved: true }]);
+      setScaleData([/** @type {ScaleListEntry} */ ({ ...connectedScale, saved: true })]);
       return;
     }
     const saved = connectedScale.saved;
+    /** @type {ScaleListEntry[]} */
     const scales = fetchedScales.map(scale => ({ ...scale, saved: scale.uuid === saved }));
     if (saved && !scales.some(scale => scale.saved)) {
       // Saved but not advertising: keep it listed so it can still be forgotten.
@@ -157,12 +203,17 @@ export function BluetoothTab() {
       console.error('Scan failed:', error);
       updateScaleState({
         scanning: false,
-        connectError: { address: null, reason: 'request_failed', at: Date.now() },
+        // No scale address for a failed scan; ScaleState types `address` as string only.
+        connectError: {
+          address: /** @type {string} */ (/** @type {unknown} */ (null)),
+          reason: 'request_failed',
+          at: Date.now(),
+        },
       });
     }
   }, []);
 
-  const onConnect = useCallback(async uuid => {
+  const onConnect = useCallback(async (/** @type {string} */ uuid) => {
     setConnectingUuid(uuid);
     updateScaleState({ connectError: null });
     try {
@@ -178,7 +229,7 @@ export function BluetoothTab() {
     }
   }, []);
 
-  const onForget = useCallback(async uuid => {
+  const onForget = useCallback(async (/** @type {string} */ uuid) => {
     setForgettingUuid(uuid);
     updateScaleState({ connectError: null, disconnected: null });
     try {
@@ -196,7 +247,7 @@ export function BluetoothTab() {
 
   const loading = isLoading || isInfoLoading;
   const errorAddress = connectError?.address;
-  const errorMessage = CONNECT_ERROR_MESSAGES[connectError?.reason];
+  const errorMessage = connectError ? CONNECT_ERROR_MESSAGES[connectError.reason] : undefined;
   const scaleName =
     (disconnected && (scaleModelName(disconnected.name) || disconnected.name)) || t`Scale`;
 
@@ -283,6 +334,14 @@ export function BluetoothTab() {
   );
 }
 
+/**
+ * @param {{
+ *   kind: 'error' | 'warning',
+ *   title: string,
+ *   message: string,
+ *   onDismiss: () => void,
+ * }} props
+ */
 function ScaleNotice({ kind, title, message, onDismiss }) {
   return (
     <div
@@ -300,6 +359,18 @@ function ScaleNotice({ kind, title, message, onDismiss }) {
   );
 }
 
+/**
+ * @param {{
+ *   isLoading: boolean,
+ *   isError: boolean,
+ *   isInfoError: boolean,
+ *   scaleData: ScaleListEntry[],
+ *   connectingUuid: string | null,
+ *   forgettingUuid: string | null,
+ *   onConnect: (uuid: string) => void,
+ *   onForget: (uuid: string) => void,
+ * }} props
+ */
 function ScaleList(props) {
   const {
     isLoading,

@@ -9,6 +9,9 @@ import { SourceMarker } from '../SourceMarker';
 import { getAnalyzerShotDisplayName, getShotDateTimeLabel } from '../useShotNotesState';
 import { ShotSummaryMetricsRow } from './ShotMetricCards';
 
+/** @typedef {import('../../types').AnalysisCompareEntry} AnalysisCompareEntry */
+/** @typedef {import('../../types').AnalyzerNotes} AnalyzerNotes */
+
 const WEEKDAY_LABELS = [
   msg`Sunday`,
   msg`Monday`,
@@ -19,6 +22,7 @@ const WEEKDAY_LABELS = [
   msg`Saturday`,
 ];
 
+/** @param {number | null | undefined} timestamp Unix epoch seconds */
 function getRelativeDayLabel(timestamp) {
   if (!timestamp) return '';
   const now = new Date();
@@ -61,6 +65,11 @@ function getRelativeDayLabel(timestamp) {
   return plural(diffYears, { one: '# year ago', other: '# years ago' });
 }
 
+/**
+ * @param {object} props
+ * @param {number | null | undefined} props.rating
+ * @param {(rating: number) => void} props.onChange
+ */
 function RatingControl({ rating, onChange }) {
   const { t } = useLingui();
   return (
@@ -85,6 +94,16 @@ function RatingControl({ rating, onChange }) {
   );
 }
 
+/**
+ * @param {object} props
+ * @param {AnalysisCompareEntry} props.entry
+ * @param {boolean} [props.isCompare]
+ * @param {AnalyzerNotes} props.notes
+ * @param {boolean} [props.loading]
+ * @param {(rating: number) => void} [props.onRatingChange]
+ * @param {boolean} [props.showSummaryMetrics]
+ * @param {string} [props.className]
+ */
 export function ShotMainInfoCard({
   entry,
   isCompare = false,

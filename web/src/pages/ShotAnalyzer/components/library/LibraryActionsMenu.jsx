@@ -3,15 +3,28 @@ import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useLingui } from '@lingui/react/macro';
 import { faEllipsisVertical } from '@fortawesome/free-solid-svg-icons/faEllipsisVertical';
-import {
-  getAnalyzerIconButtonClasses,
-  getAnalyzerTextButtonClasses,
-} from '../analyzerControlStyles';
+import { AnalyzerControl } from '../AnalyzerControl.jsx';
+import { cx } from '../../../../utils/cx.js';
+
+/**
+ * @typedef {object} LibraryAction
+ * @property {string} label
+ * @property {import('@fortawesome/fontawesome-svg-core').IconDefinition} icon
+ * @property {import('../AnalyzerControl.jsx').AnalyzerControlTone} [tone]
+ * @property {string} [href] Renders the action as a link.
+ * @property {() => void} [onSelect]
+ */
 
 const MENU_WIDTH = 176;
 const MENU_GAP = 8;
 const VIEWPORT_MARGIN = 12;
 
+/**
+ * @param {Element | null} anchor
+ * @param {number} actionCount
+ * @param {'top' | 'bottom'} preferredPlacement
+ * @returns {import('../types').MenuPosition}
+ */
 function getMenuPosition(anchor, actionCount, preferredPlacement) {
   if (!anchor) return { top: VIEWPORT_MARGIN, left: VIEWPORT_MARGIN, width: MENU_WIDTH };
 
@@ -40,6 +53,13 @@ function getMenuPosition(anchor, actionCount, preferredPlacement) {
   };
 }
 
+/**
+ * @param {object} props
+ * @param {LibraryAction[]} props.actions
+ * @param {string} props.ariaLabel
+ * @param {string} [props.buttonClassName]
+ * @param {'top' | 'bottom'} [props.placement]
+ */
 export function LibraryActionsMenu({ actions, ariaLabel, buttonClassName, placement = 'bottom' }) {
   const { t } = useLingui();
   const [isOpen, setIsOpen] = useState(false);
@@ -48,7 +68,9 @@ export function LibraryActionsMenu({ actions, ariaLabel, buttonClassName, placem
     left: VIEWPORT_MARGIN,
     width: MENU_WIDTH,
   });
+  /** @type {import('preact').RefObject<HTMLDetailsElement>} */
   const detailsRef = useRef(null);
+  /** @type {import('preact').RefObject<HTMLDivElement>} */
   const menuRef = useRef(null);
 
   const closeMenu = useCallback(() => {
@@ -62,12 +84,15 @@ export function LibraryActionsMenu({ actions, ariaLabel, buttonClassName, placem
   useEffect(() => {
     if (!isOpen) return;
 
+    /** @param {PointerEvent} event */
     const handlePointerDown = event => {
-      if (detailsRef.current?.contains(event.target) || menuRef.current?.contains(event.target)) {
+      const target = /** @type {Node | null} */ (event.target);
+      if (detailsRef.current?.contains(target) || menuRef.current?.contains(target)) {
         return;
       }
       closeMenu();
     };
+    /** @param {KeyboardEvent} event */
     const handleKeyDown = event => {
       if (event.key === 'Escape') closeMenu();
     };
@@ -85,6 +110,10 @@ export function LibraryActionsMenu({ actions, ariaLabel, buttonClassName, placem
     };
   }, [closeMenu, isOpen, updateMenuPosition]);
 
+  /**
+   * @param {Event} event
+   * @param {(() => void) | undefined} onSelect
+   */
   const handleAction = (event, onSelect) => {
     event.stopPropagation();
     closeMenu();
@@ -112,31 +141,33 @@ export function LibraryActionsMenu({ actions, ariaLabel, buttonClassName, placem
               <span>{action.label}</span>
             </>
           );
-          const className = getAnalyzerTextButtonClasses({
-            tone: action.tone,
-            className: 'w-full gap-2 px-2.5 py-2 text-left text-xs font-medium',
-          });
+          const className = 'w-full gap-2 px-2.5 py-2 text-left text-xs font-medium';
 
           return action.href ? (
-            <a
+            <AnalyzerControl
               key={action.label}
+              as='a'
+              variant='text'
+              tone={action.tone}
+              className={className}
               href={action.href}
               role='menuitem'
-              className={className}
-              onClick={event => handleAction(event, action.onSelect)}
+              onClick={/** @param {Event} event */ event => handleAction(event, action.onSelect)}
             >
               {content}
-            </a>
+            </AnalyzerControl>
           ) : (
-            <button
+            <AnalyzerControl
               key={action.label}
               type='button'
-              role='menuitem'
+              variant='text'
+              tone={action.tone}
               className={className}
-              onClick={event => handleAction(event, action.onSelect)}
+              role='menuitem'
+              onClick={/** @param {Event} event */ event => handleAction(event, action.onSelect)}
             >
               {content}
-            </button>
+            </AnalyzerControl>
           );
         })}
       </div>
@@ -146,23 +177,27 @@ export function LibraryActionsMenu({ actions, ariaLabel, buttonClassName, placem
   return (
     <details
       ref={detailsRef}
-      onToggle={event => {
-        const open = event.currentTarget.open;
-        if (open) updateMenuPosition();
-        setIsOpen(open);
-      }}
+      onToggle={
+        /** @param {import('preact').JSX.TargetedEvent<HTMLDetailsElement, Event>} event */ event => {
+          const open = event.currentTarget.open;
+          if (open) updateMenuPosition();
+          setIsOpen(open);
+        }
+      }
     >
-      <summary
-        onClick={event => event.stopPropagation()}
-        className={getAnalyzerIconButtonClasses({
-          tone: 'subtle',
-          className: `cursor-pointer list-none ${buttonClassName} [&::-webkit-details-marker]:hidden`,
-        })}
+      <AnalyzerControl
+        as='summary'
+        tone='subtle'
+        className={cx(
+          'cursor-pointer list-none [&::-webkit-details-marker]:hidden',
+          buttonClassName,
+        )}
+        onClick={/** @param {Event} event */ event => event.stopPropagation()}
         aria-label={ariaLabel}
         title={t`More actions`}
       >
         <FontAwesomeIcon icon={faEllipsisVertical} size='sm' />
-      </summary>
+      </AnalyzerControl>
 
       {isOpen ? createPortal(menu, document.body) : null}
     </details>

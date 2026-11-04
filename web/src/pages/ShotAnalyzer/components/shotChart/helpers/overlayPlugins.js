@@ -7,6 +7,17 @@ import {
 } from './canvasDrawing';
 import { readCssColorVar } from './chartTheme';
 
+/**
+ * @typedef {import('./types').ShotChartInstance} ShotChartInstance
+ * @typedef {import('./types').FinalWeightCallout} FinalWeightCallout
+ * @typedef {import('./types').StopIconOverlayItem} StopIconOverlayItem
+ * @typedef {import('./types').FinalWeightBadgeLabel} FinalWeightBadgeLabel
+ * @typedef {{ startX: number, startY: number }} CalloutAnchor
+ * @typedef {CalloutAnchor & { endX: number, endY: number, color: string, lineWidth: number }} CalloutLine
+ * @typedef {{ badgeHeight: number, badgeWidth: number, centerX: number, centerY: number, labelScale: number }} StopIconLayout
+ * @typedef {{ offsetX: number, offsetY: number, blur: number, color: string }} GlassShadow
+ */
+
 const PHASE_BACKGROUND_FILL_FALLBACK = 'rgba(107, 114, 128, 0.085)';
 
 const STOP_ICON_BADGE_RADIUS = 8.5;
@@ -28,6 +39,10 @@ const GLASS_SURFACE_SHADOW_FALLBACK = {
 
 const CSS_LENGTH_PATTERN = /^(-?\d+(?:\.\d+)?)(?:px)?$/;
 
+/**
+ * @param {string | undefined} token
+ * @returns {number | null}
+ */
 function parseShadowLengthToken(token) {
   const match = CSS_LENGTH_PATTERN.exec(String(token || ''));
   return match ? Number(match[1]) : null;
@@ -35,6 +50,11 @@ function parseShadowLengthToken(token) {
 
 export const hoverGuidePlugin = {
   id: 'hoverGuide',
+  /**
+   * @param {ShotChartInstance} chart
+   * @param {unknown} _args
+   * @param {import('./types').HoverGuidePluginOptions} [pluginOptions]
+   */
   afterDatasetsDraw(chart, _args, pluginOptions) {
     if (chart?.$suppressHoverGuide) return;
 
@@ -42,7 +62,7 @@ export const hoverGuidePlugin = {
     const x = Number.isFinite(chart?.$fixedTooltipPointerX)
       ? chart.$fixedTooltipPointerX
       : active[0]?.element?.x;
-    if (!Number.isFinite(x)) return;
+    if (x == null || !Number.isFinite(x)) return;
 
     const overflow = Number(pluginOptions?.overflow) || 6;
     const { top, bottom } = chart.chartArea;
@@ -61,6 +81,11 @@ export const hoverGuidePlugin = {
   },
 };
 
+/**
+ * @param {ShotChartInstance} chart
+ * @param {FinalWeightCallout} callout
+ * @returns {CalloutAnchor | null}
+ */
 function resolveFinalWeightCalloutAnchor(chart, callout) {
   const xScale = chart.scales[callout.xScaleID || 'x'];
   const yScale = chart.scales[callout.yScaleID || 'yWeight'];
@@ -77,6 +102,11 @@ function resolveFinalWeightCalloutAnchor(chart, callout) {
   return { startX, startY };
 }
 
+/**
+ * @param {FinalWeightCallout} callout
+ * @param {CalloutAnchor} anchor
+ * @returns {{ endX: number, endY: number } | null}
+ */
 function resolveFinalWeightCalloutEnd(callout, anchor) {
   const xAdjust = Number(callout.xAdjust) || 0;
   const yAdjust = Number(callout.yAdjust) || 0;
@@ -90,6 +120,11 @@ function resolveFinalWeightCalloutEnd(callout, anchor) {
   };
 }
 
+/**
+ * @param {ShotChartInstance} chart
+ * @param {FinalWeightCallout} callout
+ * @returns {CalloutLine | null}
+ */
 function resolveFinalWeightCalloutLine(chart, callout) {
   if (!callout?.visible) return null;
   const anchor = resolveFinalWeightCalloutAnchor(chart, callout);
@@ -105,6 +140,10 @@ function resolveFinalWeightCalloutLine(chart, callout) {
   };
 }
 
+/**
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {CalloutLine} line
+ */
 function drawFinalWeightCalloutLine(ctx, line) {
   ctx.beginPath();
   ctx.strokeStyle = line.color;
@@ -117,6 +156,11 @@ function drawFinalWeightCalloutLine(ctx, line) {
 
 export const finalWeightCalloutLinePlugin = {
   id: 'finalWeightCalloutLine',
+  /**
+   * @param {ShotChartInstance} chart
+   * @param {unknown} _args
+   * @param {import('./types').FinalWeightCalloutLinePluginOptions} [pluginOptions]
+   */
   afterDatasetsDraw(chart, _args, pluginOptions = {}) {
     if (!chart?.chartArea || !chart?.scales) return;
 
@@ -134,6 +178,11 @@ export const finalWeightCalloutLinePlugin = {
 
 export const phaseBackgroundOverlayPlugin = {
   id: 'phaseBackgroundOverlay',
+  /**
+   * @param {ShotChartInstance} chart
+   * @param {unknown} _args
+   * @param {import('./types').PhaseBackgroundOverlayPluginOptions} [pluginOptions]
+   */
   beforeDatasetsDraw(chart, _args, pluginOptions = {}) {
     if (!chart?.chartArea || !chart?.scales) return;
 
@@ -168,11 +217,23 @@ export const phaseBackgroundOverlayPlugin = {
   },
 };
 
+/**
+ * @param {StopIconOverlayItem} stop
+ * @param {boolean} shouldFilterByReplayTime
+ * @param {number} stopRevealX
+ * @returns {boolean}
+ */
 function shouldDrawStopIcon(stop, shouldFilterByReplayTime, stopRevealX) {
   if (!stop?.visible || !stop?.iconDef) return false;
   return !shouldFilterByReplayTime || Number(stop.xValue) <= stopRevealX;
 }
 
+/**
+ * @param {ShotChartInstance} chart
+ * @param {StopIconOverlayItem} stop
+ * @param {number} labelScale
+ * @returns {StopIconLayout | null}
+ */
 function resolveStopIconLayout(chart, stop, labelScale) {
   const xScale = chart.scales[stop.xScaleID || 'x'];
   const yScale = chart.scales[stop.yScaleID || 'yMain'];
@@ -193,11 +254,22 @@ function resolveStopIconLayout(chart, stop, labelScale) {
   };
 }
 
+/**
+ * @param {unknown} value
+ * @param {number} fallback
+ * @returns {number}
+ */
 function getStopIconShadowOffset(value, fallback) {
   const numericValue = Number(value);
   return Number.isFinite(numericValue) ? numericValue : fallback;
 }
 
+/**
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {StopIconOverlayItem} stop
+ * @param {StopIconLayout} layout
+ * @param {GlassShadow} shadow
+ */
 function drawStopIcon(ctx, stop, layout, shadow) {
   const { badgeHeight, badgeWidth, centerX, centerY, labelScale } = layout;
   ctx.save();
@@ -227,6 +299,11 @@ function drawStopIcon(ctx, stop, layout, shadow) {
 
 export const stopIconOverlayPlugin = {
   id: 'stopIconOverlay',
+  /**
+   * @param {ShotChartInstance} chart
+   * @param {unknown} _args
+   * @param {import('./types').StopIconOverlayPluginOptions} [pluginOptions]
+   */
   afterDraw(chart, _args, pluginOptions = {}) {
     if (!chart?.chartArea || !chart?.scales) return;
 
@@ -247,6 +324,7 @@ export const stopIconOverlayPlugin = {
   },
 };
 
+/** @returns {GlassShadow} */
 function getGlassSurfaceShadowSettings() {
   const value = readCssColorVar('--app-glass-surface-shadow', '0 14px 36px rgba(15, 23, 42, 0.16)');
   const [offsetXToken, offsetYToken, blurToken, ...colorTokens] = String(value).trim().split(/\s+/);
@@ -267,6 +345,10 @@ function getGlassSurfaceShadowSettings() {
   };
 }
 
+/**
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {{ centerX: number, centerY: number, width: number, height: number }} shape
+ */
 function drawStopBadgeDropPath(ctx, { centerX, centerY, width, height }) {
   const halfWidth = width / 2;
   const halfHeight = height / 2;
@@ -329,14 +411,30 @@ function drawStopBadgeDropPath(ctx, { centerX, centerY, width, height }) {
   ctx.closePath();
 }
 
+/**
+ * @param {unknown} content
+ * @returns {string}
+ */
 function getFinalWeightBadgeText(content) {
   return Array.isArray(content) ? String(content[0] || '') : String(content || '');
 }
 
+/**
+ * @param {ShotChartInstance} chart
+ * @param {string | undefined} scaleId
+ * @param {string} fallbackScaleId
+ * @returns {import('chart.js').Scale | null}
+ */
 function getFinalWeightBadgeScale(chart, scaleId, fallbackScaleId) {
   return chart.scales[scaleId || fallbackScaleId] || null;
 }
 
+/**
+ * @param {import('chart.js').Scale} scale
+ * @param {unknown} value
+ * @param {unknown} adjustment
+ * @returns {number | null}
+ */
 function getFinalWeightBadgeCoordinate(scale, value, adjustment) {
   const numericValue = Number(value);
   if (!Number.isFinite(numericValue)) return null;
@@ -345,6 +443,11 @@ function getFinalWeightBadgeCoordinate(scale, value, adjustment) {
   return Number.isFinite(coordinate) ? coordinate : null;
 }
 
+/**
+ * @param {ShotChartInstance} chart
+ * @param {FinalWeightBadgeLabel} label
+ * @returns {{ effectiveFontSize: number, fontWeight: string | number, labelScale: number, padding: { x?: number, y?: number } }}
+ */
 function getFinalWeightBadgeStyle(chart, label) {
   const labelScale = getChartLabelScale(chart);
   const padding =
@@ -360,6 +463,10 @@ function getFinalWeightBadgeStyle(chart, label) {
   };
 }
 
+/**
+ * @param {ShotChartInstance} chart
+ * @param {FinalWeightBadgeLabel} label
+ */
 function resolveFinalWeightBadgeLayout(chart, label) {
   if (!label || label.visible === false) return null;
 
@@ -382,6 +489,10 @@ function resolveFinalWeightBadgeLayout(chart, label) {
   };
 }
 
+/**
+ * @param {ShotChartInstance} chart
+ * @param {FinalWeightBadgeLabel} label
+ */
 function drawFinalWeightBadge(chart, label) {
   const layout = resolveFinalWeightBadgeLayout(chart, label);
   if (!layout) return;
@@ -421,6 +532,11 @@ function drawFinalWeightBadge(chart, label) {
 
 export const finalWeightBadgeOverlayPlugin = {
   id: 'finalWeightBadgeOverlay',
+  /**
+   * @param {ShotChartInstance} chart
+   * @param {unknown} _args
+   * @param {import('./types').FinalWeightBadgeOverlayPluginOptions} [pluginOptions]
+   */
   afterDraw(chart, _args, pluginOptions = {}) {
     if (!chart?.chartArea || !chart?.scales) return;
 

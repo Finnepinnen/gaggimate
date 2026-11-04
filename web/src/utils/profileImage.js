@@ -7,8 +7,13 @@ export const ACCEPTED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'i
 const COLOR_FORMAT_TRUE_COLOR = 4;
 const HEADER = COLOR_FORMAT_TRUE_COLOR | (PROFILE_IMAGE_SIZE << 10) | (PROFILE_IMAGE_SIZE << 21);
 
+/** @param {string} id */
 const imageUrl = id => `/api/profiles/image?id=${encodeURIComponent(id)}`;
 
+/**
+ * @param {Blob} blob
+ * @param {string} [name] File name, checked for a .gif extension.
+ */
 export async function isGif(blob, name = '') {
   if (blob.type === 'image/gif' || /\.gif$/i.test(name)) return true;
   const magic = new Uint8Array(await blob.slice(0, 4).arrayBuffer());
@@ -16,13 +21,15 @@ export async function isGif(blob, name = '') {
 }
 
 // Center-crop to a square and scale to 300x300.
+/** @param {Blob} blob */
 export async function drawToCanvas(blob) {
   const bitmap = await createImageBitmap(blob);
   const side = Math.min(bitmap.width, bitmap.height);
   const canvas = document.createElement('canvas');
   canvas.width = PROFILE_IMAGE_SIZE;
   canvas.height = PROFILE_IMAGE_SIZE;
-  const ctx = canvas.getContext('2d');
+  // A fresh canvas always yields a 2d context.
+  const ctx = /** @type {CanvasRenderingContext2D} */ (canvas.getContext('2d'));
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, PROFILE_IMAGE_SIZE, PROFILE_IMAGE_SIZE);
   ctx.imageSmoothingQuality = 'high';
@@ -41,10 +48,18 @@ export async function drawToCanvas(blob) {
   return canvas;
 }
 
+/**
+ * @param {HTMLCanvasElement} canvas
+ * @returns {ArrayBuffer}
+ */
 export function canvasToDeviceImage(canvas) {
-  const px = canvas
-    .getContext('2d')
-    .getImageData(0, 0, PROFILE_IMAGE_SIZE, PROFILE_IMAGE_SIZE).data;
+  // The canvas comes from drawToCanvas, which already uses a 2d context.
+  const px = /** @type {CanvasRenderingContext2D} */ (canvas.getContext('2d')).getImageData(
+    0,
+    0,
+    PROFILE_IMAGE_SIZE,
+    PROFILE_IMAGE_SIZE,
+  ).data;
   const out = new DataView(new ArrayBuffer(4 + PROFILE_IMAGE_SIZE * PROFILE_IMAGE_SIZE * 2));
   out.setUint32(0, HEADER, true);
   for (let i = 0, o = 4; i < px.length; i += 4, o += 2) {
@@ -53,12 +68,14 @@ export function canvasToDeviceImage(canvas) {
   return out.buffer;
 }
 
+/** @param {ArrayBuffer} buffer */
 export function deviceImageToCanvas(buffer) {
   const view = new DataView(buffer);
   const canvas = document.createElement('canvas');
   canvas.width = PROFILE_IMAGE_SIZE;
   canvas.height = PROFILE_IMAGE_SIZE;
-  const ctx = canvas.getContext('2d');
+  // A fresh canvas always yields a 2d context.
+  const ctx = /** @type {CanvasRenderingContext2D} */ (canvas.getContext('2d'));
   const image = ctx.createImageData(PROFILE_IMAGE_SIZE, PROFILE_IMAGE_SIZE);
   for (let i = 0, o = 4; o + 1 < buffer.byteLength; i += 4, o += 2) {
     const v = view.getUint16(o, true);
@@ -71,11 +88,19 @@ export function deviceImageToCanvas(buffer) {
   return canvas;
 }
 
+/**
+ * @param {string} id
+ * @returns {Promise<ArrayBuffer | null>}
+ */
 export async function fetchProfileImage(id) {
   const response = await fetch(imageUrl(id), { cache: 'no-store' });
   return response.ok ? response.arrayBuffer() : null;
 }
 
+/**
+ * @param {string} id
+ * @param {ArrayBuffer} buffer Device image (see canvasToDeviceImage).
+ */
 export async function uploadProfileImage(id, buffer) {
   const response = await fetch(imageUrl(id), {
     method: 'POST',
@@ -85,18 +110,24 @@ export async function uploadProfileImage(id, buffer) {
   if (!response.ok) throw new Error((await response.text()) || t`Upload failed`);
 }
 
+/** @param {string} id */
 export async function deleteProfileImage(id) {
   const response = await fetch(imageUrl(id), { method: 'DELETE' });
   if (!response.ok) throw new Error((await response.text()) || t`Could not remove image`);
 }
 
 // Export format: the "image" field of a profile, as a PNG data URL. Returns null when the profile has no image.
+/** @param {string} id */
 export async function exportProfileImage(id) {
   const buffer = await fetchProfileImage(id);
   return buffer ? deviceImageToCanvas(buffer).toDataURL('image/png') : null;
 }
 
 // Import from a data URL (GaggiMate "image" or Meticulous display.image); GIFs and other formats are skipped.
+/**
+ * @param {string} id
+ * @param {unknown} dataUrl
+ */
 export async function importProfileImage(id, dataUrl) {
   if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image/')) return false;
   const blob = await (await fetch(dataUrl)).blob();

@@ -17,6 +17,7 @@ import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
  */
 export function useConfirmAction(timeoutMs = 4000) {
   const [armed, setArmed] = useState(false);
+  /** @type {import('preact').RefObject<ReturnType<typeof setTimeout> | null>} */
   const timerRef = useRef(null);
 
   // Auto-cancel after timeout and cleanup on unmount
@@ -42,6 +43,7 @@ export function useConfirmAction(timeoutMs = 4000) {
   }, []);
 
   const armOrRun = useCallback(
+    /** @param {(() => void) | undefined} [fn] */
     fn => {
       if (!armed) {
         setArmed(true);

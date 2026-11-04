@@ -24,7 +24,7 @@ export function SettingsFormField({
   noMargin = false,
 }) {
   return (
-    <div className={`form-control ${noMargin ? '' : 'mb-3'} ${className}`}>
+    <div className={`${noMargin ? '' : 'mb-3'} ${className}`}>
       <label htmlFor={htmlFor} className='mb-1 block text-sm font-medium'>
         {label}
       </label>
@@ -54,11 +54,11 @@ export function InputGroupField({
   noMargin = false,
 }) {
   return (
-    <div className={`form-control ${noMargin ? '' : 'mb-3'}`}>
+    <div className={`${noMargin ? '' : 'mb-3'}`}>
       <label htmlFor={htmlFor} className='mb-1 block text-sm font-medium'>
         {label}
       </label>
-      <div className='input-group'>
+      <div>
         <label htmlFor={htmlFor} className='input w-full'>
           {children}
           <span aria-label={unitAriaLabel}>{unit}</span>
@@ -79,10 +79,10 @@ export function InputGroupField({
  */
 export function ToggleField({ label, htmlFor, checked, onChange, helpText }) {
   return (
-    <div className='form-control'>
+    <div>
       <label htmlFor={htmlFor} className='label cursor-pointer'>
         {/* Explicit color: older WebViews resolve daisyUI's color-mix(currentColor) label color to transparent. */}
-        <span className='label-text text-base-content text-sm font-medium'>{label}</span>
+        <span className='text-base-content text-sm font-medium'>{label}</span>
         <input
           id={htmlFor}
           name={htmlFor}
@@ -97,14 +97,19 @@ export function ToggleField({ label, htmlFor, checked, onChange, helpText }) {
   );
 }
 
+/** @typedef {{ id: string, label: import('preact').ComponentChildren, required?: boolean }} SortableDefinition */
+/** @typedef {'visible' | 'available'} DragSource */
+/** @typedef {{ id: string, pos: 'before' | 'after' }} DragOverInfo */
+
 /**
+ * @template {SortableDefinition} D
  * @param {object} props
  * @param {string[]} props.order
- * @param {Record<string, any>} props.definitions
- * @param {{id: string, label: import('preact').ComponentChildren}[]} props.hidden - Definitions not in `order`
+ * @param {D[]} props.definitions
+ * @param {SortableDefinition[]} props.hidden - Definitions not in `order`
  * @param {(order: string[]) => void} props.onOrderChange
  * @param {import('preact').ComponentChildren} [props.emptyMessage]
- * @param {(def: any) => import('preact').ComponentChildren} [props.extraControls]
+ * @param {(def: D) => import('preact').ComponentChildren} [props.extraControls]
  */
 export function SortableConfigurator({
   order,
@@ -117,24 +122,33 @@ export function SortableConfigurator({
   const orderRef = useRef(order);
   orderRef.current = order;
 
+  /** @type {import('preact').RefObject<string | null>} */
   const draggingIdRef = useRef(null);
+  /** @type {import('preact').RefObject<DragSource | null>} */
   const draggingSourceRef = useRef(null);
-  const [draggingId, setDraggingId] = useState(null);
-  const [draggingSource, setDraggingSource] = useState(null);
+  const [draggingId, setDraggingId] = useState(/** @type {string | null} */ (null));
+  const [draggingSource, setDraggingSource] = useState(/** @type {DragSource | null} */ (null));
+  /** @type {import('preact').RefObject<DragOverInfo | null>} */
   const dragOverInfoRef = useRef(null);
-  const [dragOverInfo, setDragOverInfo] = useState(null);
+  const [dragOverInfo, setDragOverInfo] = useState(/** @type {DragOverInfo | null} */ (null));
 
+  /** @param {DragOverInfo | null} info */
   const updateDragOver = info => {
     dragOverInfoRef.current = info;
     setDragOverInfo(info);
   };
 
+  /**
+   * @param {DragEvent} e
+   * @param {string} id
+   * @param {DragSource} source
+   */
   const startDrag = (e, id, source) => {
     draggingIdRef.current = id;
     draggingSourceRef.current = source;
     setDraggingId(id);
     setDraggingSource(source);
-    e.dataTransfer.effectAllowed = 'move';
+    /** @type {DataTransfer} */ (e.dataTransfer).effectAllowed = 'move';
   };
 
   const endDrag = () => {
@@ -145,6 +159,10 @@ export function SortableConfigurator({
     updateDragOver(null);
   };
 
+  /**
+   * @param {string} id
+   * @param {'up' | 'down'} dir
+   */
   const move = (id, dir) => {
     const idx = order.indexOf(id);
     if (idx === -1) return;
@@ -155,12 +173,14 @@ export function SortableConfigurator({
     onOrderChange(next);
   };
 
+  /** @param {string} id */
   const remove = id => {
     const def = definitions.find(d => d.id === id);
     if (def?.required) return;
     onOrderChange(order.filter(oid => oid !== id));
   };
 
+  /** @param {string} id */
   const add = id => {
     if (order.includes(id)) return;
     onOrderChange([...order, id]);
@@ -173,7 +193,7 @@ export function SortableConfigurator({
           <Trans>Visible</Trans>
         </div>
         <div
-          className={`flex flex-col gap-1 rounded-lg transition-all duration-200${draggingSource === 'available' ? 'bg-primary/5 ring-primary/40 ring-1' : ''}`}
+          className={`flex flex-col gap-1 rounded-lg transition-all duration-200 ${draggingSource === 'available' ? 'bg-primary/5 ring-primary/40 ring-1' : ''}`}
           onDragOver={e => e.preventDefault()}
           onDrop={e => {
             e.preventDefault();
@@ -240,7 +260,7 @@ export function SortableConfigurator({
                     type='button'
                     disabled={idx === 0}
                     onClick={() => move(id, 'up')}
-                    className='btn btn-ghost btn-xs flex h-5 w-5 items-center justify-center rounded p-0'
+                    className='btn btn-ghost btn-xs flex h-5 w-5 items-center justify-center rounded-sm p-0'
                   >
                     <FontAwesomeIcon icon={faChevronUp} className='h-2.5 w-2.5' />
                   </button>
@@ -248,7 +268,7 @@ export function SortableConfigurator({
                     type='button'
                     disabled={idx === order.length - 1}
                     onClick={() => move(id, 'down')}
-                    className='btn btn-ghost btn-xs flex h-5 w-5 items-center justify-center rounded p-0'
+                    className='btn btn-ghost btn-xs flex h-5 w-5 items-center justify-center rounded-sm p-0'
                   >
                     <FontAwesomeIcon icon={faChevronDown} className='h-2.5 w-2.5' />
                   </button>
@@ -261,7 +281,7 @@ export function SortableConfigurator({
                   <button
                     type='button'
                     onClick={() => remove(id)}
-                    className='btn btn-ghost btn-xs text-error flex h-6 w-6 items-center justify-center rounded p-0'
+                    className='btn btn-ghost btn-xs text-error flex h-6 w-6 items-center justify-center rounded-sm p-0'
                   >
                     <FontAwesomeIcon icon={faXmark} className='h-3.5 w-3.5' />
                   </button>
@@ -283,7 +303,7 @@ export function SortableConfigurator({
               draggable
               onDragStart={e => startDrag(e, def.id, 'available')}
               onDragEnd={endDrag}
-              className={`border-base-content/10 bg-base-100 flex min-h-14 cursor-grab items-center gap-2 rounded-lg border px-2 py-1.5 transition-all duration-150${draggingId === def.id ? 'opacity-40' : ''}`}
+              className={`border-base-content/10 bg-base-100 flex min-h-14 cursor-grab items-center gap-2 rounded-lg border px-2 py-1.5 transition-all duration-150 ${draggingId === def.id ? 'opacity-40' : ''}`}
             >
               <span className='text-base-content/20 select-none'>⠿</span>
               <span className='flex-1 text-sm'>{def.label}</span>

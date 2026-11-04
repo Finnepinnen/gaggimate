@@ -9,6 +9,14 @@ import { Trans } from '@lingui/react/macro';
 import { SkeletonBlock } from '../../../components/SkeletonBlock.jsx';
 import { useProfileList } from '../../../services/hooks.js';
 
+/** @typedef {import('../../../types').Profile & { id: string }} StoredProfile */
+
+/**
+ * @param {object} props
+ * @param {StoredProfile} props.profile
+ * @param {boolean} props.isSelected
+ * @param {(id: string) => void} props.onSelect
+ */
 function ProfileMiniCard({ profile, isSelected, onSelect }) {
   const phases = Array.isArray(profile?.phases) ? profile.phases : [];
   const totalSeconds = phases.reduce(
@@ -56,11 +64,21 @@ ProfileMiniCard.propTypes = {
   onSelect: PropTypes.func.isRequired,
 };
 
+/**
+ * @param {object} props
+ * @param {string | null} [props.selectedProfileId]
+ * @param {boolean} [props.inCard]
+ * @param {boolean} [props.compact]
+ */
 export function FavoriteProfilesCard({ selectedProfileId, inCard = false, compact = false }) {
-  const apiService = useContext(ApiServiceContext);
+  // Provided at the app root, so never null here.
+  const apiService = /** @type {import('../../../services/ApiService.js').default} */ (
+    useContext(ApiServiceContext)
+  );
   const { profiles, loading } = useProfileList();
   const favorites = profiles.filter(p => p.favorite).slice(0, 3);
 
+  /** @param {string} id */
   const handleSelect = id => {
     apiService.request({ tp: 'req:profiles:select', id }).catch(() => {});
   };

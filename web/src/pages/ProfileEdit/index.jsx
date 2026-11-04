@@ -36,12 +36,15 @@ const pressureAvailable = computed(() => machine.value.capabilities.pressure);
 export function ProfileEdit() {
   const { t } = useLingui();
   const isConnected = connected.value;
-  const apiService = useContext(ApiServiceContext);
+  // Provided at the app root, so never null here.
+  const apiService = /** @type {import('../../services/ApiService.js').default} */ (
+    useContext(ApiServiceContext)
+  );
   const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { params } = useRoute();
-  const [data, setData] = useState(null);
+  const [data, setData] = useState(/** @type {import('./types').EditorProfile | null} */ (null));
   useEffect(() => {
     async function fetchData() {
       if (params.id === 'new') {
@@ -109,6 +112,7 @@ export function ProfileEdit() {
     fetchData();
   }, [params.id, setData, isConnected, apiService]);
   const onSave = useCallback(
+    /** @param {import('./types').EditorProfile} data */
     async data => {
       setSaving(true);
       console.log(data);
@@ -121,7 +125,8 @@ export function ProfileEdit() {
   );
   const onConvert = useCallback(() => {
     setData({
-      ...data,
+      // Only offered while a standard profile is loaded.
+      .../** @type {import('./types').EditorProfile} */ (data),
       type: 'pro',
     });
   }, [data, setData]);
@@ -139,7 +144,7 @@ export function ProfileEdit() {
   return (
     <>
       <div className='mb-4 flex flex-row items-center gap-2'>
-        <h2 className='flex-grow text-2xl font-bold sm:text-3xl'>
+        <h2 className='grow text-2xl font-bold sm:text-3xl'>
           {params.id === 'new' ? t`Create Profile` : t`Edit ${label}`}
         </h2>
         {data?.type === 'standard' && pressureAvailable.value && (
@@ -154,7 +159,14 @@ export function ProfileEdit() {
         )}
       </div>
 
-      {!data?.type && <ProfileTypeSelection onSelect={type => setData({ ...data, type })} />}
+      {!data?.type && (
+        <ProfileTypeSelection
+          // `data` is set before `loading` clears.
+          onSelect={type =>
+            setData({ .../** @type {import('./types').EditorProfile} */ (data), type })
+          }
+        />
+      )}
       {data?.type === 'standard' && (
         <StandardProfileForm
           data={data}

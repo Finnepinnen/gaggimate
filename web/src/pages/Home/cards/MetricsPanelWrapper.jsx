@@ -3,6 +3,12 @@ import { METRIC_DEFINITIONS } from '../../../utils/metricDefinitions.js';
 import { metricOrderSignal } from '../../../utils/dashboardManager.js';
 import { MetricsGrid } from './MetricsGrid.jsx';
 
+/**
+ * @param {object} props
+ * @param {import('../../../utils/metricDefinitions.js').MetricSource} props.ds
+ * @param {boolean} [props.inCard]
+ * @param {boolean} [props.compact]
+ */
 export function MetricsPanelWrapper({ ds, inCard = false, compact = false }) {
   const metricOrder = metricOrderSignal.value;
 
@@ -13,7 +19,7 @@ export function MetricsPanelWrapper({ ds, inCard = false, compact = false }) {
 
   const visibleMetrics = orderedIds
     .map(id => METRIC_DEFINITIONS.find(m => m.id === id))
-    .filter(Boolean)
+    .filter(m => m !== undefined)
     .filter(m => m.available(ds))
     .map(m => ({
       id: m.id,

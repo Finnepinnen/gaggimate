@@ -1,3 +1,9 @@
+/**
+ * @param {object} props
+ * @param {number | null | undefined} props.shotNumber
+ * @param {string | null | undefined} [props.color]
+ * @param {string} [props.className]
+ */
 export function TooltipShotBadge({ shotNumber, color, className }) {
   if (shotNumber !== null && shotNumber !== undefined) {
     return (

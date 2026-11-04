@@ -5,6 +5,14 @@ import { faEyeSlash } from '@fortawesome/free-solid-svg-icons/faEyeSlash';
 import { faSpinner } from '@fortawesome/free-solid-svg-icons/faSpinner';
 import { Trans, useLingui } from '@lingui/react/macro';
 
+/**
+ * @param {object} props
+ * @param {boolean} props.isOpen
+ * @param {() => void} props.onClose
+ * @param {(username: string, password: string, remember: boolean) => Promise<void>} props.onUpload Rejects to keep the modal open.
+ * @param {boolean} [props.isUploading]
+ * @param {Pick<import('../types').Shot, 'profile' | 'timestamp' | 'duration' | 'volume'>} [props.shotInfo]
+ */
 export default function VisualizerUploadModal({
   isOpen,
   onClose,
@@ -18,6 +26,7 @@ export default function VisualizerUploadModal({
   const [showPassword, setShowPassword] = useState(false);
   const [rememberCredentials, setRememberCredentials] = useState(false);
 
+  /** @param {import('preact').JSX.TargetedEvent<HTMLFormElement, Event>} e */
   const handleSubmit = async e => {
     e.preventDefault();
     if (!username.trim() || !password.trim()) {
@@ -77,7 +86,7 @@ export default function VisualizerUploadModal({
   if (!isOpen) return null;
 
   return (
-    <div className='bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black p-4'>
+    <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4'>
       <div className='max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-white shadow-xl dark:bg-gray-800'>
         <div className='p-6'>
           <div className='mb-4 flex items-center justify-between'>
@@ -115,7 +124,7 @@ export default function VisualizerUploadModal({
                 </strong>{' '}
                 {(shotInfo.duration / 1000).toFixed(1)}s
               </p>
-              {shotInfo.volume > 0 && (
+              {shotInfo.volume != null && shotInfo.volume > 0 && (
                 <p className='text-sm text-gray-600 dark:text-gray-300'>
                   <strong>
                     <Trans>Yield:</Trans>
@@ -181,7 +190,7 @@ export default function VisualizerUploadModal({
                 checked={rememberCredentials}
                 onChange={e => setRememberCredentials(e.currentTarget.checked)}
                 disabled={isUploading}
-                className='h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50'
+                className='h-4 w-4 rounded-sm border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50'
               />
               <label htmlFor='remember' className='ml-2 text-sm text-gray-600 dark:text-gray-300'>
                 <Trans>Remember credentials</Trans>

@@ -8,16 +8,31 @@
 import { t } from '@lingui/core/macro';
 import { openDB } from 'idb';
 
+/** @typedef {import('../types').AnalyzerShot} AnalyzerShot */
+/** @typedef {import('../types').AnalyzerProfile} AnalyzerProfile */
+/** @typedef {import('../types').AnalyzerNotes} AnalyzerNotes */
+/**
+ * @typedef {object} AnalyzerDBSchema
+ * @property {{ key: string, value: AnalyzerShot }} shots
+ * @property {{ key: string, value: AnalyzerProfile }} profiles
+ * @property {{ key: string, value: AnalyzerNotes }} notes
+ */
+/** @typedef {import('idb').IDBPDatabase<AnalyzerDBSchema>} AnalyzerDB */
+
 const DB_NAME = 'gaggimate-analyzer';
 const DB_VERSION = 3;
 
-/** @param {any} [profile] */
+/**
+ * @param {AnalyzerProfile} [profile]
+ * @returns {AnalyzerProfile | null}
+ */
 function normalizeStoredProfile(profile = {}) {
   const label = String(
     profile.label || profile.name || profile.fileName || profile.exportName || '',
   ).trim();
   if (!label) return null;
 
+  /** @type {AnalyzerProfile} */
   const normalized = {
     ...profile,
     label,
@@ -28,40 +43,45 @@ function normalizeStoredProfile(profile = {}) {
 }
 
 class IndexedDBService {
+  /** @type {AnalyzerDB | null} */
   db = null;
+  /** @type {Promise<AnalyzerDB> | null} */
   _initPromise = null;
 
   /**
    * Initialize the database.
    * Caches the init promise to prevent concurrent openDB calls.
+   * @returns {Promise<AnalyzerDB>}
    */
   async init() {
     if (this.db) return this.db;
     if (this._initPromise) return this._initPromise;
 
-    this._initPromise = openDB(DB_NAME, DB_VERSION, {
-      async upgrade(db, oldVersion, newVersion, transaction) {
-        if (!db.objectStoreNames.contains('shots')) {
-          db.createObjectStore('shots', { keyPath: 'name' });
-        }
-        if (!db.objectStoreNames.contains('profiles')) {
-          db.createObjectStore('profiles', { keyPath: 'label' });
-        } else if (oldVersion < 3) {
-          const existingProfiles = await transaction.objectStore('profiles').getAll();
-          db.deleteObjectStore('profiles');
-          const profileStore = db.createObjectStore('profiles', { keyPath: 'label' });
+    this._initPromise = /** @type {Promise<AnalyzerDB>} */ (
+      openDB(DB_NAME, DB_VERSION, {
+        async upgrade(db, oldVersion, newVersion, transaction) {
+          if (!db.objectStoreNames.contains('shots')) {
+            db.createObjectStore('shots', { keyPath: 'name' });
+          }
+          if (!db.objectStoreNames.contains('profiles')) {
+            db.createObjectStore('profiles', { keyPath: 'label' });
+          } else if (oldVersion < 3) {
+            const existingProfiles = await transaction.objectStore('profiles').getAll();
+            db.deleteObjectStore('profiles');
+            const profileStore = db.createObjectStore('profiles', { keyPath: 'label' });
 
-          existingProfiles.forEach(profile => {
-            const normalizedProfile = normalizeStoredProfile(profile);
-            if (normalizedProfile) profileStore.put(normalizedProfile);
-          });
-        }
-        // v2: Dedicated notes store (same JSON format as GaggiMate API)
-        if (!db.objectStoreNames.contains('notes')) {
-          db.createObjectStore('notes', { keyPath: 'id' });
-        }
-      },
-    })
+            existingProfiles.forEach(profile => {
+              const normalizedProfile = normalizeStoredProfile(profile);
+              if (normalizedProfile) profileStore.put(normalizedProfile);
+            });
+          }
+          // v2: Dedicated notes store (same JSON format as GaggiMate API)
+          if (!db.objectStoreNames.contains('notes')) {
+            db.createObjectStore('notes', { keyPath: 'id' });
+          }
+        },
+      })
+    )
       .then(db => {
         this.db = db;
         return db;
@@ -76,13 +96,15 @@ class IndexedDBService {
 
   /**
    * Save a shot to browser storage
-   * @param {Object} shot - Shot data with metadata
+   * @param {AnalyzerShot} shot - Shot data with metadata
+   * @returns {Promise<AnalyzerShot>}
    */
   async saveShot(shot) {
     const db = await this.init();
     const storageKey = String(shot.storageKey || shot.name || shot.id || Date.now());
 
     // Add source tag and storage timestamp
+    /** @type {AnalyzerShot} */
     const shotWithMeta = {
       ...shot,
       name: storageKey,
@@ -97,7 +119,7 @@ class IndexedDBService {
 
   /**
    * Get all browser-uploaded shots
-   * @returns {Promise<Array>} List of shots
+   * @returns {Promise<AnalyzerShot[]>} List of shots
    */
   async getAllShots() {
     const db = await this.init();
@@ -114,6 +136,7 @@ class IndexedDBService {
   /**
    * Get a single shot by name
    * @param {string} name - Shot filename/ID
+   * @returns {Promise<AnalyzerShot | undefined>}
    */
   async getShot(name) {
     const db = await this.init();
@@ -131,7 +154,8 @@ class IndexedDBService {
 
   /**
    * Save a profile to browser storage
-   * @param {Object} profile - Profile data
+   * @param {AnalyzerProfile} profile - Profile data
+   * @returns {Promise<AnalyzerProfile>}
    */
   async saveProfile(profile) {
     const db = await this.init();
@@ -141,6 +165,7 @@ class IndexedDBService {
     }
 
     // Add source tag and storage timestamp
+    /** @type {AnalyzerProfile} */
     const profileWithMeta = {
       ...normalizedProfile,
       source: 'browser',
@@ -153,7 +178,7 @@ class IndexedDBService {
 
   /**
    * Get all browser-uploaded profiles
-   * @returns {Promise<Array>} List of profiles
+   * @returns {Promise<AnalyzerProfile[]>} List of profiles
    */
   async getAllProfiles() {
     const db = await this.init();
@@ -172,6 +197,7 @@ class IndexedDBService {
   /**
    * Get a single profile by label
    * @param {string} label - Profile label
+   * @returns {Promise<AnalyzerProfile | undefined>}
    */
   async getProfile(label) {
     const db = await this.init();
@@ -189,7 +215,7 @@ class IndexedDBService {
 
   /**
    * Save notes for a shot
-   * @param {Object} notes - Notes object with id, rating, beanType, etc.
+   * @param {AnalyzerNotes} notes - Notes object with id, rating, beanType, etc.
    */
   async saveNotes(notes) {
     const db = await this.init();
@@ -199,7 +225,7 @@ class IndexedDBService {
   /**
    * Get notes for a shot by ID
    * @param {string} id - Shot ID
-   * @returns {Promise<Object|undefined>} Notes object or undefined
+   * @returns {Promise<AnalyzerNotes | undefined>} Notes object or undefined
    */
   async getNotes(id) {
     const db = await this.init();
@@ -231,7 +257,7 @@ class IndexedDBService {
 
   /**
    * Get storage stats
-   * @returns {Promise<Object>} Count of shots and profiles
+   * @returns {Promise<{ shots: number, profiles: number, total: number }>} Count of shots and profiles
    */
   async getStats() {
     const db = await this.init();

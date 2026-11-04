@@ -4,6 +4,7 @@ import { faDiagramNext } from '@fortawesome/free-solid-svg-icons/faDiagramNext';
 import { faChartSimple } from '@fortawesome/free-solid-svg-icons/faChartSimple';
 import { Trans, useLingui } from '@lingui/react/macro';
 
+/** @param {{ onSelect: (type: import('../../types').ProfileType) => void }} props */
 export function ProfileTypeSelection({ onSelect }) {
   const { t } = useLingui();
   return (

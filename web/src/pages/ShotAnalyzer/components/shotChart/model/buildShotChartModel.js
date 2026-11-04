@@ -18,6 +18,16 @@ import {
   createHoverWaterValueGetter,
 } from './waterValues';
 
+/**
+ * @param {{
+ *   shotData: import('./types').ChartShotData | null | undefined,
+ *   results: import('./types').AnalyzerResults | null | undefined,
+ *   visibility: import('./types').ChartVisibility,
+ *   colors: import('./types').ShotChartColors,
+ *   brewModeMeta?: import('./types').BrewModeMeta | null,
+ *   usePhaseNumbers: boolean,
+ * }} params
+ */
 export function buildShotChartModel({
   shotData,
   results,
@@ -45,9 +55,12 @@ export function buildShotChartModel({
     tempAxisMin,
     tempAxisMax,
   } = buildAxisRanges(series);
+  /** @type {import('./types').PhaseLabelOverlay[]} */
   const phaseLabelOverlays = [];
+  /** @type {import('./types').PhaseBackgroundRange[]} */
   const phaseBackgroundRanges = [];
   const extendedStartX = getExtendedRecordingStartX(samples, maxTime);
+  /** @type {import('./types').StopIconOverlay[]} */
   const stopIconOverlays = [];
   const phaseAnnotations = buildPhaseAnnotations({
     shotData,

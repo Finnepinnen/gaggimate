@@ -11,6 +11,17 @@ import { SkeletonBlock } from '../../../components/SkeletonBlock.jsx';
 import { fmtElapsed, fmtPhaseTarget, getPhaseLabel } from '../utils.js';
 import { parseBinaryIndex, indexToShotList } from '../../ShotHistory/parseBinaryIndex.js';
 
+/** @typedef {import('../../../types').ProcessProgress} ProcessProgress */
+/** @typedef {import('../../../types').Profile} Profile */
+/** @typedef {{ maxPressure?: number | null, avgFlow?: number | null }} FinishedStats */
+
+/**
+ * @param {object} props
+ * @param {ProcessProgress | null} [props.processInfo]
+ * @param {boolean} props.isBrewing
+ * @param {boolean} props.isGrinding
+ * @param {string} [props.selectedProfile]
+ */
 function ProgressCard({ processInfo, isBrewing, isGrinding, selectedProfile }) {
   const { t } = useLingui();
   const p = processInfo;
@@ -26,7 +37,7 @@ function ProgressCard({ processInfo, isBrewing, isGrinding, selectedProfile }) {
       </div>
       <div className='flex items-baseline justify-between'>
         <div className='flex flex-col gap-0.5'>
-          <span className='bg-primary/20 text-primary rounded px-1.5 py-0.5 text-[0.6rem] font-semibold tracking-wider uppercase'>
+          <span className='bg-primary/20 text-primary rounded-sm px-1.5 py-0.5 text-[0.6rem] font-semibold tracking-wider uppercase'>
             {phase}
           </span>
           <span className='text-base-content text-2xl font-bold tabular-nums'>
@@ -59,6 +70,14 @@ ProgressCard.propTypes = {
   selectedProfile: PropTypes.string,
 };
 
+/**
+ * @param {object} props
+ * @param {ProcessProgress | null} [props.processInfo]
+ * @param {boolean} props.isBrewing
+ * @param {string} [props.selectedProfile]
+ * @param {FinishedStats | null} [props.stats]
+ * @param {number} [props.weight]
+ */
 function FinishedProcessCard({ processInfo, isBrewing, selectedProfile, stats, weight }) {
   const { t } = useLingui();
   const p = processInfo;
@@ -70,7 +89,7 @@ function FinishedProcessCard({ processInfo, isBrewing, selectedProfile, stats, w
     weightLabel && { key: 'weight', label: t`Weight`, value: weightLabel },
     pressureLabel && { key: 'pressure', label: t`Pressure`, value: pressureLabel },
     flowLabel && { key: 'flow', label: t`Flow`, value: flowLabel },
-  ].filter(Boolean);
+  ].filter(item => !!item);
 
   return (
     <div className='card bg-success/10 border-success/30 flex flex-col gap-1 rounded-xl border p-3'>
@@ -108,6 +127,18 @@ FinishedProcessCard.propTypes = {
   weight: PropTypes.number,
 };
 
+/**
+ * @param {object} props
+ * @param {string} [props.selectedProfile]
+ * @param {string | null} [props.selectedProfileId]
+ * @param {ProcessProgress | null} [props.processInfo]
+ * @param {boolean} props.isActive
+ * @param {boolean} props.isFinished
+ * @param {boolean} props.isBrewing
+ * @param {boolean} props.isGrinding
+ * @param {boolean} [props.inCard]
+ * @param {boolean} [props.compact]
+ */
 export function ProfileCard({
   selectedProfile,
   selectedProfileId,
@@ -121,9 +152,9 @@ export function ProfileCard({
 }) {
   const { t } = useLingui();
   const apiService = useContext(ApiServiceContext);
-  const [profileData, setProfileData] = useState(null);
+  const [profileData, setProfileData] = useState(/** @type {Profile | null} */ (null));
   const [profileLoading, setProfileLoading] = useState(false);
-  const [finishedStats, setFinishedStats] = useState(null);
+  const [finishedStats, setFinishedStats] = useState(/** @type {FinishedStats | null} */ (null));
 
   // Always mounted (unlike the finished view itself), so this can't miss the
   // event if it arrives before the next status update flips isFinished true.

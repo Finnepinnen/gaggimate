@@ -3,6 +3,13 @@ import { MAIN_CHART_HEIGHT_DEFAULT, TEMP_CHART_HEIGHT_RATIO } from '../constants
 const MOBILE_CHART_STACK_GAP = 12;
 const MOBILE_SCRUBBER_HEIGHT_FALLBACK = 48;
 const MOBILE_COLLAPSED_LEGEND_HEIGHT_FALLBACK = 32;
+
+/** @typedef {import('chart.js').Chart} Chart */
+/** @typedef {import('../tooltip/tooltipState').ExternalTooltipState} ExternalTooltipState */
+/** @typedef {import('preact/hooks').Dispatch<import('preact/hooks').StateUpdater<number>>} SetViewportResizeNonce */
+/** @typedef {{ frameId: number, timeoutIds: number[] }} ViewportResizeHandles */
+
+/** @returns {Window | undefined} */
 export function getBrowserWindow() {
   return globalThis.window;
 }
@@ -14,10 +21,17 @@ export function isSmartphoneViewport(browserWindow = getBrowserWindow()) {
   return Number(browserWindow?.innerWidth) <= 640;
 }
 
+/** @param {SetViewportResizeNonce} setViewportResizeNonce */
 function bumpViewportResizeNonce(setViewportResizeNonce) {
   setViewportResizeNonce(n => n + 1);
 }
 
+/**
+ * @param {Window} browserWindow
+ * @param {SetViewportResizeNonce} setViewportResizeNonce
+ * @param {ViewportResizeHandles} handles
+ * @param {number[]} delays
+ */
 export function scheduleViewportResizeBumps(
   browserWindow,
   setViewportResizeNonce,
@@ -32,6 +46,10 @@ export function scheduleViewportResizeBumps(
   );
 }
 
+/**
+ * @param {Window} browserWindow
+ * @param {ViewportResizeHandles} handles
+ */
 export function clearViewportResizeBumps(browserWindow, handles) {
   browserWindow.cancelAnimationFrame(handles.frameId);
   for (const timeoutId of handles.timeoutIds || []) {
@@ -41,10 +59,20 @@ export function clearViewportResizeBumps(browserWindow, handles) {
   handles.timeoutIds = [];
 }
 
+/** @param {Element | null | undefined} element */
 function getElementHeight(element) {
   return element?.getBoundingClientRect().height || 0;
 }
 
+/**
+ * @param {{
+ *   hasExternalDesktopCardHeight: boolean,
+ *   isSmartphone: boolean,
+ *   shellHeight: number,
+ *   shellTop: number,
+ *   viewportHeight: number,
+ * }} options
+ */
 function getAvailableShellHeight({
   hasExternalDesktopCardHeight,
   isSmartphone,
@@ -61,6 +89,21 @@ function getAvailableShellHeight({
   return viewportHeight - shellTop - 24;
 }
 
+/**
+ * @param {{
+ *   browserWindow: Window | undefined,
+ *   desktopCardHeight: number | string,
+ *   desktopLegendElement: Element | null,
+ *   externalTooltipElement: Element | null,
+ *   mobileActionsElement: Element | null,
+ *   mobileLegendElement: Element | null,
+ *   mobileScrubberElement: Element | null,
+ *   scrubberMax: number,
+ *   shellElement: Element | null,
+ *   useStaticTooltip: boolean,
+ * }} options
+ * @returns {number}
+ */
 export function getAvailableCombinedChartHeight({
   browserWindow,
   desktopCardHeight,
@@ -121,6 +164,10 @@ export function getAvailableCombinedChartHeight({
   );
 }
 
+/**
+ * @param {Chart} chart
+ * @returns {number | undefined}
+ */
 export function getChartPointerClientY(chart) {
   const chartRect = chart.canvas?.getBoundingClientRect?.();
   if (!chartRect) return undefined;
@@ -132,6 +179,12 @@ export function getChartPointerClientY(chart) {
   return chartRect.top + chartAreaTop + midpointOffset;
 }
 
+/**
+ * @param {number} containerWidth
+ * @param {number} [availableCombinedHeight]
+ * @param {boolean} [fillAvailableDesktopHeight]
+ * @returns {number}
+ */
 export function getStandardMainChartHeight(
   containerWidth,
   availableCombinedHeight = 0,
@@ -183,6 +236,17 @@ export function getStandardMainChartHeight(
   );
 }
 
+/**
+ * @param {{
+ *   tooltipState: ExternalTooltipState,
+ *   sourceChart: Chart,
+ *   tempChart: Chart | null,
+ *   hoverAreaElement: Element | null,
+ *   mainChartElement: Element | null,
+ *   tempChartElement: Element | null,
+ * }} options
+ * @returns {ExternalTooltipState}
+ */
 export function getSurfaceExternalTooltipState({
   tooltipState,
   sourceChart,
@@ -208,7 +272,8 @@ export function getSurfaceExternalTooltipState({
   const pointerClientY = Number(sourceChart.$externalTooltipClientY);
   const minClientY = mainRect.top + tooltipState.chartAreaTop;
   const maxClientY = tempRect
-    ? tempRect.top + tempChart.chartArea.bottom
+    ? // tempRect is only set when tempChart has a chartArea.
+      tempRect.top + /** @type {NonNullable<typeof tempChart>} */ (tempChart).chartArea.bottom
     : mainRect.top + tooltipState.chartAreaBottom;
   const fallbackClientY = mainRect.top + tooltipState.anchorY;
   const clampedClientY = Math.min(
@@ -233,6 +298,19 @@ export function getSurfaceExternalTooltipState({
   };
 }
 
+/**
+ * @param {{
+ *   externalTooltipState: ExternalTooltipState,
+ *   hasActiveScrubValue: boolean,
+ *   hoverAreaElement: Element | null,
+ *   mainChartElement: Element | null,
+ *   mobileScrubberElement: Element | null,
+ *   tempChart: Chart | null,
+ *   tempChartElement: Element | null,
+ *   useStaticTooltip: boolean,
+ * }} options
+ * @returns {{ display: 'none' | 'block', left?: string, top?: string, height?: string }}
+ */
 export function getHoverGuideConnectorStyle({
   externalTooltipState,
   hasActiveScrubValue,

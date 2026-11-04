@@ -3,6 +3,13 @@ import test from 'node:test';
 import { parseBinaryShot } from '../src/pages/ShotHistory/parseBinaryShot.js';
 import { getBluetoothScaleConnectionState } from '../src/pages/ShotAnalyzer/services/analyzer/scaleConnection.js';
 
+/**
+ * Builds a two-sample .slog buffer.
+ * @param {number} version
+ * @param {number} size Sample size in bytes.
+ * @param {number} flags System info bits.
+ * @param {boolean} [elapsed] v6+ 4-byte elapsed-ms timestamps.
+ */
 function fixture(version, size, flags, elapsed = true) {
   const buffer = new ArrayBuffer(512 + size * 2);
   const view = new DataView(buffer);
@@ -47,17 +54,20 @@ for (const [
 ])) {
   test(`decode ${name}`, () => {
     const shot = parseBinaryShot(fixture(version, size, flags, elapsed), 'test');
+    // parseBinaryShot builds samples dynamically, so its inferred element type is `{}`.
+    const samples = /** @type {import('../src/types').ShotSample[]} */ (shot.samples);
     assert.deepEqual(
-      shot.samples.map(s => s.t),
+      samples.map(s => s.t),
       [250, 500],
     );
-    assert.equal(shot.samples[0].ct, 93.5);
-    assert.equal(shot.samples[0].cp, 8.7);
-    assert.equal(shot.samples[0].fl, 2.45);
-    assert.equal(shot.samples[0].v, 12);
+    assert.equal(samples[0].ct, 93.5);
+    assert.equal(samples[0].cp, 8.7);
+    assert.equal(samples[0].fl, 2.45);
+    assert.equal(samples[0].v, 12);
     assert.equal(shot.volume, 12.3); // preserve extended-recording final weight
-    assert.equal(shot.samples[0].systemInfo.activeScaleConnected, connected);
-    assert.equal(shot.samples[0].wp, size === 30 ? 45.6 : undefined);
+    const systemInfo = /** @type {import('../src/types').ShotSystemInfo} */ (samples[0].systemInfo);
+    assert.equal(systemInfo.activeScaleConnected, connected);
+    assert.equal(samples[0].wp, size === 30 ? 45.6 : undefined);
     assert.equal(shot.incomplete, false);
   });
 }

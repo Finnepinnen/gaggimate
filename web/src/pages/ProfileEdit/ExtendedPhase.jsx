@@ -6,8 +6,24 @@ import { faPlus } from '@fortawesome/free-solid-svg-icons/faPlus';
 import { Tooltip } from '../../components/Tooltip.jsx';
 import { Trans, useLingui } from '@lingui/react/macro';
 
+/** @typedef {import('./types').EditorPhase} EditorPhase */
+/** @typedef {import('../../types').PhaseTarget} PhaseTarget */
+/** @typedef {import('../../types').PumpAdvanced} PumpAdvanced */
+
+/**
+ * @param {{
+ *   phase: EditorPhase,
+ *   index: number,
+ *   onChange: (phase: EditorPhase) => void,
+ *   pressureAvailable: boolean,
+ * }} props
+ */
 export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
   const { t, i18n } = useLingui();
+  /**
+   * @param {keyof EditorPhase} field
+   * @param {unknown} value
+   */
   const onFieldChange = (field, value) => {
     onChange({
       ...phase,
@@ -15,27 +31,37 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
     });
   };
 
+  /**
+   * @param {number} index
+   * @param {PhaseTarget} value
+   */
   const onTargetChange = (index, value) => {
     const newPhase = {
       ...phase,
     };
-    newPhase.targets[index] = value;
+    // Only called from the rendered target list, so targets exist.
+    /** @type {PhaseTarget[]} */ (newPhase.targets)[index] = value;
     onChange(newPhase);
   };
 
+  /** @param {number} index */
   const onTargetRemove = index => {
+    // Only called from the rendered target list, so targets exist.
+    const targets = /** @type {PhaseTarget[]} */ (phase.targets);
+    /** @type {EditorPhase & { targets: PhaseTarget[] }} */
     const newPhase = {
       ...phase,
       targets: [],
     };
-    for (let i = 0; i < phase.targets.length; i++) {
+    for (let i = 0; i < targets.length; i++) {
       if (i !== index) {
-        newPhase.targets.push(phase.targets[i]);
+        newPhase.targets.push(targets[i]);
       }
     }
     onChange(newPhase);
   };
 
+  /** @param {PhaseTarget} target */
   const onTargetAdd = target => {
     onChange({
       ...phase,
@@ -49,10 +75,14 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
   const pressure = !isNumber(phase.pump) ? phase.pump.pressure : 0;
   const flow = !isNumber(phase.pump) ? phase.pump.flow : 0;
   let mode = isNumber(phase.pump) ? (phase.pump === 0 ? 'off' : 'power') : phase.pump.target;
-  if (mode === 'pressure' && phase.pump.pressure === -1) mode = 'hold-pressure';
-  if (mode === 'flow' && phase.pump.flow === -1) mode = 'hold-flow';
+  if (mode === 'pressure' && /** @type {PumpAdvanced} */ (phase.pump).pressure === -1)
+    mode = 'hold-pressure';
+  if (mode === 'flow' && /** @type {PumpAdvanced} */ (phase.pump).flow === -1) mode = 'hold-flow';
   const availableTargetTypes = TargetTypes.filter(
-    tt => !targets.find(t2 => t2.type === tt.type && t2.operator === tt.operator),
+    tt =>
+      !targets.find(
+        (/** @type {PhaseTarget} */ t2) => t2.type === tt.type && t2.operator === tt.operator,
+      ),
   );
   const phaseNumber = index + 1;
 
@@ -67,13 +97,13 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
       aria-label={t`Phase ${phaseNumber} configuration`}
     >
       <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-        <div className='form-control'>
+        <div>
           <label htmlFor={`phase-${index}-type`} className='mb-2 block text-sm font-medium'>
             <Trans>Phase Type</Trans>
           </label>
           <select
             id={`phase-${index}-type`}
-            className='select select-bordered w-full'
+            className='select w-full'
             onChange={e => onFieldChange('phase', e.currentTarget.value)}
             value={phase.phase}
             aria-label={t`Select the type of brew phase`}
@@ -86,14 +116,14 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
             </option>
           </select>
         </div>
-        <div className='form-control'>
+        <div>
           <label htmlFor={`phase-${index}-name`} className='mb-2 block text-sm font-medium'>
             <Trans>Phase Name</Trans>
           </label>
           <div className='flex gap-2'>
             <input
               id={`phase-${index}-name`}
-              className='input input-bordered flex-1'
+              className='input flex-1'
               placeholder={t`Name...`}
               value={phase.name}
               onChange={e => onFieldChange('name', e.currentTarget.value)}
@@ -104,11 +134,11 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
       </div>
 
       <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-        <div className='form-control'>
+        <div>
           <label htmlFor={`phase-${index}-duration`} className='mb-2 block text-sm font-medium'>
             <Trans>Duration</Trans>
           </label>
-          <div className='input-group'>
+          <div>
             <label htmlFor={`phase-${index}-duration`} className='input w-full'>
               <input
                 id={`phase-${index}-duration`}
@@ -123,11 +153,11 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
             </label>
           </div>
         </div>
-        <div className='form-control'>
+        <div>
           <label htmlFor={`phase-${index}-temperature`} className='mb-2 block text-sm font-medium'>
             <Trans>Temperature (0 = Default)</Trans>
           </label>
-          <div className='input-group'>
+          <div>
             <label htmlFor={`phase-${index}-temperature`} className='input w-full'>
               <input
                 id={`phase-${index}-target`}
@@ -145,7 +175,7 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
         </div>
       </div>
 
-      <div className='form-control'>
+      <div>
         <fieldset>
           <legend className='mb-2 block text-sm font-medium'>
             <Trans>Valve</Trans>
@@ -164,7 +194,7 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
               type='button'
               className={`join-item btn btn-sm ${phase.valve ? 'btn-primary' : 'btn-outline'}`}
               onClick={() => onFieldChange('valve', 1)}
-              aria-pressed={phase.valve}
+              aria-pressed={/** @type {boolean} */ (/** @type {unknown} */ (phase.valve))}
               aria-label={t`Valve open`}
             >
               <Trans context='valve state'>Open</Trans>
@@ -173,7 +203,7 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
         </fieldset>
       </div>
 
-      <div className='form-control'>
+      <div>
         <fieldset>
           <legend className='mb-2 block text-sm font-medium'>
             <Trans>Pump Mode</Trans>
@@ -210,8 +240,8 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
                     mode !== 'pressure' &&
                     onFieldChange('pump', {
                       target: 'pressure',
-                      pressure: Math.max(phase.pump.pressure || 0, 0),
-                      flow: Math.max(phase.pump?.flow || 0, 0),
+                      pressure: Math.max(/** @type {PumpAdvanced} */ (phase.pump).pressure || 0, 0),
+                      flow: Math.max(/** @type {PumpAdvanced} */ (phase.pump)?.flow || 0, 0),
                     })
                   }
                   aria-pressed={mode === 'pressure'}
@@ -226,8 +256,8 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
                     mode !== 'flow' &&
                     onFieldChange('pump', {
                       target: 'flow',
-                      pressure: Math.max(phase.pump.pressure || 0, 0),
-                      flow: Math.max(phase.pump?.flow || 0, 0),
+                      pressure: Math.max(/** @type {PumpAdvanced} */ (phase.pump).pressure || 0, 0),
+                      flow: Math.max(/** @type {PumpAdvanced} */ (phase.pump)?.flow || 0, 0),
                     })
                   }
                   aria-pressed={mode === 'flow'}
@@ -243,7 +273,7 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
                     onFieldChange('pump', {
                       target: 'pressure',
                       pressure: -1,
-                      flow: Math.max(phase.pump?.flow || 0, 0),
+                      flow: Math.max(/** @type {PumpAdvanced} */ (phase.pump)?.flow || 0, 0),
                     })
                   }
                   aria-pressed={mode === 'hold-pressure'}
@@ -258,7 +288,7 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
                     mode !== 'hold-flow' &&
                     onFieldChange('pump', {
                       target: 'flow',
-                      pressure: Math.max(phase.pump.pressure || 0, 0),
+                      pressure: Math.max(/** @type {PumpAdvanced} */ (phase.pump).pressure || 0, 0),
                       flow: -1,
                     })
                   }
@@ -274,11 +304,11 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
       </div>
 
       {mode === 'power' && (
-        <div className='form-control'>
+        <div>
           <label htmlFor={`phase-${index}-power`} className='mb-2 block text-sm font-medium'>
             <Trans>Pump Power</Trans>
           </label>
-          <div className='input-group'>
+          <div>
             <label htmlFor={`phase-${index}-power`} className='input w-full'>
               <input
                 id={`phase-${index}-power`}
@@ -303,7 +333,7 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
         mode === 'hold-flow') && (
         <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
           {mode !== 'hold-pressure' && (
-            <div className='form-control'>
+            <div>
               <label htmlFor={`phase-${index}-pressure`} className='mb-2 block text-sm font-medium'>
                 {mode === 'pressure'
                   ? t`Target Pressure`
@@ -311,7 +341,7 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
                     ? t`Maximum Pressure (0 = Ignore)`
                     : t`Maximum Pressure`}
               </label>
-              <div className='input-group'>
+              <div>
                 <label htmlFor={`phase-${index}-pressure`} className='input w-full'>
                   <input
                     id={`phase-${index}-pressure`}
@@ -322,7 +352,7 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
                     value={pressure.toString()}
                     onChange={e =>
                       onFieldChange('pump', {
-                        ...phase.pump,
+                        .../** @type {PumpAdvanced} */ (phase.pump),
                         pressure: parseFloat(e.currentTarget.value),
                       })
                     }
@@ -334,7 +364,7 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
             </div>
           )}
           {mode !== 'hold-flow' && (
-            <div className='form-control'>
+            <div>
               <label htmlFor={`phase-${index}-flow`} className='mb-2 block text-sm font-medium'>
                 {mode === 'flow'
                   ? t`Target Flow`
@@ -342,7 +372,7 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
                     ? t`Maximum Flow (0 = Ignore)`
                     : t`Maximum Flow`}
               </label>
-              <div className='input-group'>
+              <div>
                 <label htmlFor={`phase-${index}-flow`} className='input w-full'>
                   <input
                     id={`phase-${index}-flow`}
@@ -352,7 +382,7 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
                     value={flow.toString()}
                     onChange={e =>
                       onFieldChange('pump', {
-                        ...phase.pump,
+                        .../** @type {PumpAdvanced} */ (phase.pump),
                         flow: parseFloat(e.currentTarget.value),
                       })
                     }
@@ -368,7 +398,7 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
       )}
 
       <div className='grid grid-cols-1 gap-4'>
-        <div className='form-control'>
+        <div>
           <fieldset>
             <legend className='mb-2 block text-sm font-medium'>
               <Trans>Ramp Style</Trans>
@@ -438,7 +468,7 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
       {phase.transition?.type !== 'instant' && (
         <>
           <div className='grid grid-cols-1 gap-4'>
-            <div className='form-control'>
+            <div>
               <fieldset>
                 <legend className='mb-2 block text-sm font-medium'>
                   <Trans>Ramp Target</Trans>
@@ -486,14 +516,14 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
             </div>
           </div>
           <div className='grid grid-cols-1 gap-4'>
-            <div className='form-control'>
+            <div>
               <label
                 htmlFor={`phase-${index}-transition-duration`}
                 className='mb-2 block text-sm font-medium'
               >
                 <Trans>Ramp Length</Trans>
               </label>
-              <div className='input-group'>
+              <div>
                 <label htmlFor={`phase-${index}-transition-duration`} className='input w-full'>
                   <input
                     id={`phase-${index}-transition-duration`}
@@ -514,7 +544,7 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
                 </label>
               </div>
             </div>
-            <div className='form-control'>
+            <div>
               <fieldset>
                 <legend className='mb-2 block text-sm font-medium'>
                   <Trans>Start Ramp from</Trans>
@@ -594,7 +624,7 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
           </ul>
         </div>
       </div>
-      {targets.map((target, idx) => (
+      {targets.map((/** @type {PhaseTarget} */ target, /** @type {number} */ idx) => (
         <Fragment key={idx}>
           {idx !== 0 && (
             <div className='divider'>
@@ -602,7 +632,7 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
             </div>
           )}
           <ExtendedPhaseTarget
-            onChange={value => onTargetChange(idx, value)}
+            onChange={(/** @type {PhaseTarget} */ value) => onTargetChange(idx, value)}
             onRemove={() => onTargetRemove(idx)}
             target={target}
             index={idx}

@@ -3,16 +3,48 @@ import { Chart } from 'chart.js';
 import { ChartComponent } from './Chart';
 import { t } from '@lingui/core/macro';
 
+/** @typedef {import('../types').ProfilePhase} ProfilePhase */
+/** @typedef {import('../types').PumpAdvanced} PumpAdvanced */
+
+/**
+ * A phase as the chart reads it. The profile editor passes raw form values, so
+ * `duration` may be a string; JS coerces it in the arithmetic below.
+ * @typedef {Omit<ProfilePhase, 'duration'> & { duration: number | string }} ChartPhase
+ */
+
+/**
+ * ChartPhase with simple (numeric) pumps readable as an object: their fields read as undefined.
+ * @typedef {Omit<ChartPhase, 'pump'> & { pump: ProfilePhase['pump'] & Partial<PumpAdvanced> }} PumpReadablePhase
+ */
+
+/** @typedef {{ x: number, y: number, target: boolean }} ProfilePoint */
+/** Segment context of a line dataset; `raw` is the ProfilePoint. */
+/** @typedef {{ p0: { raw: ProfilePoint } }} SegmentContext */
+
+/** @typedef {{ start: number, end: number }} PhaseRange */
+
+/**
+ * Plugin options as built below; `annotation` is filled in after the literal.
+ * @typedef {{ drawTime: string, clip: boolean, annotations: object[], interaction?: object }} AnnotationConfig
+ * @typedef {{ legend: object, title: object, annotation?: AnnotationConfig }} LinePlugins
+ */
+
 const POINT_INTERVAL = 0.1; // s
 
+/**
+ * @template T
+ * @param {SegmentContext} ctx
+ * @param {T} value
+ * @returns {T | undefined}
+ */
 const skipped = (ctx, value) => (!ctx.p0.raw.target ? value : undefined);
 const pressureDatasetDefaults = {
   borderColor: 'rgb(75, 192, 192)',
   tension: 0.4,
   cubicInterpolationMode: 'monotone',
   segment: {
-    borderColor: ctx => skipped(ctx, 'rgba(75, 192, 192, 0.6)'),
-    borderDash: ctx => skipped(ctx, [6, 6]),
+    borderColor: /** @param {SegmentContext} ctx */ ctx => skipped(ctx, 'rgba(75, 192, 192, 0.6)'),
+    borderDash: /** @param {SegmentContext} ctx */ ctx => skipped(ctx, [6, 6]),
   },
   spanGaps: true,
 };
@@ -22,26 +54,34 @@ const flowDatasetDefaults = {
   tension: 0.4,
   cubicInterpolationMode: 'monotone',
   segment: {
-    borderColor: ctx => skipped(ctx, 'rgba(255, 192, 192, 0.6)'),
-    borderDash: ctx => skipped(ctx, [6, 6]),
+    borderColor: /** @param {SegmentContext} ctx */ ctx => skipped(ctx, 'rgba(255, 192, 192, 0.6)'),
+    borderDash: /** @param {SegmentContext} ctx */ ctx => skipped(ctx, [6, 6]),
   },
   spanGaps: true,
   yAxisID: 'y1',
 };
 
+/** @param {number} t */
 function easeLinear(t) {
   return t;
 }
+/** @param {number} t */
 function easeIn(t) {
   return t * t;
 }
+/** @param {number} t */
 function easeOut(t) {
   return 1.0 - (1.0 - t) * (1.0 - t);
 }
+/** @param {number} t */
 function easeInOut(t) {
   return t < 0.5 ? 2.0 * t * t : 1.0 - 2.0 * (1.0 - t) * (1.0 - t);
 }
 
+/**
+ * @param {number} t
+ * @param {import('../types').TransitionType} type
+ */
 function applyEasing(t, type) {
   if (t <= 0.0) return 0.0;
   if (t >= 1.0) return 1.0;
@@ -60,6 +100,11 @@ function applyEasing(t, type) {
   }
 }
 
+/**
+ * @param {PumpReadablePhase[]} phases
+ * @param {'pressure' | 'flow'} target
+ * @returns {ProfilePoint[]}
+ */
 function prepareData(phases, target) {
   if (!Array.isArray(phases) || phases.length === 0) {
     return [];
@@ -80,7 +125,8 @@ function prepareData(phases, target) {
   do {
     currentPhase = phases[phaseIndex];
     const alpha = applyEasing(
-      phaseTime / (currentPhase.transition?.duration || currentPhase.duration),
+      phaseTime /
+        (currentPhase.transition?.duration || /** @type {number} */ (currentPhase.duration)),
       currentPhase?.transition?.type || 'linear',
     );
     currentFlow =
@@ -98,7 +144,7 @@ function prepareData(phases, target) {
     });
     time += POINT_INTERVAL;
     phaseTime += POINT_INTERVAL;
-    if (phaseTime >= currentPhase.duration) {
+    if (phaseTime >= /** @type {number} */ (currentPhase.duration)) {
       phaseTime = 0;
       phaseIndex++;
       if (phaseIndex < phases.length) {
@@ -115,6 +161,14 @@ function prepareData(phases, target) {
   return data;
 }
 
+/**
+ * @param {{ phases?: ChartPhase[] } | null | undefined} data
+ * @param {number | null} selectedPhase
+ * @param {PhaseRange[]} phaseRanges
+ * @param {((index: number) => void) | null} onPhaseClick
+ * @param {boolean} [isDarkMode]
+ * @param {boolean} [showPhaseLabels]
+ */
 function makeChartData(
   data,
   selectedPhase,
@@ -126,7 +180,7 @@ function makeChartData(
   const phases = Array.isArray(data?.phases) ? data.phases : [];
   let duration = 0;
   for (const phase of phases) {
-    duration += Number.parseFloat(phase.duration);
+    duration += Number.parseFloat(/** @type {string} */ (phase.duration));
   }
   const chartData = {
     type: 'line',
@@ -135,12 +189,12 @@ function makeChartData(
         {
           ...pressureDatasetDefaults,
           label: t`Pressure`,
-          data: prepareData(phases, 'pressure'),
+          data: prepareData(/** @type {PumpReadablePhase[]} */ (phases), 'pressure'),
         },
         {
           ...flowDatasetDefaults,
           label: t`Flow`,
-          data: prepareData(phases, 'flow'),
+          data: prepareData(/** @type {PumpReadablePhase[]} */ (phases), 'flow'),
         },
       ],
     },
@@ -151,7 +205,7 @@ function makeChartData(
       interaction: {
         intersect: false,
       },
-      plugins: {
+      plugins: /** @type {LinePlugins} */ ({
         legend: {
           position: 'top',
           display: true,
@@ -163,15 +217,18 @@ function makeChartData(
             font: {
               size: window.innerWidth < 640 ? 10 : 12,
             },
+            /** @param {import('chart.js').Chart<'line'>} chart */
             generateLabels(chart) {
               const original = Chart.defaults.plugins.legend.labels.generateLabels;
+              /** @type {import('chart.js').LegendItem[]} */
               const labels = original.call(this, chart);
 
               labels.forEach((label, index) => {
                 const dataset = chart.data.datasets[index];
                 label.lineWidth = 3;
                 if (dataset.borderDash && dataset.borderDash.length > 0) {
-                  label.lineDash = dataset.borderDash;
+                  // Datasets here only set static dash arrays.
+                  label.lineDash = /** @type {number[]} */ (dataset.borderDash);
                 }
               });
 
@@ -186,7 +243,7 @@ function makeChartData(
             size: window.innerWidth < 640 ? 14 : 16,
           },
         },
-      },
+      }),
       animations: false,
       radius: 0,
       scales: {
@@ -199,7 +256,7 @@ function makeChartData(
           title: {},
           ticks: {
             source: 'auto',
-            callback: value => {
+            callback: (/** @type {number} */ value) => {
               return `${value?.toFixed()}s`;
             },
             font: {
@@ -326,10 +383,12 @@ function makeChartData(
         backgroundColor: hoverLeaveColor,
         borderColor: 'rgba(100, 100, 100, 0)',
         clip: true,
+        /** @param {{ element: { options: { backgroundColor: string } } }} context */
         enter({ element }) {
           element.options.backgroundColor = hoverEnterColor;
           return true;
         },
+        /** @param {{ element: { options: { backgroundColor: string } } }} context */
         leave({ element }) {
           element.options.backgroundColor = hoverLeaveColor;
           return true;
@@ -345,11 +404,15 @@ function makeChartData(
   return chartData;
 }
 
+/**
+ * @param {ChartPhase[]} phases
+ * @returns {PhaseRange[]}
+ */
 function buildPhaseRanges(phases) {
   const ranges = [];
   let start = 0;
   for (const phase of phases) {
-    const duration = Number.parseFloat(phase.duration);
+    const duration = Number.parseFloat(/** @type {string} */ (phase.duration));
     ranges.push({ start, end: start + duration });
     start += duration;
   }
@@ -358,7 +421,7 @@ function buildPhaseRanges(phases) {
 
 /**
  * @param {object} props
- * @param {any} props.data - Profile (with `phases`)
+ * @param {{ phases?: ChartPhase[] } | null} [props.data] Profile, or the editor's form state
  * @param {string} [props.className]
  * @param {number | null} [props.selectedPhase]
  * @param {((index: number) => void) | null} [props.onPhaseClick]
@@ -390,7 +453,7 @@ export function ExtendedProfileChart({
 
   return (
     <ChartComponent
-      className='min-h-0 max-w-full flex-shrink flex-grow'
+      className='min-h-0 max-w-full shrink grow'
       chartClassName={`${className}${onPhaseClick ? ' cursor-pointer' : ''}`}
       data={config}
       style={style}

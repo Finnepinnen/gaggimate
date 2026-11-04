@@ -21,7 +21,28 @@ import { withTranslatedLabel } from './translatedLabel.js';
  *   onDecrease — (ds) => function — handler for the minus button. Omit if not adjustable.
  *   onIncrease — (ds) => function — handler for the plus button. Omit if not adjustable.
  */
-export const METRIC_DEFINITIONS = [
+
+/** @typedef {ReturnType<typeof import('../pages/Home/useDashboardState.js').useDashboardState>} DashboardState */
+/**
+ * What metric/panel guards read: the dashboard state or raw machine status (Settings).
+ * @typedef {Partial<DashboardState> & Partial<import('../types').MachineStatus>} MetricSource
+ */
+/**
+ * @typedef {object} MetricDefinition
+ * @property {string} id
+ * @property {import('@lingui/core').MessageDescriptor} labelMsg
+ * @property {boolean} required
+ * @property {(ds: MetricSource) => boolean} available
+ * @property {(ds: MetricSource) => string} getValue
+ * @property {(ds: MetricSource) => string | null} getTarget
+ * @property {string} [unit]
+ * @property {(ds: MetricSource) => boolean} adjustable
+ * @property {(ds: MetricSource) => boolean} [disabled]
+ * @property {(ds: MetricSource) => (() => void) | undefined} [onDecrease]
+ * @property {(ds: MetricSource) => (() => void) | undefined} [onIncrease]
+ */
+
+export const METRIC_DEFINITIONS = /** @type {MetricDefinition[]} */ ([
   {
     id: 'pressure',
     labelMsg: msg`Pressure`,
@@ -38,7 +59,7 @@ export const METRIC_DEFINITIONS = [
     required: false,
     available: () => true,
     getValue: ds => `${(ds.currentFlow ?? 0).toFixed(1)} ml/s`,
-    getTarget: ds => (ds.targetFlow > 0 ? (ds.targetFlow ?? 0).toFixed(1) : null),
+    getTarget: ds => ((ds.targetFlow ?? 0) > 0 ? (ds.targetFlow ?? 0).toFixed(1) : null),
     unit: ' ml/s',
     adjustable: () => false,
   },
@@ -124,7 +145,11 @@ export const METRIC_DEFINITIONS = [
     labelMsg: msg`Water Level`,
     required: false,
     available: ds => !!ds.tofDistance,
-    getValue: ds => (ds.waterLevelPercent !== null ? `${Math.round(ds.waterLevelPercent)}%` : '—'),
+    // useDashboardState always sets waterLevelPercent (number | null).
+    getValue: ds => {
+      const pct = /** @type {number | null} */ (ds.waterLevelPercent);
+      return pct !== null ? `${Math.round(pct)}%` : '—';
+    },
     getTarget: () => null,
     unit: '%',
     adjustable: () => false,
@@ -148,4 +173,4 @@ export const METRIC_DEFINITIONS = [
     onDecrease: ds => ds.lowerTarget,
     onIncrease: ds => ds.raiseTarget,
   },
-].map(withTranslatedLabel);
+]).map(withTranslatedLabel);

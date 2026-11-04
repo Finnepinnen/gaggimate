@@ -41,7 +41,82 @@ import {
   normalizePhaseExitReasonCode,
 } from './exitReasons.js';
 
+/** @typedef {import('../../../../types').ShotSample} ShotSample */
+/** @typedef {import('../../../../types').ShotSystemInfo} ShotSystemInfo */
+/** @typedef {import('../../types').AnalysisSettings} AnalysisSettings */
+/** @typedef {import('../../types').AnalyzedPhase} AnalyzedPhase */
+/** @typedef {import('../../types').AnalyzerProfile} AnalyzerProfile */
+/** @typedef {import('../../types').AnalyzerProfilePhase} AnalyzerProfilePhase */
+/** @typedef {import('../../types').AnalyzerShot} AnalyzerShot */
+/** @typedef {import('../../types').AnalyzerTarget} AnalyzerTarget */
+/** @typedef {import('../../types').DelayTotals} DelayTotals */
+/** @typedef {import('../../types').MeasuredSample} MeasuredSample */
+/** @typedef {import('../../types').PhaseDelayTracker} PhaseDelayTracker */
+/** @typedef {import('../../types').PhaseStats} PhaseStats */
+/** @typedef {import('../../types').PumpedWaterSource} PumpedWaterSource */
+/** @typedef {import('../../types').SamplesByPhase} SamplesByPhase */
+/** @typedef {import('../../types').SysAnomaly} SysAnomaly */
+/** @typedef {import('../../types').SysStatKey} SysStatKey */
+/** @typedef {import('../../types').TargetCalcValues} TargetCalcValues */
+/** @typedef {import('../../types').TargetContext} TargetContext */
+/** @typedef {import('../../types').TargetMatch} TargetMatch */
+/** @typedef {Partial<Record<SysStatKey, SysAnomaly>>} SysAnomalies */
+/** @typedef {AnalyzerProfilePhase & { targets: AnalyzerTarget[] }} TargetedProfilePhase */
+
+/**
+ * @typedef {object} ExitState
+ * @property {number} exitCode
+ * @property {string | null} exitReason
+ * @property {'recorded' | null} exitSource
+ * @property {string | null} exitType
+ * @property {number | null} finalPredictedWeight
+ * @property {TargetCalcValues | null} targetCalcValues
+ */
+
+/**
+ * Every named option the phase helpers below take; each picks the fields it uses.
+ * @typedef {object} PhaseAnalysisOptions
+ * @property {boolean} bluetoothScaleWasConnected
+ * @property {number} conservativeRate g/s
+ * @property {boolean} debugEnabled
+ * @property {PhaseDelayTracker} delayTracker
+ * @property {DelayTotals} delayTotals
+ * @property {string} displayName
+ * @property {number} duration s
+ * @property {ExitState} exitState
+ * @property {number} finalW g
+ * @property {number} globalStartTime ms
+ * @property {boolean} isAutoAdjusted
+ * @property {boolean} isBrewByWeight
+ * @property {boolean} isLastPhase
+ * @property {string} lastPhaseKey
+ * @property {TargetMatch} match
+ * @property {ShotSample[]} nextPhaseSamples
+ * @property {Record<string, string>} phaseNameMap
+ * @property {string} phaseNum
+ * @property {number} phaseWeightRate g/s
+ * @property {SamplesByPhase} phases
+ * @property {AnalyzerProfile | null} profileData
+ * @property {TargetedProfilePhase} profilePhase
+ * @property {PumpedWaterSource} pumpedWaterSource
+ * @property {number} recordedExitReasonCode
+ * @property {ShotSample[]} samples
+ * @property {boolean} scaleConnectionBrokenPermanently
+ * @property {AnalysisSettings} settings
+ * @property {AnalyzerShot} shotData
+ * @property {string[]} sortedPhaseKeys
+ * @property {number} stopW g
+ * @property {TargetContext} targetContext
+ * @property {AnalyzerTarget} weightTarget
+ */
+
+/**
+ * @param {ShotSample[]} samples
+ * @param {Partial<ShotSystemInfo>} sysInfo
+ * @returns {SysAnomalies}
+ */
 function getPhaseSysAnomalies(samples, sysInfo) {
+  /** @type {[SysStatKey, keyof ShotSystemInfo][]} */
   const sysFieldMap = [
     ['sys_shot_vol', 'shotStartedVolumetric'],
     ['sys_curr_vol', 'currentlyVolumetric'],
@@ -49,6 +124,7 @@ function getPhaseSysAnomalies(samples, sysInfo) {
     ['sys_vol_avail', 'volumetricAvailable'],
     ['sys_ext', 'extendedRecording'],
   ];
+  /** @type {SysAnomalies} */
   const sysAnomalies = {};
 
   for (const [statsKey, sampleKey] of sysFieldMap) {
@@ -71,12 +147,21 @@ function getPhaseSysAnomalies(samples, sysInfo) {
   return sysAnomalies;
 }
 
+/**
+ * @param {AnalyzerProfile | null} profileData
+ * @param {string | undefined} rawName
+ * @returns {AnalyzerProfilePhase | null}
+ */
 function findProfilePhase(profileData, rawName) {
   if (!profileData?.phases) return null;
   const cleanName = rawName ? rawName.trim().toLowerCase() : '';
   return profileData.phases.find(p => p.name.trim().toLowerCase() === cleanName) || null;
 }
 
+/**
+ * @param {Pick<PhaseAnalysisOptions, 'phaseNum' | 'phases' | 'sortedPhaseKeys'>} options
+ * @returns {ShotSample[]}
+ */
 function getNextPhaseSamples({ phaseNum, phases, sortedPhaseKeys }) {
   const currentKeyIndex = sortedPhaseKeys.indexOf(phaseNum);
   const nextPhaseKey =
@@ -86,6 +171,14 @@ function getNextPhaseSamples({ phaseNum, phases, sortedPhaseKeys }) {
   return nextPhaseKey ? phases[nextPhaseKey] || [] : [];
 }
 
+/**
+ * @param {string | null} exitType
+ * @param {ShotSample[]} samples
+ * @param {number} phaseStartTime ms
+ * @param {ShotSample | null} closingSample
+ * @param {PumpedWaterSource} pumpedWaterSource
+ * @returns {number | null | undefined}
+ */
 function getRecordedStopValue(exitType, samples, phaseStartTime, closingSample, pumpedWaterSource) {
   const stopIndex = getLastNonExtendedIndex(samples);
   const stopSample = stopIndex >= 0 ? samples[stopIndex] : getPhaseEndSample(samples);
@@ -106,6 +199,10 @@ function getRecordedStopValue(exitType, samples, phaseStartTime, closingSample, 
   return null;
 }
 
+/**
+ * @param {Pick<PhaseAnalysisOptions, 'isBrewByWeight' | 'isLastPhase' | 'pumpedWaterSource' | 'samples' | 'scaleConnectionBrokenPermanently'>} options
+ * @returns {TargetContext}
+ */
 function buildPhaseTargetContext({
   isBrewByWeight,
   isLastPhase,
@@ -118,8 +215,9 @@ function buildPhaseTargetContext({
     lastNonExtendedIndex >= 0 ? samples[lastNonExtendedIndex] : getPhaseEndSample(samples);
   const anchorIdx =
     isLastPhase && lastNonExtendedIndex >= 0 ? lastNonExtendedIndex : samples.length - 1;
-  const anchor = samples[anchorIdx];
-  const prevAnchor = anchorIdx > 0 ? samples[anchorIdx - 1] : anchor;
+  const anchor = /** @type {MeasuredSample} */ (samples[anchorIdx]);
+  const prevAnchor =
+    anchorIdx > 0 ? /** @type {MeasuredSample} */ (samples[anchorIdx - 1]) : anchor;
   const anchorDt = (anchor.t - prevAnchor.t) / 1000;
 
   return {
@@ -137,6 +235,12 @@ function buildPhaseTargetContext({
   };
 }
 
+/**
+ * @param {AnalyzerTarget[]} targets
+ * @param {TargetContext} targetContext
+ * @param {ShotSample[]} nextPhaseSamples
+ * @returns {TargetMatch | null}
+ */
 function findAutoAdjustedTargetMatch(targets, targetContext, nextPhaseSamples) {
   const anchor = targetContext.anchor;
   let match = findTargetMatch(
@@ -181,6 +285,10 @@ function findAutoAdjustedTargetMatch(targets, targetContext, nextPhaseSamples) {
   return null;
 }
 
+/**
+ * @param {Pick<PhaseAnalysisOptions, 'isAutoAdjusted' | 'nextPhaseSamples' | 'profilePhase' | 'targetContext' | 'settings'>} options
+ * @returns {TargetMatch | null}
+ */
 function findPhaseTargetMatch({
   isAutoAdjusted,
   nextPhaseSamples,
@@ -198,6 +306,7 @@ function findPhaseTargetMatch({
   });
 }
 
+/** @returns {ExitState} */
 function createExitState() {
   return {
     exitCode: 0,
@@ -209,6 +318,11 @@ function createExitState() {
   };
 }
 
+/**
+ * @param {ExitState} exitState
+ * @param {number} recordedExitReasonCode
+ * @returns {boolean}
+ */
 function applyRecordedExitReason(exitState, recordedExitReasonCode) {
   if (!isKnownPhaseExitReason(recordedExitReasonCode)) return false;
 
@@ -220,6 +334,11 @@ function applyRecordedExitReason(exitState, recordedExitReasonCode) {
   return true;
 }
 
+/**
+ * @param {ExitState} exitState
+ * @param {number} duration s
+ * @param {AnalyzerProfilePhase} profilePhase
+ */
 function applyTimeLimitExit(exitState, duration, profilePhase) {
   const profDur = profilePhase.duration;
   if (Math.abs(duration - profDur) < 0.5 || duration >= profDur) {
@@ -228,6 +347,7 @@ function applyTimeLimitExit(exitState, duration, profilePhase) {
   }
 }
 
+/** @param {Pick<PhaseAnalysisOptions, 'debugEnabled' | 'delayTracker' | 'delayTotals' | 'displayName' | 'exitState' | 'isAutoAdjusted' | 'match' | 'phaseNum' | 'profilePhase' | 'shotData' | 'targetContext'>} options */
 function applyTargetMatchResult({
   debugEnabled,
   delayTracker,
@@ -268,14 +388,22 @@ function applyTargetMatchResult({
   }
 }
 
+/**
+ * @param {AnalyzerTarget[]} targets
+ * @returns {AnalyzerTarget | null}
+ */
 function findWeightTarget(targets) {
   return targets.find(t => isWeightType(t.type)) || null;
 }
 
+/** @param {ShotSample[]} samples */
 function getLastPhaseWeightSamples(samples) {
-  const finalSample = getPhaseEndSample(samples);
+  const finalSample = /** @type {MeasuredSample} */ (getPhaseEndSample(samples));
   const lastNonExtendedIndex = getLastNonExtendedIndex(samples);
-  const stopSample = lastNonExtendedIndex >= 0 ? samples[lastNonExtendedIndex] : finalSample;
+  const stopSample =
+    lastNonExtendedIndex >= 0
+      ? /** @type {MeasuredSample} */ (samples[lastNonExtendedIndex])
+      : finalSample;
   return {
     finalSample,
     finalW: finalSample.v,
@@ -284,11 +412,16 @@ function getLastPhaseWeightSamples(samples) {
   };
 }
 
+/**
+ * @param {...number} rates
+ * @returns {number}
+ */
 function getConservativeRate(...rates) {
   const rateCandidates = rates.filter(isPositiveFiniteRate);
   return rateCandidates.length > 0 ? Math.min(...rateCandidates) : 0;
 }
 
+/** @param {Pick<PhaseAnalysisOptions, 'debugEnabled' | 'delayTracker' | 'delayTotals' | 'displayName' | 'exitState' | 'phaseWeightRate' | 'shotData' | 'stopW' | 'weightTarget'>} options */
 function applyLastPhaseOvershootFallback({
   debugEnabled,
   delayTracker,
@@ -322,6 +455,7 @@ function applyLastPhaseOvershootFallback({
   });
 }
 
+/** @param {Pick<PhaseAnalysisOptions, 'conservativeRate' | 'debugEnabled' | 'delayTracker' | 'delayTotals' | 'displayName' | 'exitState' | 'finalW' | 'shotData' | 'stopW' | 'weightTarget'>} options */
 function applyLastPhaseUndershootFallback({
   conservativeRate,
   debugEnabled,
@@ -361,6 +495,7 @@ function applyLastPhaseUndershootFallback({
   });
 }
 
+/** @param {Pick<PhaseAnalysisOptions, 'debugEnabled' | 'delayTracker' | 'delayTotals' | 'displayName' | 'exitState' | 'phaseWeightRate' | 'profilePhase' | 'samples' | 'shotData'>} options */
 function applyLastPhaseWeightFallback({
   debugEnabled,
   delayTracker,
@@ -417,6 +552,7 @@ function applyLastPhaseWeightFallback({
   });
 }
 
+/** @param {Pick<PhaseAnalysisOptions, 'delayTracker' | 'phaseWeightRate' | 'profilePhase' | 'samples'>} options */
 function updateLastPhaseDelayWarning({ delayTracker, phaseWeightRate, profilePhase, samples }) {
   const weightTarget = findWeightTarget(profilePhase.targets);
   if (!weightTarget) return;
@@ -441,6 +577,15 @@ function updateLastPhaseDelayWarning({ delayTracker, phaseWeightRate, profilePha
   }
 }
 
+/**
+ * @param {AnalyzerProfilePhase} profilePhase
+ * @returns {profilePhase is TargetedProfilePhase}
+ */
+function hasTargets(profilePhase) {
+  return (profilePhase.targets?.length ?? 0) > 0;
+}
+
+/** @param {Pick<PhaseAnalysisOptions, 'isAutoAdjusted' | 'isBrewByWeight' | 'isLastPhase' | 'scaleConnectionBrokenPermanently'>} options */
 function shouldRunLastPhaseWeightLogic({
   isAutoAdjusted,
   isBrewByWeight,
@@ -452,6 +597,7 @@ function shouldRunLastPhaseWeightLogic({
   );
 }
 
+/** @param {Pick<PhaseAnalysisOptions, 'debugEnabled' | 'delayTracker' | 'delayTotals' | 'displayName' | 'duration' | 'exitState' | 'isAutoAdjusted' | 'isBrewByWeight' | 'isLastPhase' | 'phaseNum' | 'phaseWeightRate' | 'phases' | 'pumpedWaterSource' | 'samples' | 'scaleConnectionBrokenPermanently' | 'settings' | 'shotData' | 'sortedPhaseKeys'> & { profilePhase: AnalyzerProfilePhase }} options */
 function analyzePhaseTargets({
   debugEnabled,
   delayTracker,
@@ -475,8 +621,8 @@ function analyzePhaseTargets({
 }) {
   applyTimeLimitExit(exitState, duration, profilePhase);
   const profDur = profilePhase.duration;
-  const shouldCheckTargets =
-    profilePhase.targets?.length > 0 && (!exitState.exitType || duration < profDur - 0.5);
+  if (!hasTargets(profilePhase)) return;
+  const shouldCheckTargets = !exitState.exitType || duration < profDur - 0.5;
   if (!shouldCheckTargets) return;
 
   const nextPhaseSamples = getNextPhaseSamples({ phaseNum, phases, sortedPhaseKeys });
@@ -541,6 +687,14 @@ function analyzePhaseTargets({
   }
 }
 
+/**
+ * @param {ShotSample[]} samples
+ * @param {ShotSample[]} weightSamples
+ * @param {Partial<ShotSystemInfo>} sysInfo
+ * @param {SysAnomalies} sysAnomalies
+ * @param {{ brewModeLabel: string, configuredScaleDelayMs: number, recordedStopReason: string }} analyzerSystemInfo
+ * @returns {PhaseStats}
+ */
 function getPhaseStats(samples, weightSamples, sysInfo, sysAnomalies, analyzerSystemInfo) {
   return {
     p: getMetricStats(samples, 'cp'),
@@ -567,6 +721,10 @@ function getPhaseStats(samples, weightSamples, sysInfo, sysAnomalies, analyzerSy
   };
 }
 
+/**
+ * @param {Pick<PhaseAnalysisOptions, 'debugEnabled' | 'delayTotals' | 'globalStartTime' | 'isAutoAdjusted' | 'isBrewByWeight' | 'lastPhaseKey' | 'phaseNameMap' | 'phaseNum' | 'phases' | 'profileData' | 'pumpedWaterSource' | 'recordedExitReasonCode' | 'bluetoothScaleWasConnected' | 'scaleConnectionBrokenPermanently' | 'settings' | 'shotData' | 'sortedPhaseKeys'>} options
+ * @returns {{ phase: AnalyzedPhase, bluetoothScaleWasConnected: boolean, scaleConnectionBrokenPermanently: boolean }}
+ */
 export function analyzeExecutedPhase({
   debugEnabled,
   delayTotals,
@@ -601,7 +759,8 @@ export function analyzeExecutedPhase({
   const weightEndSample = getFinalWeightSample(samples) || getPhaseEndSample(samples);
   const rawName = phaseNameMap[phaseNum];
   const displayName = rawName || t`Phase ${phaseNum}`;
-  const sysInfo = getPhaseEndSample(samples).systemInfo || {};
+  const sysInfo =
+    getPhaseEndSample(samples).systemInfo || /** @type {Partial<ShotSystemInfo>} */ ({});
   const sysAnomalies = getPhaseSysAnomalies(samples, sysInfo);
   const bluetoothScaleConnection = getBluetoothScaleConnectionState(
     samples,

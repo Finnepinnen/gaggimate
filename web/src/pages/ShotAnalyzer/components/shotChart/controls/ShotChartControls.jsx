@@ -4,10 +4,6 @@ import { useEffect, useState } from 'preact/hooks';
 import { Trans } from '@lingui/react/macro';
 import { LEGEND_ORDER } from '../constants';
 import { COMPARE_TARGET_DISPLAY_MODES } from '../../../utils/analyzerUtils';
-import {
-  ANALYZER_ACTION_ICON_BUTTON_CLASS,
-  getAnalyzerIconButtonClasses,
-} from '../../analyzerControlStyles';
 import { ChartLegendArea } from './chartLegendControls';
 import { CompareControlsRow } from './compareControls';
 import { ChartActionGroup, ReplayExportStatus } from './chartReplayControls';
@@ -22,6 +18,7 @@ function useIsMobileControls() {
   useEffect(() => {
     const mediaQuery = globalThis.window?.matchMedia?.('(max-width: 1023px)');
     if (mediaQuery) {
+      /** @param {MediaQueryListEvent} event */
       const handleChange = event => {
         setIsMobile(event.matches);
       };
@@ -36,6 +33,9 @@ function useIsMobileControls() {
   return isMobile;
 }
 
+/**
+ * @param {{ isCompareMode?: boolean, shouldShowReplayFocusHint?: boolean }} props
+ */
 function ReplayFocusHint({ isCompareMode, shouldShowReplayFocusHint }) {
   if (!isCompareMode && shouldShowReplayFocusHint) {
     return (
@@ -52,8 +52,8 @@ function ReplayFocusHint({ isCompareMode, shouldShowReplayFocusHint }) {
 
 /**
  * @param {object} props
- * @param {import('preact').Ref<HTMLElement>} props.exportMenuRef
- * @param {any} props.exportMenuState
+ * @param {import('preact').Ref<HTMLDivElement>} props.exportMenuRef
+ * @param {import('./chartReplayControls').ExportMenuState} props.exportMenuState
  * @param {boolean} props.hasWeightData
  * @param {boolean} props.hasWeightFlowData
  * @param {boolean} props.hasVideoExportSupport
@@ -65,13 +65,13 @@ function ReplayFocusHint({ isCompareMode, shouldShowReplayFocusHint }) {
  * @param {boolean} props.isVideoExportActive
  * @param {Record<string, string>} props.legendColorByLabel
  * @param {string[]} [props.hiddenLegendLabels]
- * @param {any[]} [props.compareShotLegendItems]
+ * @param {import('./compareControls').CompareShotLegendItem[]} [props.compareShotLegendItems]
  * @param {string} [props.compareAlignmentMode]
- * @param {any[]} [props.compareAlignmentOptions]
+ * @param {import('./compareControls').CompareSelectOption[]} [props.compareAlignmentOptions]
  * @param {((mode: string) => void) | null} [props.onCompareAlignmentModeChange]
  * @param {(() => void) | null} [props.onCompareSwap]
  * @param {string} [props.compareTargetDisplayMode]
- * @param {((mode: string) => void) | null} [props.onCompareTargetDisplayModeChange]
+ * @param {((mode: import('../../../utils/constants.js').CompareTargetDisplayMode) => void) | null} [props.onCompareTargetDisplayModeChange]
  * @param {boolean} [props.showCompareAnnotationToggle]
  * @param {boolean} [props.compareAnnotationsEnabled]
  * @param {(() => void) | null} [props.onCompareAnnotationsToggle]
@@ -84,25 +84,25 @@ function ReplayFocusHint({ isCompareMode, shouldShowReplayFocusHint }) {
  * @param {boolean} [props.showReplayButton]
  * @param {boolean} [props.showStopButton]
  * @param {() => void} props.onCloseExportMenu
- * @param {(...args: any[]) => void} props.onExportAction
+ * @param {() => void} props.onExportAction
  * @param {() => void} props.onExportMenuToggle
  * @param {boolean} [props.profileExportAvailable]
- * @param {(...args: any[]) => void} props.onExportTypeChange
- * @param {(...args: any[]) => void} props.onExportFormatChange
+ * @param {(exportType: string | null) => void} props.onExportTypeChange
+ * @param {(exportFormat: string) => void} props.onExportFormatChange
  * @param {() => void} props.onExportFormatInfoToggle
  * @param {() => void} props.onFullDisplayToggle
- * @param {(...args: any[]) => void} props.onIncludeLegendChange
+ * @param {(includeLegend: boolean) => void} props.onIncludeLegendChange
  * @param {(label: string) => void} props.onLegendToggle
  * @param {() => void} props.onReplayToggle
  * @param {() => void} props.onStop
- * @param {any} props.replayExportStatus
+ * @param {import('./chartReplayControls').ReplayExportStatusState} props.replayExportStatus
  * @param {string} props.replayExportStatusHint
  * @param {string} props.replayExportStatusLabel
  * @param {boolean} props.shouldShowReplayFocusHint
  * @param {boolean} props.shouldLockWebmToggle
  * @param {boolean} props.shouldShowWebmToggle
  * @param {boolean} [props.separateMobileReplayActions]
- * @param {any} props.visibility
+ * @param {import('../types').ShotChartVisibility} props.visibility
  */
 export function ShotChartControls({
   exportMenuRef,
@@ -158,9 +158,6 @@ export function ShotChartControls({
   visibility,
 }) {
   const isMobile = useIsMobileControls();
-  const chartActionButtonClasses = getAnalyzerIconButtonClasses({
-    className: `${ANALYZER_ACTION_ICON_BUTTON_CLASS} border-0 bg-transparent shadow-none`,
-  });
   const shouldShowCompareControls =
     isCompareMode &&
     (compareShotLegendItems.length > 0 ||
@@ -194,7 +191,6 @@ export function ShotChartControls({
 
         <div className='flex shrink-0 flex-wrap items-center justify-end gap-2'>
           <ChartActionGroup
-            chartActionButtonClasses={chartActionButtonClasses}
             exportMenuRef={exportMenuRef}
             exportMenuState={exportMenuState}
             hasVideoExportSupport={hasVideoExportSupport}

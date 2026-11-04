@@ -19,20 +19,28 @@ import {
 } from './machines.js';
 
 // App-only sidebar entry: shows the connected machine and switches, adds or disconnects machines.
+/** @param {{ collapsed?: boolean }} props */
 export function MachineSwitcher({ collapsed = false }) {
   const { t } = useLingui();
   const [open, setOpen] = useState(false);
   // Fixed position next to the button; the collapsed sidebar scrolls and would clip the menu.
-  const [menuPosition, setMenuPosition] = useState(null);
+  const [menuPosition, setMenuPosition] = useState(
+    /** @type {{ left: number, bottom: number } | null} */ (null),
+  );
+  /** @type {import('preact').RefObject<HTMLDivElement>} */
   const root = useRef(null);
-  const trigger = useRef(null);
+  /** @type {import('preact').RefObject<HTMLButtonElement>} */
+  const trigger = useRef(/** @type {HTMLButtonElement | null} */ (null));
   const current = activeMachine.value;
   const peekStates = useMachinePeeks(machines.value, open);
 
   // Close on a tap outside or Escape.
   useEffect(() => {
     if (!open) return undefined;
-    const onPointer = event => !root.current?.contains(event.target) && setOpen(false);
+    /** @param {PointerEvent} event */
+    const onPointer = event =>
+      !root.current?.contains(/** @type {Node} */ (event.target)) && setOpen(false);
+    /** @param {KeyboardEvent} event */
     const onKey = event => event.key === 'Escape' && setOpen(false);
     const onResize = () => setOpen(false);
     document.addEventListener('pointerdown', onPointer);
@@ -49,12 +57,14 @@ export function MachineSwitcher({ collapsed = false }) {
   const host = current.host;
   const connected = machine.value.connected;
   const liveStatus = connected ? formatMachineStatus(machine.value.status) : null;
+  /** @param {import('./machines.js').SavedMachine} m */
   const statusOf = m => {
     if (m.id === current.id) return liveStatus;
     const state = peekStates[m.id]?.value;
     return state?.connected ? formatMachineStatus(state.status) : null;
   };
 
+  /** @param {() => unknown} action */
   const run = action => () => {
     setOpen(false);
     action();
@@ -78,9 +88,9 @@ export function MachineSwitcher({ collapsed = false }) {
         aria-expanded={open}
         onClick={() => {
           if (!open && collapsed) {
-            const rect = trigger.current.getBoundingClientRect();
-            const edge =
-              trigger.current.closest('.sidebar')?.getBoundingClientRect().right ?? rect.right;
+            const button = /** @type {HTMLButtonElement} */ (trigger.current);
+            const rect = button.getBoundingClientRect();
+            const edge = button.closest('.sidebar')?.getBoundingClientRect().right ?? rect.right;
             setMenuPosition({ left: edge + 8, bottom: window.innerHeight - rect.bottom });
           }
           setOpen(!open);

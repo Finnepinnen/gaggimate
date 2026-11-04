@@ -3,6 +3,18 @@ import { faTrashCan } from '@fortawesome/free-solid-svg-icons/faTrashCan';
 import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react/macro';
 
+/** @typedef {import('../../types').PhaseTarget} PhaseTarget */
+/**
+ * @typedef {{
+ *   label: import('@lingui/core').MessageDescriptor,
+ *   type: PhaseTarget['type'],
+ *   operator: import('../../types').TargetOperator,
+ *   unit: string,
+ *   unitPosition?: 'left',
+ * }} TargetTypeDef
+ */
+
+/** @type {TargetTypeDef[]} */
 export const TargetTypes = [
   {
     label: msg`Water drawn`,
@@ -49,6 +61,14 @@ export const TargetTypes = [
   },
 ];
 
+/**
+ * @param {{
+ *   onChange: (target: PhaseTarget) => void,
+ *   target: PhaseTarget,
+ *   index: number,
+ *   onRemove: () => void,
+ * }} props
+ */
 export function ExtendedPhaseTarget({ onChange, target, index, onRemove }) {
   const { t, i18n } = useLingui();
   const targetType =
@@ -58,12 +78,12 @@ export function ExtendedPhaseTarget({ onChange, target, index, onRemove }) {
   return (
     <>
       <div className='grid grid-cols-1 gap-4'>
-        <div className='form-control'>
+        <div>
           <label htmlFor={`phase-${index}-target-value`} className='mb-2 block text-sm font-medium'>
             {i18n._(targetType.label)}
           </label>
           <div className='flex flex-row gap-2'>
-            <div className='input-group flex-grow'>
+            <div className='grow'>
               <label htmlFor={`phase-${index}-target-value`} className='input w-full'>
                 {targetType.unitPosition === 'left' && (
                   <span aria-label={targetType.unit}>{targetType.unit}</span>

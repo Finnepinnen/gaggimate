@@ -15,11 +15,13 @@ import { Trans, useLingui } from '@lingui/react/macro';
 
 const sdCard = computed(() => !!machine.value.capabilities.sdCard);
 
+/** @param {{ profileId: string | undefined }} props */
 export function ProfileImageUpload({ profileId }) {
   const { t } = useLingui();
-  const [preview, setPreview] = useState(null);
+  const [preview, setPreview] = useState(/** @type {string | null} */ (null));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  /** @type {import('preact').RefObject<HTMLInputElement>} */
   const inputRef = useRef(null);
   const hasSdCard = sdCard.value;
 
@@ -37,6 +39,7 @@ export function ProfileImageUpload({ profileId }) {
   }, [profileId, hasSdCard]);
 
   const onFile = useCallback(
+    /** @param {import('./types').FieldEvent} e */
     async e => {
       const file = e.target.files?.[0];
       e.target.value = '';
@@ -53,10 +56,11 @@ export function ProfileImageUpload({ profileId }) {
       setBusy(true);
       try {
         const canvas = await drawToCanvas(file);
-        await uploadProfileImage(profileId, canvasToDeviceImage(canvas));
+        // The upload controls only render once there is a profileId.
+        await uploadProfileImage(/** @type {string} */ (profileId), canvasToDeviceImage(canvas));
         setPreview(canvas.toDataURL());
       } catch (err) {
-        setError(err.message || t`Could not read this image.`);
+        setError(/** @type {Error} */ (err).message || t`Could not read this image.`);
       } finally {
         setBusy(false);
       }
@@ -68,10 +72,10 @@ export function ProfileImageUpload({ profileId }) {
     setBusy(true);
     setError('');
     try {
-      await deleteProfileImage(profileId);
+      await deleteProfileImage(/** @type {string} */ (profileId)); // see onFile
       setPreview(null);
     } catch (err) {
-      setError(err.message);
+      setError(/** @type {Error} */ (err).message);
     } finally {
       setBusy(false);
     }
@@ -80,7 +84,7 @@ export function ProfileImageUpload({ profileId }) {
   if (!hasSdCard) return null;
 
   return (
-    <div className='form-control'>
+    <div>
       <label htmlFor='profile-image' className='mb-2 block text-sm font-medium'>
         <Trans>Image</Trans>
       </label>
@@ -90,7 +94,7 @@ export function ProfileImageUpload({ profileId }) {
         </p>
       ) : (
         <div className='flex flex-row items-start gap-4'>
-          <div className='bg-base-200 flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded'>
+          <div className='bg-base-200 flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-sm'>
             {preview ? (
               <img src={preview} alt={t`Profile image`} className='h-full w-full object-cover' />
             ) : (

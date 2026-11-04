@@ -1,7 +1,16 @@
 // Shared route helpers keep Analyzer/ProfileList -> Statistics deep links consistent.
+
+/**
+ * @typedef {import('../types').StatisticsSource} StatisticsSource
+ * @typedef {import('../types').StatisticsSourceSelection} StatisticsSourceSelection
+ */
+
+/** @type {StatisticsSource[]} */
 export const VALID_STATISTICS_SOURCES = ['gaggimate', 'browser'];
+/** @type {string[]} */
 export const VALID_STATISTICS_SOURCE_SELECTIONS = ['gaggimate', 'browser', 'both'];
 
+/** @type {Record<string, StatisticsSource>} */
 const SOURCE_ALIAS_TO_SOURCE = {
   internal: 'gaggimate',
   gm: 'gaggimate',
@@ -11,11 +20,13 @@ const SOURCE_ALIAS_TO_SOURCE = {
   browser: 'browser',
 };
 
+/** @type {Record<string, 'internal' | 'external'>} */
 const SOURCE_TO_ALIAS = {
   gaggimate: 'internal',
   browser: 'external',
 };
 
+/** @type {Record<string, StatisticsSource>} */
 export const STATISTICS_SOURCE_FALLBACK = {
   gaggimate: 'browser',
   browser: 'gaggimate',
@@ -23,6 +34,10 @@ export const STATISTICS_SOURCE_FALLBACK = {
 
 const INVALID_PROFILE_NAMES = new Set(['no profile loaded']);
 
+/**
+ * @param {string | null | undefined} alias
+ * @returns {StatisticsSource | null}
+ */
 export function mapStatisticsSourceAliasToSource(alias) {
   const normalized = String(alias || '')
     .trim()
@@ -30,6 +45,10 @@ export function mapStatisticsSourceAliasToSource(alias) {
   return SOURCE_ALIAS_TO_SOURCE[normalized] || null;
 }
 
+/**
+ * @param {string | null | undefined} source
+ * @returns {'internal' | 'external' | null}
+ */
 export function mapSourceToStatisticsAlias(source) {
   const normalized = String(source || '')
     .trim()
@@ -37,13 +56,24 @@ export function mapSourceToStatisticsAlias(source) {
   return SOURCE_TO_ALIAS[normalized] || null;
 }
 
-export function normalizeStatisticsSourceSelection(source, fallback = 'both') {
+/**
+ * @template {StatisticsSourceSelection | ''} [F='both']
+ * @param {unknown} source
+ * @param {F} [fallback]
+ * @returns {StatisticsSourceSelection | F}
+ */
+export function normalizeStatisticsSourceSelection(source, fallback = /** @type {F} */ ('both')) {
   const normalized = String(source || '')
     .trim()
     .toLowerCase();
-  return VALID_STATISTICS_SOURCE_SELECTIONS.includes(normalized) ? normalized : fallback;
+  return VALID_STATISTICS_SOURCE_SELECTIONS.includes(normalized)
+    ? /** @type {StatisticsSourceSelection} */ (normalized)
+    : fallback;
 }
 
+/**
+ * @param {{ source?: string | null, profileName?: string | null }} args
+ */
 export function buildStatisticsProfileHref({ source, profileName }) {
   const alias = mapSourceToStatisticsAlias(source);
   const trimmedName = String(profileName || '').trim();
@@ -52,6 +82,10 @@ export function buildStatisticsProfileHref({ source, profileName }) {
   return `/statistics/${alias}/${encodeURIComponent(trimmedName)}`;
 }
 
+/**
+ * @param {Record<string, string> | null | undefined} params
+ * @returns {{ source: StatisticsSource, profileName: string } | null}
+ */
 export function parseStatisticsProfileRouteParams(params) {
   const source = mapStatisticsSourceAliasToSource(params?.sourceAlias);
   const rawProfileParam = params?.profileName;

@@ -9,12 +9,16 @@ import { faCaretRight } from '@fortawesome/free-solid-svg-icons/faCaretRight';
 import { Spinner } from '../../../components/Spinner.jsx';
 import Section from '../../../components/Card.jsx';
 
+/**
+ * @param {Blob} blob
+ * @returns {Promise<string>} Data URL.
+ */
 const imageUrlToBase64 = async blob => {
   return new Promise((onSuccess, onError) => {
     try {
       const reader = new FileReader();
       reader.onload = function () {
-        onSuccess(this.result);
+        onSuccess(/** @type {string} */ (this.result));
       };
       reader.onerror = function () {
         onError(new Error('FileReader failed to read image blob.'));
@@ -26,16 +30,19 @@ const imageUrlToBase64 = async blob => {
   });
 };
 
-const getRssiStatusClass = rssi => {
+/** @param {number} [rssi] dBm; unknown until the first status frame. */
+const getRssiStatusClass = (rssi = 0) => {
   if (rssi < -90) return 'status-error';
   if (rssi < -80) return 'status-warning';
   return 'status-success';
 };
 
+/** @param {{ phase: number, progress: number }} props */
 function OtaProgressView({ phase, progress }) {
   const { t } = useLingui();
   const finished = phase === 4;
   const failed = phase === 5;
+  /** @param {number} p */
   const getOtaPhaseText = p => {
     switch (p) {
       case 1:
@@ -74,8 +81,12 @@ function OtaProgressView({ phase, progress }) {
   );
 }
 
+/** @param {{ formData: OtaSettings }} props */
 function StorageAndMemorySection({ formData }) {
   const { t } = useLingui();
+  // The firmware sends heapFree and heapLargest together with heapTotal.
+  const heapFree = /** @type {number} */ (formData.heapFree);
+  const heapLargest = /** @type {number} */ (formData.heapLargest);
   return (
     <Section title={t`Storage & Memory`} className='h-full'>
       <div className='grid grid-cols-1 gap-6'>
@@ -84,7 +95,7 @@ function StorageAndMemorySection({ formData }) {
             <span className='text-base-content/70 text-sm font-medium'>
               <Trans>Storage (LittleFS)</Trans>
             </span>
-            <div className='bg-base-300 h-3 w-full overflow-hidden rounded'>
+            <div className='bg-base-300 h-3 w-full overflow-hidden rounded-sm'>
               <div
                 className='bg-primary h-full transition-all'
                 style={{ width: `${formData.spiffsUsedPct || 0}%` }}
@@ -102,7 +113,7 @@ function StorageAndMemorySection({ formData }) {
             <span className='text-base-content/70 text-sm font-medium'>
               <Trans>Storage (SD-Card)</Trans>
             </span>
-            <div className='bg-base-300 h-3 w-full overflow-hidden rounded'>
+            <div className='bg-base-300 h-3 w-full overflow-hidden rounded-sm'>
               <div
                 className='bg-primary h-full transition-all'
                 style={{ width: `${formData.sdUsedPct || 0}%` }}
@@ -120,26 +131,22 @@ function StorageAndMemorySection({ formData }) {
             <span className='text-base-content/70 text-sm font-medium'>
               <Trans>Free Memory (Heap)</Trans>
             </span>
-            <div className='bg-base-300 h-3 w-full overflow-hidden rounded'>
+            <div className='bg-base-300 h-3 w-full overflow-hidden rounded-sm'>
               <div
                 className='bg-primary h-full transition-all'
                 style={{
-                  width: `${formData.heapTotal > 0 ? ((formData.heapTotal - formData.heapFree) / formData.heapTotal) * 100 : 0}%`,
+                  width: `${formData.heapTotal > 0 ? ((formData.heapTotal - heapFree) / formData.heapTotal) * 100 : 0}%`,
                 }}
               />
             </div>
             <div className='text-base-content/60 text-xs'>
-              {((formData.heapTotal - formData.heapFree || 0) / 1024).toFixed(1)} kB /{' '}
+              {((formData.heapTotal - heapFree || 0) / 1024).toFixed(1)} kB /{' '}
               {(formData.heapTotal / 1024).toFixed(1)} kB (
               {(formData.heapTotal > 0
-                ? ((formData.heapTotal - formData.heapFree) / formData.heapTotal) * 100
+                ? ((formData.heapTotal - heapFree) / formData.heapTotal) * 100
                 : 0
               ).toFixed(2)}
-              %) ({t`Frag:`}{' '}
-              {(formData.heapFree > 0
-                ? 100 - (formData.heapLargest * 100) / formData.heapFree
-                : 0
-              ).toFixed(2)}
+              %) ({t`Frag:`} {(heapFree > 0 ? 100 - (heapLargest * 100) / heapFree : 0).toFixed(2)}
               %)
             </div>
           </div>
@@ -149,6 +156,15 @@ function StorageAndMemorySection({ formData }) {
   );
 }
 
+/**
+ * @param {{
+ *   downloadSupportData: () => void,
+ *   onHistoryRebuild: () => void,
+ *   rebuilding: boolean,
+ *   rebuilt: boolean,
+ *   rebuildProgress: { total: number, current: number, status: string },
+ * }} props
+ */
 function MaintenanceSection({
   downloadSupportData,
   onHistoryRebuild,
@@ -200,7 +216,7 @@ function MaintenanceSection({
               ? t`Scanning shot history files...`
               : t`Processing shot history files (${current}/${total})`}
           </div>
-          <div className='bg-base-300 h-2 w-full overflow-hidden rounded'>
+          <div className='bg-base-300 h-2 w-full overflow-hidden rounded-sm'>
             <div
               className={`h-full transition-all duration-300 ${
                 rebuildProgress.total === 0 ? 'bg-primary animate-pulse' : 'bg-primary'
@@ -245,7 +261,10 @@ function MaintenanceSection({
 
 export function SystemTab() {
   const { t } = useLingui();
-  const apiService = useContext(ApiServiceContext);
+  // Provided at the app root, so never null here.
+  const apiService = /** @type {import('../../../services/ApiService.js').default} */ (
+    useContext(ApiServiceContext)
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState(/** @type {OtaSettings} */ ({}));
@@ -321,13 +340,14 @@ export function SystemTab() {
     }, 500);
   }, [apiService]);
 
-  const formRef = useRef();
+  const formRef = useRef(/** @type {HTMLFormElement | null} */ (null));
 
   const onSubmit = useCallback(
+    /** @param {import('preact').JSX.TargetedSubmitEvent<HTMLFormElement>} e */
     async e => {
       e.preventDefault();
       setSubmitting(true);
-      const form = formRef.current;
+      const form = /** @type {HTMLFormElement} */ (formRef.current);
       const data = new FormData(form);
       apiService.send({ tp: 'req:ota-settings', update: true, channel: data.get('channel') });
     },
@@ -335,6 +355,7 @@ export function SystemTab() {
   );
 
   const onUpdate = useCallback(
+    /** @param {'controller' | 'display' | 'both'} component */
     component => {
       apiService.send({ tp: 'req:ota-start', cp: component });
     },
@@ -365,12 +386,12 @@ export function SystemTab() {
       {/* Firmware updates channel */}
       <Section title={t`System Version & Updates`} className='h-full'>
         <form ref={formRef} onSubmit={onSubmit} className='space-y-4'>
-          <div className='form-control max-w-md'>
+          <div className='max-w-md'>
             <label htmlFor='channel' className='mb-2 block text-sm font-medium'>
               <Trans>Update Channel</Trans>
             </label>
             <div className='mb-2 flex w-full items-center gap-2'>
-              <select id='channel' name='channel' className='select select-bordered grow'>
+              <select id='channel' name='channel' className='select grow'>
                 <option value='latest' selected={formData.channel === 'latest'}>
                   {t({ message: 'Stable', context: 'update channel' })}
                 </option>

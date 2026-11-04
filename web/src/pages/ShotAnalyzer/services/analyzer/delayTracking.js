@@ -1,23 +1,36 @@
 import { t } from '@lingui/core/macro';
 import { isWeightType } from './exitReasons.js';
 
+/** @typedef {import('../../types').DelayTotals} DelayTotals */
+/** @typedef {import('../../types').PhaseDelayState} PhaseDelayState */
+/** @typedef {import('../../types').PhaseDelayTracker} PhaseDelayTracker */
+
 export const LAST_PHASE_UNDERSHOOT_MIN_G = 2;
 export const LAST_PHASE_UNDERSHOOT_MAX_G = 6;
 export const LAST_PHASE_OVERSHOOT_MAX_G = 4;
 export const LAST_PHASE_ESTIMATED_DELAY_MAX_MS = 4000;
 
+/** @returns {boolean} */
 export function isAnalyzerDebugEnabled() {
   if (typeof globalThis === 'undefined') return false;
   try {
     return (
-      globalThis.__SHOT_ANALYZER_DEBUG__ === true ||
-      globalThis.localStorage?.getItem('shotAnalyzerDebug') === '1'
+      /** @type {{ __SHOT_ANALYZER_DEBUG__?: boolean }} */ (globalThis).__SHOT_ANALYZER_DEBUG__ ===
+        true || globalThis.localStorage?.getItem('shotAnalyzerDebug') === '1'
     );
   } catch {
-    return globalThis.__SHOT_ANALYZER_DEBUG__ === true;
+    return (
+      /** @type {{ __SHOT_ANALYZER_DEBUG__?: boolean }} */ (globalThis).__SHOT_ANALYZER_DEBUG__ ===
+      true
+    );
   }
 }
 
+/**
+ * @param {boolean} enabled
+ * @param {string} message
+ * @param {object | null} [payload]
+ */
 export function analyzerDebug(enabled, message, payload = null) {
   if (!enabled) return;
   if (payload == null) {
@@ -27,6 +40,11 @@ export function analyzerDebug(enabled, message, payload = null) {
   }
 }
 
+/**
+ * @param {number | null} phaseNumber
+ * @param {number | null} delayMs
+ * @returns {string | null}
+ */
 export function getDelayReviewMessage(phaseNumber, delayMs) {
   if (!phaseNumber) return null;
   if (delayMs != null) {
@@ -35,6 +53,7 @@ export function getDelayReviewMessage(phaseNumber, delayMs) {
   return t`Unusually high inferred delay in Phase ${phaseNumber}.`;
 }
 
+/** @returns {DelayTotals} */
 export function createDelayTotals() {
   return {
     sumScaleDelay: 0,
@@ -44,6 +63,11 @@ export function createDelayTotals() {
   };
 }
 
+/**
+ * @param {DelayTotals} delayTotals
+ * @param {string | null} exitType
+ * @param {number} delayMs
+ */
 export function addDelayHit(delayTotals, exitType, delayMs) {
   if (isWeightType(exitType)) {
     delayTotals.sumScaleDelay += delayMs;
@@ -54,7 +78,12 @@ export function addDelayHit(delayTotals, exitType, delayMs) {
   delayTotals.countSensorHits++;
 }
 
+/**
+ * @param {boolean} isLastPhase
+ * @returns {PhaseDelayTracker}
+ */
 export function createPhaseDelayTracker(isLastPhase) {
+  /** @type {PhaseDelayState} */
   const state = {
     highScaleDelay: false,
     estimatedScaleDelayMs: null,
@@ -63,6 +92,7 @@ export function createPhaseDelayTracker(isLastPhase) {
     delayReviewMs: null,
   };
 
+  /** @param {number | null | undefined} delayMs */
   const setEstimatedScaleDelay = delayMs => {
     if (delayMs == null || !Number.isFinite(delayMs) || delayMs < 0) return;
     const roundedDelay = Math.round(delayMs);
@@ -75,6 +105,10 @@ export function createPhaseDelayTracker(isLastPhase) {
     }
   };
 
+  /**
+   * @param {number | null | undefined} delayMs
+   * @param {string} [reason]
+   */
   const setPhaseDelayReviewHint = (delayMs, reason) => {
     if (delayMs == null || !Number.isFinite(delayMs) || delayMs < 1000) return;
     const roundedDelay = Math.round(delayMs);

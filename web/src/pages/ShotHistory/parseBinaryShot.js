@@ -46,6 +46,11 @@ const FIELD_BITS = {
  * @typedef {FieldDef & { bitPos: number, size?: number }} FieldLayoutEntry
  */
 
+/** @typedef {import('../../types').ShotLog} ShotLog */
+/** @typedef {import('../../types').ShotSample} ShotSample */
+/** @typedef {import('../../types').ShotPhaseTransition} ShotPhaseTransition */
+/** @typedef {import('../../types').ExitReason} ExitReason */
+
 // Field definitions with parsing info
 /** @type {Record<number, FieldDef>} */
 const FIELD_DEFS = {
@@ -87,6 +92,10 @@ const FIELD_DEFS = {
   // Phase number field removed in v5+, moved to header transitions
 };
 
+/**
+ * @param {Uint8Array} bytes
+ * @returns {string}
+ */
 function decodeCString(bytes) {
   // Bytes are a null-terminated UTF-8 C string. Decode as UTF-8 — appending
   // String.fromCharCode(byte) treats each byte as a Latin-1 code point, which
@@ -101,6 +110,10 @@ function decodeCString(bytes) {
   return new TextDecoder('utf-8').decode(bytes.subarray(0, end));
 }
 
+/**
+ * @param {number} n
+ * @returns {number}
+ */
 function countSetBits(n) {
   let count = 0;
   while (n) {
@@ -112,6 +125,7 @@ function countSetBits(n) {
 
 // Phase exit reason codes (must match PhaseExitReason in shot_log_format.h / profile.h).
 // 0 (unknown) is also what legacy files carry in the formerly-reserved byte.
+/** @type {Record<number, string>} */
 export const PHASE_EXIT_REASON_LABELS = {
   0: 'Unknown',
   1: 'Volumetric target',
@@ -126,7 +140,13 @@ export const PHASE_EXIT_REASON_LABELS = {
 };
 
 // Parse phase transitions from v5+ headers
+/**
+ * @param {DataView} view
+ * @param {number} transitionCount
+ * @returns {ShotPhaseTransition[]}
+ */
 function parsePhaseTransitions(view, transitionCount) {
+  /** @type {ShotPhaseTransition[]} */
   const transitions = [];
   const baseOffset = 110; // Offset after existing header fields
 
@@ -137,7 +157,7 @@ function parsePhaseTransitions(view, transitionCount) {
     const phaseNumber = view.getUint8(offset + 2);
     // Byte at offset + 3 was reserved through v5; repurposed as the phase exit reason.
     // Legacy files wrote 0 here, which maps to "Unknown".
-    const transitionReason = view.getUint8(offset + 3);
+    const transitionReason = /** @type {ExitReason} */ (view.getUint8(offset + 3));
     const phaseNameBytes = new Uint8Array(view.buffer, view.byteOffset + offset + 4, 25);
     const phaseName = decodeCString(phaseNameBytes);
 
@@ -153,6 +173,11 @@ function parsePhaseTransitions(view, transitionCount) {
   return transitions;
 }
 
+/**
+ * @param {ArrayBuffer} arrayBuffer
+ * @param {string} id
+ * @returns {ShotLog}
+ */
 export function parseBinaryShot(arrayBuffer, id) {
   const view = new DataView(arrayBuffer);
 
@@ -201,14 +226,16 @@ export function parseBinaryShot(arrayBuffer, id) {
   const profileName = decodeCString(profileNameBytes);
 
   // Parse phase transitions for v5+
+  /** @type {ShotPhaseTransition[]} */
   let phaseTransitions = [];
+  /** @type {ExitReason} */
   let finalExitReason = 0;
   let brewDelay = 0;
   if (version >= 5) {
     const transitionCount = view.getUint8(110 + 12 * 29); // After 12 PhaseTransitions
     phaseTransitions = parsePhaseTransitions(view, transitionCount);
     // finalExitReason follows phaseTransitionCount; was reserved padding before, so legacy files read 0.
-    finalExitReason = view.getUint8(110 + 12 * 29 + 1);
+    finalExitReason = /** @type {ExitReason} */ (view.getUint8(110 + 12 * 29 + 1));
     // brewDelayMs (ms) follows finalExitReason; legacy files read 0 (was reserved padding).
     brewDelay = view.getUint16(110 + 12 * 29 + 2, true);
   }
@@ -249,6 +276,7 @@ export function parseBinaryShot(arrayBuffer, id) {
     }
   }
 
+  /** @type {ShotSample[]} */
   const samples = [];
   const dataBytes = view.byteLength - headerSize;
   if (dataBytes < 0) {
@@ -264,7 +292,7 @@ export function parseBinaryShot(arrayBuffer, id) {
 
   for (let i = 0; i < maxSamples; i++) {
     const base = headerSize + i * sampleSize;
-    const sample = {};
+    const sample = /** @type {ShotSample} */ ({});
 
     // Parse each field dynamically. The first field grew from 2 to 4 bytes in
     // v6; all remaining fields retain their existing order and width.
@@ -292,7 +320,8 @@ export function parseBinaryShot(arrayBuffer, id) {
         finalValue = rawValue;
       }
 
-      sample[field.name] = finalValue;
+      /** @type {Record<string, unknown>} */ (/** @type {unknown} */ (sample))[field.name] =
+        finalValue;
       offset += elapsedTimestamp && field.bitPos === FIELD_BITS.T ? 4 : 2;
     }
 
@@ -328,12 +357,12 @@ export function parseBinaryShot(arrayBuffer, id) {
   const lastT = samples.length ? samples[samples.length - 1].t : 0;
   const headerIncomplete = sampleCountHeader === 0;
   const inferredIncomplete =
-    trailingBytes !== 0 || (sampleCountHeader && sampleCountHeader > inferredSamples);
+    trailingBytes !== 0 || (sampleCountHeader !== 0 && sampleCountHeader > inferredSamples);
   const incomplete = headerIncomplete || inferredIncomplete;
   const effectiveDuration = !incomplete && durationHeader ? durationHeader : lastT;
 
   const headerVolume = finalWeightHeader ? finalWeightHeader / WEIGHT_SCALE : 0;
-  const sampleVolume = samples.length ? samples[samples.length - 1].v : 0;
+  const sampleVolume = samples.length ? (samples[samples.length - 1].v ?? 0) : 0;
   const volume = headerVolume > 0 ? headerVolume : sampleVolume > 0 ? sampleVolume : null;
 
   return {

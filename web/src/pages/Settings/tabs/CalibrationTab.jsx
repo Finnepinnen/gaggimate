@@ -7,9 +7,18 @@ import Section from '../../../components/Card.jsx';
 import PumpFlowCalibration from '../../../components/PumpFlowCalibration/index.jsx';
 import { SettingsFormField } from '../../../components/SettingsFormField.jsx';
 
+/**
+ * @param {{
+ *   formData: import('../types').SettingsFormData,
+ *   setField: import('../types').SetField,
+ * }} props
+ */
 export function CalibrationTab({ formData, setField }) {
   const { t } = useLingui();
-  const apiService = useContext(ApiServiceContext);
+  // Provided at the app root, so never null here.
+  const apiService = /** @type {import('../../../services/ApiService.js').default} */ (
+    useContext(ApiServiceContext)
+  );
 
   // Autotune state
   const [autotuneActive, setAutotuneActive] = useState(false);
@@ -152,7 +161,7 @@ export function CalibrationTab({ formData, setField }) {
                   type='number'
                   min='30'
                   max='300'
-                  className='input input-bordered w-full'
+                  className='input w-full'
                   value={autotuneTime}
                   onChange={e => setAutotuneTime(Number.parseInt(e.currentTarget.value, 10) || 0)}
                   placeholder='120'
@@ -169,7 +178,7 @@ export function CalibrationTab({ formData, setField }) {
                   type='number'
                   min='4'
                   max='20'
-                  className='input input-bordered w-full'
+                  className='input w-full'
                   value={autotuneSamples}
                   onChange={e =>
                     setAutotuneSamples(Number.parseInt(e.currentTarget.value, 10) || 4)
@@ -188,7 +197,7 @@ export function CalibrationTab({ formData, setField }) {
                   type='number'
                   min='300'
                   max='1500'
-                  className='input input-bordered w-full'
+                  className='input w-full'
                   value={autotuneWattage}
                   onChange={e =>
                     setAutotuneWattage(Number.parseInt(e.currentTarget.value, 10) || 0)

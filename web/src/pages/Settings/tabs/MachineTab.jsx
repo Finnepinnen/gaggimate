@@ -17,10 +17,21 @@ const tofDistance = computed(() => machine.value.status.tofDistance);
 const hardwareScaleAvailable = computed(() => !!machine.value.capabilities.hardwareScale);
 const status = computed(() => machine.value.status);
 
+/** @typedef {import('../types').FieldChangeHandler} FieldChangeHandler */
+
+/**
+ * @param {{
+ *   id: string,
+ *   label: string,
+ *   value: string | undefined,
+ *   fallback: string,
+ *   onChange: FieldChangeHandler,
+ * }} props
+ */
 function SunriseColorField({ id, label, value, fallback, onChange }) {
   return (
     <SettingsFormField label={label} htmlFor={id} noMargin>
-      <label className='input input-bordered w-full cursor-pointer p-1' htmlFor={id}>
+      <label className='input w-full cursor-pointer p-1' htmlFor={id}>
         <div className='h-full w-full rounded-sm' style={{ backgroundColor: value || fallback }}>
           <input
             id={id}
@@ -36,13 +47,22 @@ function SunriseColorField({ id, label, value, fallback, onChange }) {
   );
 }
 
+/**
+ * @param {{
+ *   id: string,
+ *   label: string,
+ *   value: number | string | undefined,
+ *   onChange: FieldChangeHandler,
+ *   onUseCurrent: () => void,
+ * }} props
+ */
 function TankDistanceField({ id, label, value, onChange, onUseCurrent }) {
   const { t } = useLingui();
   const distance = tofDistance.value;
   return (
     <SettingsFormField label={label} htmlFor={id} noMargin>
       <div className='flex flex-row gap-2'>
-        <div className='input-group flex-grow'>
+        <div className='grow'>
           <label htmlFor={id} className='input w-full'>
             <input
               id={id}
@@ -66,10 +86,20 @@ function TankDistanceField({ id, label, value, onChange, onUseCurrent }) {
   );
 }
 
+/**
+ * @param {{
+ *   formData: import('../types').SettingsFormData,
+ *   onChange: import('../types').FormChange,
+ *   setField: import('../types').SetField,
+ * }} props
+ */
 export function MachineTab({ formData, onChange, setField }) {
   const { t } = useLingui();
-  const apiService = useContext(ApiServiceContext);
-  const [steamPumpDraft, setSteamPumpDraft] = useState(null);
+  // Provided at the app root, so never null here.
+  const apiService = /** @type {import('../../../services/ApiService.js').default} */ (
+    useContext(ApiServiceContext)
+  );
+  const [steamPumpDraft, setSteamPumpDraft] = useState(/** @type {string | null} */ (null));
   const [calibrationWeight, setCalibrationWeight] = useState('');
 
   const tareScale = useCallback(() => {
@@ -77,6 +107,7 @@ export function MachineTab({ formData, onChange, setField }) {
   }, [apiService]);
 
   const changeHardwareScaleSampleRate = useCallback(
+    /** @param {import('preact').JSX.TargetedEvent<HTMLSelectElement, Event>} event */
     event => {
       const sampleRate = Number.parseInt(event.currentTarget.value, 10) === 80 ? 80 : 10;
       const defaultAlpha = sampleRate === 80 ? '0.40' : '0.80';
@@ -88,6 +119,7 @@ export function MachineTab({ formData, onChange, setField }) {
   );
 
   const calibrateLoadCell = useCallback(
+    /** @param {1 | 2} cellNumber */
     cellNumber => {
       const measuredWeight =
         cellNumber === 1
@@ -100,6 +132,7 @@ export function MachineTab({ formData, onChange, setField }) {
       const actualWeight = Number.parseFloat(calibrationWeight);
       if (
         !measurementValid ||
+        measuredWeight === undefined ||
         !Number.isFinite(measuredWeight) ||
         Math.abs(measuredWeight) < 0.01 ||
         !Number.isFinite(actualWeight) ||
@@ -181,7 +214,7 @@ export function MachineTab({ formData, onChange, setField }) {
               id='pumpModelCoeffs'
               name='pumpModelCoeffs'
               type='text'
-              className='input input-bordered w-full'
+              className='input w-full'
               placeholder='10.205,5.521'
               value={formData.pumpModelCoeffs}
               onChange={onChange('pumpModelCoeffs')}
@@ -308,7 +341,7 @@ export function MachineTab({ formData, onChange, setField }) {
             <select
               id='altRelayFunction'
               name='altRelayFunction'
-              className='select select-bordered w-full'
+              className='select w-full'
               value={formData.altRelayFunction ?? 1}
               onChange={onChange('altRelayFunction')}
             >
@@ -372,7 +405,7 @@ export function MachineTab({ formData, onChange, setField }) {
               <select
                 id='preferredScaleSource'
                 name='preferredScaleSource'
-                className='select select-bordered w-full'
+                className='select w-full'
                 value={formData.preferredScaleSource || 'auto'}
                 onChange={onChange('preferredScaleSource')}
               >
@@ -405,7 +438,7 @@ export function MachineTab({ formData, onChange, setField }) {
                 <select
                   id='hardwareScaleSampleRateSps'
                   name='hardwareScaleSampleRateSps'
-                  className='select select-bordered w-full'
+                  className='select w-full'
                   value={formData.hardwareScaleSampleRateSps || 10}
                   onChange={changeHardwareScaleSampleRate}
                 >
@@ -423,7 +456,7 @@ export function MachineTab({ formData, onChange, setField }) {
                   id='hardwareScaleIdleAlpha'
                   name='hardwareScaleIdleAlpha'
                   type='number'
-                  className='input input-bordered w-full'
+                  className='input w-full'
                   min='0.05'
                   max='1'
                   step='0.01'
@@ -441,7 +474,7 @@ export function MachineTab({ formData, onChange, setField }) {
                   id='hardwareScaleActiveAlpha'
                   name='hardwareScaleActiveAlpha'
                   type='number'
-                  className='input input-bordered w-full'
+                  className='input w-full'
                   min='0.05'
                   max='1'
                   step='0.01'
@@ -488,7 +521,7 @@ export function MachineTab({ formData, onChange, setField }) {
               htmlFor='calibrationWeight'
               noMargin
             >
-              <label className='input input-bordered w-full'>
+              <label className='input w-full'>
                 <input
                   id='calibrationWeight'
                   type='number'
@@ -527,7 +560,7 @@ export function MachineTab({ formData, onChange, setField }) {
                 <p className='text-base-content/60 mb-1 text-xs'>
                   {t`Current:`}{' '}
                   {status.value?.hardwareScaleCell1Valid
-                    ? `${status.value.hardwareScaleCell1Weight.toFixed(1)} g`
+                    ? `${/** @type {number} */ (status.value.hardwareScaleCell1Weight).toFixed(1)} g`
                     : t`Unavailable / uncalibrated`}
                 </p>
                 <SettingsFormField
@@ -539,7 +572,7 @@ export function MachineTab({ formData, onChange, setField }) {
                     id='scaleFactor1'
                     name='scaleFactor1'
                     type='number'
-                    className='input input-bordered w-full'
+                    className='input w-full'
                     min='-50000'
                     max='50000'
                     step='0.01'
@@ -552,7 +585,7 @@ export function MachineTab({ formData, onChange, setField }) {
                 <p className='text-base-content/60 mb-1 text-xs'>
                   {t`Current:`}{' '}
                   {status.value?.hardwareScaleCell2Valid
-                    ? `${status.value.hardwareScaleCell2Weight.toFixed(1)} g`
+                    ? `${/** @type {number} */ (status.value.hardwareScaleCell2Weight).toFixed(1)} g`
                     : t`Unavailable / uncalibrated`}
                 </p>
                 <SettingsFormField
@@ -564,7 +597,7 @@ export function MachineTab({ formData, onChange, setField }) {
                     id='scaleFactor2'
                     name='scaleFactor2'
                     type='number'
-                    className='input input-bordered w-full'
+                    className='input w-full'
                     min='-50000'
                     max='50000'
                     step='0.01'

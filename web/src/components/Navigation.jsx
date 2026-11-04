@@ -87,11 +87,19 @@ const NAVIGATION_SECTIONS = [
   },
 ];
 
+/**
+ * @param {object} props
+ * @param {string} [props.editLink]
+ * @param {import('@fortawesome/fontawesome-svg-core').IconDefinition} props.editIcon
+ * @param {boolean} [props.editActive]
+ * @param {boolean} [props.isActive]
+ */
 function DashboardModeDropdown({ editLink, editIcon, editActive, isActive }) {
   const { t } = useLingui();
   const mode = dashboardModeSignal.value;
 
   // daisyUI dropdowns are focus-driven — blur to close after a selection.
+  /** @param {Parameters<typeof setDashboardMode>[0]} value */
   const selectMode = value => {
     setDashboardMode(value);
     /** @type {HTMLElement | null} */ (document.activeElement)?.blur();
@@ -131,14 +139,14 @@ function DashboardModeDropdown({ editLink, editIcon, editActive, isActive }) {
         {options.map(option => (
           <li key={option.value}>
             <button type='button' onClick={() => selectMode(option.value)}>
-              <span className='flex-grow'>{option.label}</span>
+              <span className='grow'>{option.label}</span>
               {mode === option.value && <FontAwesomeIcon icon={faCheck} className='h-3 w-3' />}
             </button>
           </li>
         ))}
         <li>
           <a href={editLink} onClick={() => selectMode(DASHBOARD_MODES.CUSTOM)}>
-            <span className='flex-grow'>
+            <span className='grow'>
               <Trans>Customize</Trans>
             </span>
             {mode === DASHBOARD_MODES.CUSTOM && (
@@ -192,7 +200,7 @@ function MenuItem({
     <div className={`flex h-12 flex-row ${collapsed ? 'w-12' : 'w-full'}`}>
       <a
         href={link}
-        className={`flex-grow ${className} relative`}
+        className={`grow ${className} relative`}
         aria-label={collapsed ? label : undefined}
         aria-current={isActive ? 'page' : undefined}
         title={collapsed ? label : undefined}
@@ -224,6 +232,11 @@ function MenuItem({
   );
 }
 
+/**
+ * @param {object} props
+ * @param {boolean} [props.collapsed]
+ * @param {() => void} props.onToggleCollapsed
+ */
 export function Navigation({ collapsed = false, onToggleCollapsed }) {
   const { t, i18n } = useLingui();
   // Compute the icon once per mount so the avatar doesn't reshuffle on every render.
@@ -262,7 +275,7 @@ export function Navigation({ collapsed = false, onToggleCollapsed }) {
         <div className='flex h-full flex-col'>
           <div>
             <div
-              className={`align-center flex h-12 flex-row items-center justify-center gap-2 ${collapsed ? 'w-12' : 'w-full'}`}
+              className={`flex h-12 flex-row items-center justify-center gap-2 ${collapsed ? 'w-12' : 'w-full'}`}
             >
               <GmLogoIcon width={30} height={30} />
               {collapsed ? null : (
@@ -363,7 +376,7 @@ export function Navigation({ collapsed = false, onToggleCollapsed }) {
             </div>
           ))}
 
-          <div className='flex-grow'>&nbsp;</div>
+          <div className='grow'>&nbsp;</div>
 
           {/* App-level entries sit apart from the machine's pages, next to the machine switcher. */}
           {isApp && (

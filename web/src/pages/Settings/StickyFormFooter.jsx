@@ -1,6 +1,12 @@
 import { Trans } from '@lingui/react/macro';
 import { Spinner } from '../../components/Spinner.jsx';
 
+/**
+ * @param {{
+ *   submitting: boolean,
+ *   onRestart: (e: import('preact').JSX.TargetedMouseEvent<HTMLButtonElement>) => void,
+ * }} props
+ */
 export function StickyFormFooter({ submitting, onRestart }) {
   return (
     <div className='border-base-content/10 bg-base-300/95 sticky bottom-0 z-40 mt-6 border-t pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-md'>

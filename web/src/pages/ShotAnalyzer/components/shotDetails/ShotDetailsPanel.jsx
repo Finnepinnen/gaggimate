@@ -3,13 +3,19 @@
 import { t } from '@lingui/core/macro';
 import { ShotDetailsCard } from './ShotDetailsCard';
 
+/** @typedef {import('../../types').AnalysisCompareEntry} AnalysisCompareEntry */
+
+/**
+ * @param {AnalysisCompareEntry | null | undefined} entry
+ * @param {number} index
+ */
 function getCompareDetailTabKey(entry, index) {
   return entry?.key || entry?.shot?.id || entry?.shotName || index;
 }
 
 /**
  * @param {object} props
- * @param {any[]} [props.entries]
+ * @param {AnalysisCompareEntry[]} [props.entries]
  * @param {number} [props.activeIndex]
  * @param {(index: number) => void} [props.onChange]
  */
@@ -45,7 +51,7 @@ function CompareShotTabs({ entries = [], activeIndex = 0, onChange = () => {} })
 
 /**
  * @param {object} props
- * @param {any[]} [props.entries]
+ * @param {AnalysisCompareEntry[]} [props.entries]
  * @param {boolean} [props.isCompareActive]
  * @param {number} [props.activeCompareIndex]
  * @param {(index: number) => void} [props.onActiveCompareIndexChange]

@@ -11,6 +11,10 @@ const MODE_LABELS = [
 const MODE_STEAM = 2;
 
 // One-line live summary like "Brew · 93 °C"; dual-boiler machines report steam on its own sensor.
+/**
+ * @param {Pick<import('../types').MachineStatus, 'mode' | 'currentTemperature' | 'currentSteamTemperature'>} status
+ * @returns {string}
+ */
 export function formatMachineStatus(status) {
   const descriptor = MODE_LABELS[status.mode];
   const label = descriptor

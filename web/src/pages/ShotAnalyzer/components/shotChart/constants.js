@@ -31,6 +31,20 @@ export const TEMP_CHART_HEIGHT_MIN = 72;
 export const REPLAY_TARGET_FPS = 30;
 export const REPLAY_FRAME_INTERVAL_MS = 1000 / REPLAY_TARGET_FPS;
 
+/** @typedef {{ x: number, y: number, width: number, height: number }} NormalizedRect Fractions of the output frame (0..1). */
+
+/**
+ * @typedef {object} ReplayExportConfig
+ * @property {string | null} exportType 'video' | 'image' | 'json'
+ * @property {string | null} exportFormat 'mp4' | 'webm' | 'png' (null when no video format is available)
+ * @property {boolean} includeLegend
+ * @property {string} layoutPreset
+ * @property {HTMLVideoElement | HTMLCanvasElement | HTMLImageElement | null} videoSource
+ * @property {NormalizedRect | null} videoCrop
+ * @property {NormalizedRect | null} chartPlacement
+ */
+
+/** @type {ReplayExportConfig} */
 export const DEFAULT_REPLAY_EXPORT_CONFIG = {
   exportType: 'video',
   exportFormat: 'mp4',
@@ -41,6 +55,11 @@ export const DEFAULT_REPLAY_EXPORT_CONFIG = {
   chartPlacement: null,
 };
 
+/**
+ * @param {string} status
+ * @param {string} [exportFormat]
+ * @returns {string}
+ */
 export function getReplayExportStatusLabel(status, exportFormat = 'mp4') {
   switch (status) {
     case 'idle':
@@ -156,8 +175,9 @@ const TOOLTIP_ORDER = [
 export const TOOLTIP_INDEX = TOOLTIP_ORDER.reduce((acc, label, index) => {
   acc[label] = index;
   return acc;
-}, {});
+}, /** @type {Record<string, number>} */ ({}));
 
+/** @type {Record<string, string>} */
 export const TOOLTIP_GROUP_BY_LABEL = {
   Pressure: 'pressure',
   'Target P': 'pressure',
@@ -174,6 +194,7 @@ export const TOOLTIP_GROUP_BY_LABEL = {
   'Target T': 'temp',
 };
 
+/** @type {Record<string, ChartVisibilityKey>} */
 export const VISIBILITY_KEY_BY_LABEL = {
   Phases: 'phaseNames',
   Stops: 'stops',
@@ -189,6 +210,8 @@ export const VISIBILITY_KEY_BY_LABEL = {
   Weight: 'weight',
   'Weight Flow': 'weightFlow',
 };
+
+/** @typedef {keyof typeof INITIAL_VISIBILITY} ChartVisibilityKey */
 
 export const INITIAL_VISIBILITY = {
   phaseNames: true,
@@ -207,6 +230,7 @@ export const INITIAL_VISIBILITY = {
   weightFlow: true,
 };
 
+/** @type {Record<string, string>} */
 export const UNIT_BY_LABEL = {
   Temp: '°C',
   'Target T': '°C',

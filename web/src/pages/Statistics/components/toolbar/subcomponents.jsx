@@ -9,25 +9,201 @@ import { faUndo } from '@fortawesome/free-solid-svg-icons/faUndo';
 import { SourceMarker } from '../../../ShotAnalyzer/components/SourceMarker';
 import { StatisticsSearchHelp } from '../StatisticsSearchHelp';
 import { StatisticsMultiSelectDropdown } from '../StatisticsMultiSelectDropdown';
-import {
-  STATISTICS_DROPDOWN_PANEL_SURFACE_CLASS,
-  STATISTICS_DROPDOWN_PANEL_SURFACE_STYLE,
-} from '../statisticsDropdownSurface';
+import { DropdownPanel } from '../statisticsSurfaces.jsx';
+import { AnalyzerControl } from '../../../ShotAnalyzer/components/AnalyzerControl.jsx';
+import { cx } from '../../../../utils/cx.js';
 import {
   SOURCE_OPTIONS,
   MODE_OPTIONS,
   DATE_BASIS_OPTIONS,
-  STATISTICS_TOP_ROW_CONTROL_HEIGHT_CLASS,
-  SEGMENT_GROUP_CLASS,
   WARNING_ORANGE_TEXT_STYLE,
   WARNING_ORANGE_TEXT_MUTED_STYLE,
 } from './constants';
-import { getMenuItemClasses, getSegmentButtonClasses, getDateBasisOptionTitle } from './helpers';
+import { getDateBasisOptionTitle } from './helpers';
 import { Trans, useLingui } from '@lingui/react/macro';
 import { i18n } from '../../../../i18n.js';
 
-const STATISTICS_DROPDOWN_PANEL_CLASSES = `dropdown-content mt-2 ${STATISTICS_DROPDOWN_PANEL_SURFACE_CLASS}`;
+/**
+ * @typedef {import('../../types').StatisticsSourceSelection} StatisticsSourceSelection
+ * @typedef {import('../../types').StatisticsMode} StatisticsMode
+ * @typedef {import('../../types').DateBasisMode} DateBasisMode
+ * @typedef {import('../../types').StatisticsQueryIssue} StatisticsQueryIssue
+ * @typedef {import('../../types').ProfileSelectionItem} ProfileSelectionItem
+ * @typedef {import('../../types').ShotSelectionItem} ShotSelectionItem
+ * @typedef {import('./helpers').DateRangeDisplay} DateRangeDisplay
+ * @typedef {typeof SOURCE_OPTIONS[number]} SourceOption
+ * @typedef {typeof MODE_OPTIONS[number]} ModeOption
+ * @typedef {(value: boolean) => void} BooleanSetter
+ * @typedef {{ isBusy: boolean, toolbarControlClass: string }} ToolbarControlProps
+ * @typedef {ToolbarControlProps & { busyDropdownClass: string }} ToolbarDropdownProps
+ * @typedef {ToolbarDropdownProps & {
+ *   mode: StatisticsMode,
+ *   onModeChange: (mode: StatisticsMode) => void,
+ *   currentModeOption: ModeOption,
+ * }} ModeSelectionDropdownProps
+ * @typedef {ToolbarControlProps & {
+ *   mode: StatisticsMode,
+ *   profileSelectionItems: ProfileSelectionItem[],
+ *   selectedProfileNames: string[],
+ *   onSelectedProfileNamesChange: (names: string[]) => void,
+ *   onProfilePinToggle: (item: ProfileSelectionItem) => void,
+ *   shotSelectionItems: ShotSelectionItem[],
+ *   selectedShotKeys: string[],
+ *   onSelectedShotKeysChange: (keys: string[]) => void,
+ *   onShotPinToggle: (item: ShotSelectionItem) => void,
+ * }} SelectionDropdownsProps
+ * @typedef {ToolbarDropdownProps & {
+ *   currentShotSourceOption: SourceOption,
+ *   currentProfileSourceOption: SourceOption,
+ *   shotSource: StatisticsSourceSelection,
+ *   onShotSourceChange: (source: StatisticsSourceSelection) => void,
+ *   profileSource: StatisticsSourceSelection,
+ *   onProfileSourceChange: (source: StatisticsSourceSelection) => void,
+ * }} SourceSelectionDropdownProps
+ * @typedef {ToolbarDropdownProps & {
+ *   hasDateFilter: boolean,
+ *   showDateRangeLabelInTrigger: boolean,
+ *   dateRangeDisplay: DateRangeDisplay,
+ *   dateFromLocal: string,
+ *   onDateFromChange: (value: string) => void,
+ *   dateToLocal: string,
+ *   onDateToChange: (value: string) => void,
+ * }} DateRangeDropdownProps
+ * @typedef {ToolbarControlProps & {
+ *   showAdvancedSearch: boolean,
+ *   setShowAdvancedSearch: BooleanSetter,
+ *   setShowDslSelectionPreview: BooleanSetter,
+ *   dslInputRef: import('preact').Ref<HTMLDivElement>,
+ *   query: string,
+ *   onQueryChange: (query: string) => void,
+ * }} AdvancedSearchControlsProps
+ */
 
+/**
+ * Small badge styled like the toolbar's run button, for inline hints.
+ *
+ * @param {object} props
+ * @param {import('preact').ComponentChildren} [props.children]
+ */
+export function RunButtonBadge({ children }) {
+  return (
+    <span className='bg-success text-success-content hover:bg-success/92 hover:text-success-content inline-flex h-5 w-5 items-center justify-center rounded-md'>
+      {children}
+    </span>
+  );
+}
+
+/**
+ * Full-height button in the toolbar's top row. Extra props go to the button.
+ *
+ * @param {{ className?: string, children?: import('preact').ComponentChildren } & Record<string, any>} props
+ */
+function ToolbarButton({ className, children, ...props }) {
+  return (
+    <AnalyzerControl
+      {...props}
+      variant='surface'
+      className={cx(
+        'btn btn-md inline-flex h-10 min-h-10 justify-center rounded-lg border-none px-0 shadow-none disabled:cursor-not-allowed disabled:opacity-40',
+        className,
+      )}
+    >
+      {children}
+    </AnalyzerControl>
+  );
+}
+
+/**
+ * Small neutral text control. Renders a button unless `as` says otherwise.
+ *
+ * @param {{ active?: boolean, className?: string } & Record<string, any>} props
+ */
+function CompactNeutralButton({ active = false, className, children, ...props }) {
+  return (
+    <AnalyzerControl
+      {...props}
+      variant='text'
+      className={cx(
+        'hover:text-base-content h-9 min-h-0 rounded-lg bg-transparent px-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-40',
+        active ? 'text-base-content' : 'text-base-content/65',
+        className,
+      )}
+    >
+      {children}
+    </AnalyzerControl>
+  );
+}
+
+/**
+ * Item button in a toolbar dropdown menu.
+ *
+ * @param {{ tone?: 'neutral' | 'primary', active?: boolean, className?: string } & Record<string, any>} props
+ */
+function MenuItemButton({ tone = 'neutral', active = false, className, children, ...buttonProps }) {
+  let toneClasses;
+  if (tone === 'primary') {
+    toneClasses = active
+      ? 'bg-primary text-primary-content hover:bg-primary/92'
+      : 'text-primary hover:bg-primary/12';
+  } else {
+    toneClasses = active
+      ? 'text-base-content hover:bg-base-content/5'
+      : 'text-base-content/75 hover:bg-base-content/5 hover:text-base-content';
+  }
+  return (
+    <button {...buttonProps} className={cx(className, toneClasses)}>
+      {children}
+    </button>
+  );
+}
+
+/**
+ * Row of joined segment buttons.
+ *
+ * @param {object} props
+ * @param {string} [props.className]
+ * @param {import('preact').ComponentChildren} [props.children]
+ */
+function SegmentGroup({ className, children }) {
+  return (
+    <div
+      className={cx(
+        'bg-base-content/4 divide-base-content/10 inline-flex divide-x overflow-hidden rounded-lg',
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Compact button inside a SegmentGroup.
+ *
+ * @param {{ active?: boolean, activeTone?: 'secondary' | 'neutral' } & Record<string, any>} props
+ */
+function SegmentButton({ active = false, activeTone = 'neutral', children, ...buttonProps }) {
+  let stateClasses = 'bg-base-100/50 text-base-content/75 hover:bg-base-200/70';
+  if (active) {
+    stateClasses =
+      activeTone === 'secondary'
+        ? 'bg-secondary text-secondary-content'
+        : 'bg-base-content/10 text-base-content';
+  }
+  return (
+    <button
+      {...buttonProps}
+      className={cx(
+        'flex h-9 min-h-0 items-center justify-center border-0 px-1.5 text-[11px] font-semibold whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-40',
+        stateClasses,
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+/** @param {SourceOption | undefined} option */
 function renderCompactSourceSummary(option) {
   if (!option) return null;
   if (option.value === 'both') {
@@ -42,6 +218,7 @@ function renderCompactSourceSummary(option) {
   return <SourceMarker source={option.value} variant='compact' />;
 }
 
+/** @param {{ shotOption: SourceOption, profileOption: SourceOption }} options */
 function renderCombinedSourceSummary({ shotOption, profileOption }) {
   return (
     <span className='inline-flex min-w-0 items-center gap-1.5'>
@@ -62,6 +239,7 @@ function renderCombinedSourceSummary({ shotOption, profileOption }) {
   );
 }
 
+/** @param {SourceOption | undefined} option */
 function renderSourceOptionContent(option) {
   if (!option) return null;
   if (option.value === 'both') {
@@ -71,11 +249,13 @@ function renderSourceOptionContent(option) {
   return (
     <span className='inline-flex items-center gap-2'>
       <SourceMarker source={option.value} variant='compact' />
-      <span>{i18n._(option.label)}</span>
+      {/* `any`: i18n._ takes a plain id or a descriptor, but its overloads reject the union. */}
+      <span>{i18n._(/** @type {any} */ (option.label))}</span>
     </span>
   );
 }
 
+/** @param {{ visible: boolean }} props */
 export function ToolbarBusyOverlay({ visible }) {
   if (!visible) return null;
 
@@ -86,6 +266,13 @@ export function ToolbarBusyOverlay({ visible }) {
   );
 }
 
+/**
+ * @param {object} props
+ * @param {string} props.collapsedShotCountLabel
+ * @param {string} props.collapsedProfileCountLabel
+ * @param {string | number} props.collapsedDateRangeText
+ * @param {() => void} props.onExpand
+ */
 export function CollapsedToolbarStrip({
   collapsedShotCountLabel,
   collapsedProfileCountLabel,
@@ -121,11 +308,11 @@ export function CollapsedToolbarStrip({
   );
 }
 
+/** @param {ModeSelectionDropdownProps} props */
 export function ModeSelectionDropdown({
   mode,
   onModeChange,
   isBusy,
-  modeTriggerClasses,
   currentModeOption,
   toolbarControlClass,
   busyDropdownClass,
@@ -136,29 +323,36 @@ export function ModeSelectionDropdown({
       className={`dropdown max-w-full ${toolbarControlClass} ${busyDropdownClass}`.trim()}
       data-close-on-outside
     >
-      <summary
-        className={modeTriggerClasses}
+      <AnalyzerControl
+        as='summary'
+        variant='surface'
+        className={cx(
+          'btn btn-md bg-primary text-primary-content hover:bg-primary/92 h-10 min-h-10 w-[7rem] list-none justify-between rounded-lg border-none px-2 text-sm font-semibold shadow-none [&::-webkit-details-marker]:hidden',
+          isBusy && 'pointer-events-none opacity-40',
+        )}
         aria-label={t`Select statistics mode`}
         title={t`Select statistics mode`}
       >
         <span className='truncate'>{i18n._(currentModeOption.label)}</span>
         <FontAwesomeIcon icon={faChevronDown} className='-ml-0.5 text-[10px] opacity-70' />
-      </summary>
+      </AnalyzerControl>
 
-      <div
-        className={`${STATISTICS_DROPDOWN_PANEL_CLASSES} w-40 p-1.5`}
-        style={STATISTICS_DROPDOWN_PANEL_SURFACE_STYLE}
-      >
+      <DropdownPanel className='dropdown-content mt-2 w-40 p-1.5'>
         <div className='grid gap-1'>
           {MODE_OPTIONS.map(opt => (
-            <button
+            <MenuItemButton
               key={opt.value}
               type='button'
-              className={`flex h-9 min-h-0 items-center justify-between rounded-lg px-3 text-xs font-semibold transition-colors ${getMenuItemClasses({ tone: 'primary', isActive: mode === opt.value })}`}
-              onClick={e => {
-                onModeChange(opt.value);
-                closeParentDetails(e.currentTarget);
-              }}
+              tone='primary'
+              active={mode === opt.value}
+              className='flex h-9 min-h-0 items-center justify-between rounded-lg px-3 text-xs font-semibold transition-colors'
+              onClick={
+                /** @param {import('preact').JSX.TargetedMouseEvent<HTMLButtonElement>} e */
+                e => {
+                  onModeChange(opt.value);
+                  closeParentDetails(e.currentTarget);
+                }
+              }
               disabled={isBusy}
             >
               <span>{i18n._(opt.label)}</span>
@@ -167,19 +361,21 @@ export function ModeSelectionDropdown({
                   <Trans context='selected menu item'>Active</Trans>
                 </span>
               )}
-            </button>
+            </MenuItemButton>
           ))}
         </div>
-      </div>
+      </DropdownPanel>
     </details>
   );
 }
 
+/** @param {Element} target */
 function closeParentDetails(target) {
   const details = target.closest('details');
   if (details) details.open = false;
 }
 
+/** @param {SelectionDropdownsProps} props */
 export function SelectionDropdowns({
   mode,
   profileSelectionItems,
@@ -205,7 +401,7 @@ export function SelectionDropdowns({
       disabled={isBusy}
       accentTone='primary'
       emptyText={t`Select Profiles...`}
-      triggerClassName={STATISTICS_TOP_ROW_CONTROL_HEIGHT_CLASS}
+      triggerClassName='btn btn-md h-10 min-h-10 border-none shadow-none'
       rootClassName={toolbarControlClass}
     />
   );
@@ -220,7 +416,7 @@ export function SelectionDropdowns({
       disabled={isBusy}
       accentTone='primary'
       emptyText={t`Select Shots...`}
-      triggerClassName={STATISTICS_TOP_ROW_CONTROL_HEIGHT_CLASS}
+      triggerClassName='btn btn-md h-10 min-h-10 border-none shadow-none'
       rootClassName={toolbarControlClass}
     />
   );
@@ -246,8 +442,8 @@ export function SelectionDropdowns({
   return null;
 }
 
+/** @param {SourceSelectionDropdownProps} props */
 export function SourceSelectionDropdown({
-  sourceTriggerClasses,
   currentShotSourceOption,
   currentProfileSourceOption,
   shotSource,
@@ -279,8 +475,13 @@ export function SourceSelectionDropdown({
       className={`dropdown max-w-full ${toolbarControlClass} ${busyDropdownClass}`.trim()}
       data-close-on-outside
     >
-      <summary
-        className={sourceTriggerClasses}
+      <AnalyzerControl
+        as='summary'
+        variant='surface'
+        className={cx(
+          'text-base-content/70 hover:text-base-content flex h-9 min-h-0 w-[15rem] max-w-full list-none items-center justify-between gap-2 rounded-lg bg-transparent px-2 text-xs font-bold [&::-webkit-details-marker]:hidden',
+          isBusy && 'pointer-events-none opacity-40',
+        )}
         aria-label={t`Select shot and profile sources`}
         title={t`Select shot and profile sources`}
       >
@@ -291,41 +492,39 @@ export function SourceSelectionDropdown({
           })}
         </span>
         <FontAwesomeIcon icon={faChevronDown} className='-ml-0.5 text-[10px] opacity-70' />
-      </summary>
+      </AnalyzerControl>
 
-      <div
-        className={`${STATISTICS_DROPDOWN_PANEL_CLASSES} w-[min(92vw,18rem)] p-2`}
-        style={STATISTICS_DROPDOWN_PANEL_SURFACE_STYLE}
-      >
+      <DropdownPanel className='dropdown-content mt-2 w-[min(92vw,18rem)] p-2'>
         <div className='grid gap-2'>
           {sourceGroups.map(group => (
             <div key={group.key} className='grid gap-1.5'>
               <div className='text-base-content/55 px-1 text-xs font-medium'>{group.label}</div>
               <div className='grid grid-cols-3 gap-1'>
                 {SOURCE_OPTIONS.map(opt => (
-                  <button
+                  <MenuItemButton
                     key={`${group.key}-${opt.value}`}
                     type='button'
-                    className={`flex h-9 min-h-0 items-center justify-center rounded-lg px-2 text-xs font-medium transition-colors ${getMenuItemClasses({ tone: 'neutral', isActive: group.value === opt.value })}`}
+                    active={group.value === opt.value}
+                    className='flex h-9 min-h-0 items-center justify-center rounded-lg px-2 text-xs font-medium transition-colors'
                     onClick={() => {
                       group.onChange(opt.value);
                     }}
                     disabled={isBusy}
                   >
                     {renderSourceOptionContent(opt)}
-                  </button>
+                  </MenuItemButton>
                 ))}
               </div>
             </div>
           ))}
         </div>
-      </div>
+      </DropdownPanel>
     </details>
   );
 }
 
+/** @param {DateRangeDropdownProps} props */
 export function DateRangeDropdown({
-  dateTriggerClasses,
   hasDateFilter,
   showDateRangeLabelInTrigger,
   dateRangeDisplay,
@@ -334,7 +533,6 @@ export function DateRangeDropdown({
   dateToLocal,
   onDateToChange,
   isBusy,
-  compactNeutralButtonClasses,
   toolbarControlClass,
   busyDropdownClass,
 }) {
@@ -348,8 +546,14 @@ export function DateRangeDropdown({
       className={`dropdown ${toolbarControlClass} ${busyDropdownClass}`.trim()}
       data-close-on-outside
     >
-      <summary
-        className={dateTriggerClasses}
+      <AnalyzerControl
+        as='summary'
+        variant='surface'
+        className={cx(
+          'flex h-9 min-h-0 w-[11.25rem] list-none items-center gap-1.5 rounded-lg bg-transparent px-2 text-left text-xs sm:w-[12.5rem] md:w-[15rem] [&::-webkit-details-marker]:hidden',
+          hasDateFilter ? 'text-base-content' : 'text-base-content/70 hover:text-base-content',
+          busyDropdownClass,
+        )}
         aria-label={t`Edit date range filter`}
         title={t`Edit date range filter`}
       >
@@ -375,12 +579,9 @@ export function DateRangeDropdown({
           )}
         </span>
         <FontAwesomeIcon icon={faChevronDown} className='-ml-0.5 shrink-0 text-[9px] opacity-50' />
-      </summary>
+      </AnalyzerControl>
 
-      <div
-        className={`${STATISTICS_DROPDOWN_PANEL_CLASSES} w-[min(92vw,26rem)] p-3`}
-        style={STATISTICS_DROPDOWN_PANEL_SURFACE_STYLE}
-      >
+      <DropdownPanel className='dropdown-content mt-2 w-[min(92vw,26rem)] p-3'>
         <div className='grid gap-2'>
           <label className='text-base-content/75 flex items-center gap-2 text-[11px] font-semibold'>
             <span className='w-10 shrink-0'>
@@ -389,8 +590,11 @@ export function DateRangeDropdown({
             <input
               type='date'
               value={dateFromLocal}
-              onInput={e => onDateFromChange(e.currentTarget.value)}
-              className='analyzer-statistics-datetime input input-bordered border-base-content/10 bg-base-100/50 h-9 min-h-0 w-full text-xs'
+              onInput={
+                /** @param {import('preact').JSX.TargetedEvent<HTMLInputElement, Event>} e */
+                e => onDateFromChange(e.currentTarget.value)
+              }
+              className='analyzer-statistics-datetime input border-base-content/10 bg-base-100/50 h-9 min-h-0 w-full text-xs'
               disabled={isBusy}
               aria-label={t`Start date`}
               title={t`Start date`}
@@ -404,8 +608,11 @@ export function DateRangeDropdown({
             <input
               type='date'
               value={dateToLocal}
-              onInput={e => onDateToChange(e.currentTarget.value)}
-              className='analyzer-statistics-datetime input input-bordered border-base-content/10 bg-base-100/50 h-9 min-h-0 w-full text-xs'
+              onInput={
+                /** @param {import('preact').JSX.TargetedEvent<HTMLInputElement, Event>} e */
+                e => onDateToChange(e.currentTarget.value)
+              }
+              className='analyzer-statistics-datetime input border-base-content/10 bg-base-100/50 h-9 min-h-0 w-full text-xs'
               disabled={isBusy}
               aria-label={t`End date`}
               title={t`End date`}
@@ -415,24 +622,24 @@ export function DateRangeDropdown({
 
         <div className='mt-3 flex items-center justify-between gap-2'>
           <div className='text-base-content/55 text-[10px]'>{dateModeText}</div>
-          <button
+          <CompactNeutralButton
             type='button'
             onClick={() => {
               onDateFromChange('');
               onDateToChange('');
             }}
             disabled={isBusy || (!dateFromLocal && !dateToLocal)}
-            className={compactNeutralButtonClasses}
             title={t`Clear date filter`}
           >
             <Trans>Clear Date Filter</Trans>
-          </button>
+          </CompactNeutralButton>
         </div>
-      </div>
+      </DropdownPanel>
     </details>
   );
 }
 
+/** @param {AdvancedSearchControlsProps} props */
 export function AdvancedSearchControls({
   showAdvancedSearch,
   setShowAdvancedSearch,
@@ -441,8 +648,6 @@ export function AdvancedSearchControls({
   query,
   onQueryChange,
   isBusy,
-  compactNeutralButtonClasses,
-  activeCompactNeutralButtonClasses,
   toolbarControlClass,
 }) {
   const { t } = useLingui();
@@ -462,14 +667,17 @@ export function AdvancedSearchControls({
           <input
             type='text'
             value={query}
-            onInput={e => {
-              setShowDslSelectionPreview(!!String(e.currentTarget.value || '').trim());
-              onQueryChange(e.currentTarget.value);
-            }}
+            onInput={
+              /** @param {import('preact').JSX.TargetedEvent<HTMLInputElement, Event>} e */
+              e => {
+                setShowDslSelectionPreview(!!String(e.currentTarget.value || '').trim());
+                onQueryChange(e.currentTarget.value);
+              }
+            }
             onFocus={() => setShowDslSelectionPreview(true)}
             onClick={() => setShowDslSelectionPreview(true)}
             placeholder='name:"325"; profile:3_0_25; date:>h-7d;'
-            className='input input-bordered border-base-content/10 bg-base-100/50 h-9 min-h-0 w-full text-xs'
+            className='input border-base-content/10 bg-base-100/50 h-9 min-h-0 w-full text-xs'
             disabled={isBusy}
           />
         </div>
@@ -481,9 +689,11 @@ export function AdvancedSearchControls({
         </div>
       )}
 
-      <label
+      <CompactNeutralButton
+        as='label'
+        active={showAdvancedSearch}
         title={t`Toggle advanced search`}
-        className={`${showAdvancedSearch ? activeCompactNeutralButtonClasses : compactNeutralButtonClasses} gap-2 ${isBusy ? 'pointer-events-none opacity-40' : ''} ${toolbarControlClass}`.trim()}
+        className={cx('gap-2', isBusy && 'pointer-events-none opacity-40', toolbarControlClass)}
       >
         <input
           type='checkbox'
@@ -491,20 +701,40 @@ export function AdvancedSearchControls({
           disabled={isBusy}
           aria-label={t`Toggle advanced search`}
           className='toggle toggle-primary toggle-xs'
-          onChange={event => {
-            const next = event.currentTarget.checked;
-            setShowAdvancedSearch(next);
-            if (!next) setShowDslSelectionPreview(false);
-          }}
+          onChange={
+            /** @param {import('preact').JSX.TargetedEvent<HTMLInputElement, Event>} event */
+            event => {
+              const next = event.currentTarget.checked;
+              setShowAdvancedSearch(next);
+              if (!next) setShowDslSelectionPreview(false);
+            }
+          }
         />
         <span>
           <Trans>Advanced</Trans>
         </span>
-      </label>
+      </CompactNeutralButton>
     </div>
   );
 }
 
+/**
+ * @param {Omit<ModeSelectionDropdownProps, 'toolbarControlClass'>
+ *   & SelectionDropdownsProps
+ *   & SourceSelectionDropdownProps
+ *   & DateRangeDropdownProps
+ *   & AdvancedSearchControlsProps
+ *   & {
+ *     useBlankCollapseLayer: boolean,
+ *     toolbarPassiveLayerClass: string,
+ *     setIsCollapsedStripExpanded: BooleanSetter,
+ *     onClearFilters: () => void,
+ *     resetAriaCount: string,
+ *     candidateLabel: string,
+ *     onGo: () => void,
+ *     canExecute: boolean,
+ *   }} props
+ */
 export function ExpandedToolbarControls({
   useBlankCollapseLayer,
   toolbarPassiveLayerClass,
@@ -514,7 +744,6 @@ export function ExpandedToolbarControls({
   mode,
   onModeChange,
   isBusy,
-  modeTriggerClasses,
   currentModeOption,
   profileSelectionItems,
   selectedProfileNames,
@@ -525,21 +754,17 @@ export function ExpandedToolbarControls({
   onSelectedShotKeysChange,
   onShotPinToggle,
   onClearFilters,
-  resetButtonClasses,
   resetAriaCount,
   candidateLabel,
   onGo,
   canExecute,
-  runButtonClasses,
   setShowDslSelectionPreview,
-  sourceTriggerClasses,
   currentShotSourceOption,
   currentProfileSourceOption,
   shotSource,
   onShotSourceChange,
   profileSource,
   onProfileSourceChange,
-  dateTriggerClasses,
   hasDateFilter,
   showDateRangeLabelInTrigger,
   dateRangeDisplay,
@@ -547,13 +772,11 @@ export function ExpandedToolbarControls({
   onDateFromChange,
   dateToLocal,
   onDateToChange,
-  compactNeutralButtonClasses,
   showAdvancedSearch,
   setShowAdvancedSearch,
   dslInputRef,
   query,
   onQueryChange,
-  activeCompactNeutralButtonClasses,
 }) {
   const { t } = useLingui();
   return (
@@ -576,7 +799,6 @@ export function ExpandedToolbarControls({
           mode={mode}
           onModeChange={onModeChange}
           isBusy={isBusy}
-          modeTriggerClasses={modeTriggerClasses}
           currentModeOption={currentModeOption}
           toolbarControlClass={toolbarControlClass}
           busyDropdownClass={busyDropdownClass}
@@ -597,10 +819,13 @@ export function ExpandedToolbarControls({
         />
 
         <div className={`ml-auto flex items-center gap-2 ${toolbarControlClass}`.trim()}>
-          <button
+          <ToolbarButton
             type='button'
             onClick={onClearFilters}
-            className={`${resetButtonClasses} ${toolbarControlClass}`.trim()}
+            className={cx(
+              'bg-base-content/4 text-base-content/70 hover:bg-base-content/7 hover:text-base-content w-12 flex-col items-center gap-0.5',
+              toolbarControlClass,
+            )}
             disabled={isBusy}
             aria-label={t`Clear filters and selections (${resetAriaCount})`}
             title={t`Clear filters and selections (${resetAriaCount})`}
@@ -609,21 +834,24 @@ export function ExpandedToolbarControls({
             <span className='text-[10px] leading-none font-semibold tabular-nums'>
               {candidateLabel}
             </span>
-          </button>
+          </ToolbarButton>
 
-          <button
+          <ToolbarButton
             type='button'
             onClick={() => {
               setShowDslSelectionPreview(false);
               onGo();
             }}
             disabled={!canExecute}
-            className={`${runButtonClasses} ${toolbarControlClass}`.trim()}
+            className={cx(
+              'bg-success text-success-content hover:bg-success/92 hover:text-success-content w-[6rem] items-center',
+              toolbarControlClass,
+            )}
             aria-label={t`Play statistics`}
             title={t`Play statistics`}
           >
             <FontAwesomeIcon icon={faPlay} className='text-[1.35rem]' />
-          </button>
+          </ToolbarButton>
         </div>
       </div>
 
@@ -631,7 +859,6 @@ export function ExpandedToolbarControls({
         className={`relative z-10 flex w-full min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 pt-0.5 ${toolbarPassiveLayerClass}`.trim()}
       >
         <SourceSelectionDropdown
-          sourceTriggerClasses={sourceTriggerClasses}
           currentShotSourceOption={currentShotSourceOption}
           currentProfileSourceOption={currentProfileSourceOption}
           shotSource={shotSource}
@@ -644,7 +871,6 @@ export function ExpandedToolbarControls({
         />
 
         <DateRangeDropdown
-          dateTriggerClasses={dateTriggerClasses}
           hasDateFilter={hasDateFilter}
           showDateRangeLabelInTrigger={showDateRangeLabelInTrigger}
           dateRangeDisplay={dateRangeDisplay}
@@ -653,7 +879,6 @@ export function ExpandedToolbarControls({
           dateToLocal={dateToLocal}
           onDateToChange={onDateToChange}
           isBusy={isBusy}
-          compactNeutralButtonClasses={compactNeutralButtonClasses}
           toolbarControlClass={toolbarControlClass}
           busyDropdownClass={busyDropdownClass}
         />
@@ -666,8 +891,6 @@ export function ExpandedToolbarControls({
           query={query}
           onQueryChange={onQueryChange}
           isBusy={isBusy}
-          compactNeutralButtonClasses={compactNeutralButtonClasses}
-          activeCompactNeutralButtonClasses={activeCompactNeutralButtonClasses}
           toolbarControlClass={toolbarControlClass}
         />
       </div>
@@ -675,6 +898,16 @@ export function ExpandedToolbarControls({
   );
 }
 
+/**
+ * @param {object} props
+ * @param {boolean} props.visible
+ * @param {string | null} props.dateBasisWarningMessage
+ * @param {DateBasisMode} props.dateBasisMode
+ * @param {(mode: DateBasisMode) => void} props.onDateBasisModeChange
+ * @param {boolean} props.isBusy
+ * @param {string} props.toolbarPassiveLayerClass
+ * @param {string} props.toolbarControlClass
+ */
 export function DateBasisWarning({
   visible,
   dateBasisWarningMessage,
@@ -707,28 +940,35 @@ export function DateBasisWarning({
             t`Some shots have no shot timestamp. Choose how date handling should treat them.`}
         </span>
       </div>
-      <div className={`${SEGMENT_GROUP_CLASS} ${toolbarControlClass}`.trim()}>
+      <SegmentGroup className={toolbarControlClass}>
         {DATE_BASIS_OPTIONS.map(opt => (
-          <button
+          <SegmentButton
             key={opt.value}
             type='button'
-            className={getSegmentButtonClasses({
-              isActive: dateBasisMode === opt.value,
-              activeTone: opt.value === 'auto' ? 'secondary' : 'neutral',
-              compact: true,
-            })}
+            active={dateBasisMode === opt.value}
+            activeTone={opt.value === 'auto' ? 'secondary' : 'neutral'}
             onClick={() => onDateBasisModeChange(opt.value)}
             disabled={isBusy}
             title={getDateBasisOptionTitle(opt.value)}
           >
             {i18n._(opt.label)}
-          </button>
+          </SegmentButton>
         ))}
-      </div>
+      </SegmentGroup>
     </div>
   );
 }
 
+/**
+ * @param {object} props
+ * @param {boolean} props.visible
+ * @param {string | null} props.noticeMessage
+ * @param {'error' | 'warning'} props.noticeTone
+ * @param {StatisticsQueryIssue[]} props.parseErrors
+ * @param {StatisticsQueryIssue[]} props.parseWarnings
+ * @param {string | null} props.topError
+ * @param {string} props.toolbarPassiveLayerClass
+ */
 export function ToolbarNotice({
   visible,
   noticeMessage,
@@ -767,6 +1007,12 @@ export function ToolbarNotice({
   );
 }
 
+/**
+ * @param {object} props
+ * @param {boolean} props.visible
+ * @param {string | null} props.selectionHint
+ * @param {string} props.toolbarPassiveLayerClass
+ */
 export function SelectionHint({ visible, selectionHint, toolbarPassiveLayerClass }) {
   if (!visible || !selectionHint) return null;
 
@@ -780,6 +1026,13 @@ export function SelectionHint({ visible, selectionHint, toolbarPassiveLayerClass
   );
 }
 
+/**
+ * @param {object} props
+ * @param {boolean} props.visible
+ * @param {{ id: string, primary: string }[]} props.profilePreviewItems
+ * @param {ShotSelectionItem[]} props.shotPreviewItems
+ * @param {string} props.toolbarPassiveLayerClass
+ */
 export function DslSelectionPreview({
   visible,
   profilePreviewItems,

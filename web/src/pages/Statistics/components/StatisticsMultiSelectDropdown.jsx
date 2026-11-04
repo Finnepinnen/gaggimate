@@ -2,19 +2,34 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronDown } from '@fortawesome/free-solid-svg-icons/faChevronDown';
 import { faThumbtack } from '@fortawesome/free-solid-svg-icons/faThumbtack';
-import {
-  getAnalyzerIconButtonClasses,
-  getAnalyzerSurfaceTriggerClasses,
-} from '../../ShotAnalyzer/components/analyzerControlStyles';
-import {
-  STATISTICS_DROPDOWN_PANEL_SURFACE_CLASS,
-  STATISTICS_DROPDOWN_PANEL_SURFACE_STYLE,
-} from './statisticsDropdownSurface';
+import { AnalyzerControl } from '../../ShotAnalyzer/components/AnalyzerControl.jsx';
+import { cx } from '../../../utils/cx.js';
+import { DropdownPanel } from './statisticsSurfaces.jsx';
 import { Trans, useLingui } from '@lingui/react/macro';
+
+/**
+ * @typedef {import('../types').MultiSelectItem} MultiSelectItem
+ * @typedef {'neutral' | 'primary' | 'secondary'} AccentTone
+ * @typedef {{ shiftKey?: boolean, metaKey?: boolean, ctrlKey?: boolean }} SelectionModifiers
+ * @typedef {{
+ *   pointerId: number,
+ *   startItemId: string,
+ *   startX: number,
+ *   startY: number,
+ *   paintSelect: boolean,
+ *   active: boolean,
+ *   timer: number | null,
+ *   visitedIds: Set<string>,
+ *   onMove: PointerHandler | null,
+ *   onUp: PointerHandler | null,
+ *   onCancel: PointerHandler | null,
+ * }} TouchPaintState
+ */
+
+/** @typedef {(event: PointerEvent) => void} PointerHandler */
 
 const LONG_PRESS_MS = 220;
 const MOVE_CANCEL_PX = 10;
-const STATISTICS_MULTISELECT_PANEL_CLASS = `absolute top-full left-0 mt-2 w-[min(92vw,28rem)] ${STATISTICS_DROPDOWN_PANEL_SURFACE_CLASS}`;
 
 // Reusable multiselect dropdown with desktop modifiers and touch "paint" selection.
 function getBrowserWindow() {
@@ -25,14 +40,22 @@ function getBrowserDocument() {
   return globalThis.document;
 }
 
+/** @param {unknown} value */
 function normalizeSearchText(value) {
   return String(value ?? '')
     .toLowerCase()
     .trim();
 }
 
+/**
+ * @param {MultiSelectItem[]} items
+ * @param {Set<string>} nextSet
+ * @returns {string[]} Selected ids in item order
+ */
 function buildOrderedSelection(items, nextSet) {
+  /** @type {string[]} */
   const ordered = [];
+  /** @type {Set<string>} */
   const seen = new Set();
   for (const item of items || []) {
     if (!item?.id || seen.has(item.id)) continue;
@@ -42,6 +65,7 @@ function buildOrderedSelection(items, nextSet) {
   return ordered;
 }
 
+/** @param {string | undefined} label */
 function getSingularLabel(label) {
   const normalized = String(label ?? '')
     .trim()
@@ -52,6 +76,10 @@ function getSingularLabel(label) {
   return normalized || 'item';
 }
 
+/**
+ * @param {AccentTone} accentTone
+ * @param {boolean} [hasSelection]
+ */
 function getAccentTriggerClasses(accentTone, hasSelection = false) {
   if (accentTone === 'secondary') {
     return 'bg-secondary text-secondary-content hover:bg-secondary/92';
@@ -64,6 +92,10 @@ function getAccentTriggerClasses(accentTone, hasSelection = false) {
     : 'bg-base-content/4 text-base-content/70 hover:bg-base-content/7 hover:text-base-content';
 }
 
+/**
+ * @param {AccentTone} accentTone
+ * @param {boolean} selected
+ */
 function getAccentCircleClasses(accentTone, selected) {
   if (!selected) return 'border-base-content/20 bg-base-100/40';
   if (accentTone === 'secondary') return 'border-secondary/70 bg-secondary/20';
@@ -71,6 +103,10 @@ function getAccentCircleClasses(accentTone, selected) {
   return 'border-base-content/45 bg-base-content/10';
 }
 
+/**
+ * @param {AccentTone} accentTone
+ * @param {boolean} isSelected
+ */
 function getAccentSelectionDotClasses(accentTone, isSelected) {
   if (!isSelected) return 'bg-transparent opacity-0';
   if (accentTone === 'secondary') return 'bg-secondary';
@@ -78,6 +114,19 @@ function getAccentSelectionDotClasses(accentTone, isSelected) {
   return 'bg-base-content';
 }
 
+/**
+ * @template {MultiSelectItem} I
+ * @param {object} props
+ * @param {I} props.item
+ * @param {number} props.index
+ * @param {boolean} props.isSelected
+ * @param {AccentTone} props.accentTone
+ * @param {string} props.singularLabel
+ * @param {((item: I) => void) | undefined} props.onTogglePin
+ * @param {(itemId: string, index: number, event: import('preact').JSX.TargetedMouseEvent<HTMLButtonElement>) => void} props.onRowClick
+ * @param {(event: import('preact').JSX.TargetedPointerEvent<HTMLButtonElement>, itemId: string) => void} props.onCirclePointerDown
+ * @param {(itemId: string, index: number, event: import('preact').JSX.TargetedMouseEvent<HTMLButtonElement>) => void} props.onCircleClick
+ */
 function StatisticsMultiSelectRow({
   item,
   index,
@@ -128,33 +177,52 @@ function StatisticsMultiSelectRow({
       </button>
 
       {onTogglePin ? (
-        <button
+        <AnalyzerControl
           type='button'
+          tone={item.isPinned ? 'primary' : 'subtle'}
+          className={cx(
+            'h-5 w-5 shrink-0 bg-transparent p-0 text-[11px]',
+            item.isPinned && 'text-primary hover:text-primary',
+            !item.isPinned && item.pinDisabledReason && 'cursor-not-allowed opacity-35',
+          )}
           aria-label={item.isPinned ? t`Unpin ${itemName}` : t`Pin ${itemName}`}
           aria-disabled={!item.isPinned && !!item.pinDisabledReason}
           title={
             item.pinDisabledReason ||
             (item.isPinned ? t`Unpin ${singularLabel}` : t`Pin ${singularLabel}`)
           }
-          className={getAnalyzerIconButtonClasses({
-            tone: item.isPinned ? 'primary' : 'subtle',
-            className: `h-5 w-5 shrink-0 bg-transparent p-0 text-[11px] ${
-              item.isPinned ? 'text-primary hover:text-primary' : ''
-            } ${!item.isPinned && item.pinDisabledReason ? 'cursor-not-allowed opacity-35' : ''}`,
-          })}
-          onClick={event => {
-            event.stopPropagation();
-            if (!item.isPinned && item.pinDisabledReason) return;
-            onTogglePin(item);
-          }}
+          onClick={
+            /** @param {MouseEvent} event */
+            event => {
+              event.stopPropagation();
+              if (!item.isPinned && item.pinDisabledReason) return;
+              onTogglePin(item);
+            }
+          }
         >
           <FontAwesomeIcon icon={faThumbtack} />
-        </button>
+        </AnalyzerControl>
       ) : null}
     </div>
   );
 }
 
+/**
+ * @template {MultiSelectItem} I
+ * @param {object} props
+ * @param {string} props.label
+ * @param {string} [props.itemLabel] - Singular item name; derived from `label` when omitted
+ * @param {I[]} props.items
+ * @param {string[]} props.selectedIds
+ * @param {(nextIds: string[]) => void} props.onChange
+ * @param {(item: I) => void} [props.onTogglePin]
+ * @param {boolean} [props.disabled]
+ * @param {AccentTone} [props.accentTone]
+ * @param {string} [props.emptyText]
+ * @param {number} [props.maxVisibleItems]
+ * @param {string} [props.triggerClassName]
+ * @param {string} [props.rootClassName]
+ */
 export function StatisticsMultiSelectDropdown({
   label,
   itemLabel,
@@ -170,13 +238,13 @@ export function StatisticsMultiSelectDropdown({
   rootClassName = '',
 }) {
   const { t } = useLingui();
-  const rootRef = useRef(null);
-  const triggerRef = useRef(null);
-  const listRef = useRef(null);
+  const rootRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const triggerRef = useRef(/** @type {HTMLButtonElement | null} */ (null));
+  const listRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const anchorIndexRef = useRef(-1);
   const suppressRowClickRef = useRef(false);
-  const touchStateRef = useRef(null);
-  const latestSelectedSetRef = useRef(new Set());
+  const touchStateRef = useRef(/** @type {TouchPaintState | null} */ (null));
+  const latestSelectedSetRef = useRef(/** @type {Set<string>} */ (new Set()));
   const onChangeRef = useRef(onChange);
 
   const [open, setOpen] = useState(false);
@@ -204,19 +272,29 @@ export function StatisticsMultiSelectDropdown({
     });
   }, [items, normalizedSearchTerm, showPinnedOnly]);
 
+  /** @param {Set<string>} nextSet */
   const commitSelection = nextSet => {
     latestSelectedSetRef.current = new Set(nextSet);
     const next = buildOrderedSelection(items || [], nextSet);
     onChangeRef.current?.(next);
   };
 
+  /**
+   * @param {string} id
+   * @param {number} index
+   */
   const setSingleSelection = (id, index) => {
+    /** @type {Set<string>} */
     const nextSet = new Set();
     nextSet.add(id);
     commitSelection(nextSet);
     anchorIndexRef.current = index;
   };
 
+  /**
+   * @param {string} id
+   * @param {number} index
+   */
   const toggleAdditiveSelection = (id, index) => {
     const nextSet = new Set(selectedSet);
     if (nextSet.has(id)) nextSet.delete(id);
@@ -225,6 +303,10 @@ export function StatisticsMultiSelectDropdown({
     anchorIndexRef.current = index;
   };
 
+  /**
+   * @param {number} index
+   * @param {boolean} additive
+   */
   const applyRangeSelection = (index, additive) => {
     if (!Number.isInteger(index) || index < 0 || index >= filteredItems.length) return;
     const anchorIndex = anchorIndexRef.current;
@@ -241,11 +323,18 @@ export function StatisticsMultiSelectDropdown({
       .map(item => item.id)
       .filter(Boolean);
 
+    /** @type {Set<string>} */
     const nextSet = additive ? new Set(selectedSet) : new Set();
     rangeIds.forEach(id => nextSet.add(id));
     commitSelection(nextSet);
   };
 
+  /**
+   * @param {string} itemId
+   * @param {number} index
+   * @param {SelectionModifiers | undefined} event
+   * @param {{ circleOnlyToggle?: boolean }} [options]
+   */
   const handleItemInteraction = (itemId, index, event, { circleOnlyToggle = false } = {}) => {
     if (!itemId || disabled) return;
 
@@ -271,6 +360,10 @@ export function StatisticsMultiSelectDropdown({
     setSingleSelection(itemId, index);
   };
 
+  /**
+   * @param {string} itemId
+   * @param {boolean} shouldSelect
+   */
   const applyPaintToId = (itemId, shouldSelect) => {
     if (!itemId) return;
     const nextSet = new Set(latestSelectedSetRef.current);
@@ -289,14 +382,22 @@ export function StatisticsMultiSelectDropdown({
 
     const browserWindow = getBrowserWindow();
     if (browserWindow) {
-      browserWindow.removeEventListener('pointermove', state.onMove);
-      browserWindow.removeEventListener('pointerup', state.onUp);
-      browserWindow.removeEventListener('pointercancel', state.onCancel);
+      // The handlers are assigned before the state is stored in touchStateRef.
+      browserWindow.removeEventListener(
+        'pointermove',
+        /** @type {PointerHandler} */ (state.onMove),
+      );
+      browserWindow.removeEventListener('pointerup', /** @type {PointerHandler} */ (state.onUp));
+      browserWindow.removeEventListener(
+        'pointercancel',
+        /** @type {PointerHandler} */ (state.onCancel),
+      );
     }
 
     touchStateRef.current = null;
   };
 
+  /** @param {TouchPaintState} state */
   const beginPaintMode = state => {
     if (!touchStateRef.current || touchStateRef.current.pointerId !== state.pointerId) return;
     touchStateRef.current.active = true;
@@ -307,6 +408,10 @@ export function StatisticsMultiSelectDropdown({
     suppressRowClickRef.current = true;
   };
 
+  /**
+   * @param {PointerEvent} event
+   * @param {string} itemId
+   */
   const handleCirclePointerDown = (event, itemId) => {
     if (disabled || !itemId) return;
     const pointerType = event.pointerType || 'mouse';
@@ -316,6 +421,7 @@ export function StatisticsMultiSelectDropdown({
     const startY = event.clientY;
     const paintSelect = !selectedSet.has(itemId);
 
+    /** @type {TouchPaintState} */
     const state = {
       pointerId: event.pointerId,
       startItemId: itemId,
@@ -330,6 +436,7 @@ export function StatisticsMultiSelectDropdown({
       onCancel: null,
     };
 
+    /** @param {PointerEvent} moveEvent */
     const onMove = moveEvent => {
       const current = touchStateRef.current;
       if (!current || moveEvent.pointerId !== current.pointerId) return;
@@ -351,6 +458,7 @@ export function StatisticsMultiSelectDropdown({
       applyPaintToId(hitId, current.paintSelect);
     };
 
+    /** @param {PointerEvent} endEvent */
     const endGesture = endEvent => {
       const current = touchStateRef.current;
       if (!current || endEvent.pointerId !== current.pointerId) return;
@@ -380,13 +488,15 @@ export function StatisticsMultiSelectDropdown({
   useEffect(() => {
     if (!open) return;
 
+    /** @param {PointerEvent} event */
     const handleDocumentPointerDown = event => {
       if (!rootRef.current) return;
-      if (!rootRef.current.contains(event.target)) {
+      if (!rootRef.current.contains(/** @type {Node | null} */ (event.target))) {
         setOpen(false);
       }
     };
 
+    /** @param {KeyboardEvent} event */
     const handleKeyDown = event => {
       if (event.key === 'Escape') {
         setOpen(false);
@@ -441,17 +551,20 @@ export function StatisticsMultiSelectDropdown({
 
   return (
     <div ref={rootRef} className={`relative ${rootClassName}`.trim()}>
-      <button
-        ref={triggerRef}
+      <AnalyzerControl
+        controlRef={triggerRef}
         type='button'
+        variant='surface'
         data-statistics-multiselect-trigger
         disabled={disabled}
         aria-expanded={open}
         aria-haspopup='menu'
         onClick={() => setOpen(v => !v)}
-        className={getAnalyzerSurfaceTriggerClasses({
-          className: `inline-flex ${triggerClassName} max-w-[15rem] min-w-[8.5rem] items-center justify-between gap-1 rounded-lg px-2 text-xs font-semibold ${getAccentTriggerClasses(accentTone, selectedCount > 0)} disabled:cursor-not-allowed disabled:opacity-40`,
-        })}
+        className={cx(
+          'inline-flex max-w-[15rem] min-w-[8.5rem] items-center justify-between gap-1 rounded-lg px-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-40',
+          triggerClassName,
+          getAccentTriggerClasses(accentTone, selectedCount > 0),
+        )}
       >
         <span className='truncate text-left'>{triggerText}</span>
         <span className='text-[10px] opacity-65'>
@@ -460,13 +573,12 @@ export function StatisticsMultiSelectDropdown({
             className={open ? 'rotate-180 transition-transform' : 'transition-transform'}
           />
         </span>
-      </button>
+      </AnalyzerControl>
 
       {open && (
-        <div
-          ref={listRef}
-          className={STATISTICS_MULTISELECT_PANEL_CLASS}
-          style={STATISTICS_DROPDOWN_PANEL_SURFACE_STYLE}
+        <DropdownPanel
+          panelRef={listRef}
+          className='absolute top-full left-0 mt-2 w-[min(92vw,28rem)]'
         >
           <div className='border-base-content/8 border-b p-2'>
             <div className='flex items-center gap-2'>
@@ -475,23 +587,22 @@ export function StatisticsMultiSelectDropdown({
                 value={searchTerm}
                 onInput={e => setSearchTerm(e.currentTarget.value)}
                 placeholder={t`Search ${labelLower}...`}
-                className='input input-sm input-bordered border-base-content/10 bg-base-100/70 h-8 min-h-0 w-full flex-1 text-xs'
+                className='input input-sm border-base-content/10 bg-base-100/70 h-8 min-h-0 w-full flex-1 text-xs'
               />
               {onTogglePin ? (
-                <button
+                <AnalyzerControl
                   type='button'
+                  tone={showPinnedOnly ? 'primary' : 'subtle'}
+                  className={cx(
+                    'h-8 w-8 shrink-0 bg-transparent text-xs',
+                    showPinnedOnly && 'text-primary hover:text-primary',
+                  )}
                   aria-label={pinnedToggleLabel}
                   title={pinnedToggleLabel}
                   onClick={() => setShowPinnedOnly(value => !value)}
-                  className={getAnalyzerIconButtonClasses({
-                    tone: showPinnedOnly ? 'primary' : 'subtle',
-                    className: `h-8 w-8 shrink-0 bg-transparent text-xs ${
-                      showPinnedOnly ? 'text-primary hover:text-primary' : ''
-                    }`,
-                  })}
                 >
                   <FontAwesomeIcon icon={faThumbtack} />
-                </button>
+                </AnalyzerControl>
               ) : null}
             </div>
           </div>
@@ -538,7 +649,7 @@ export function StatisticsMultiSelectDropdown({
               <Trans>Cmd/Ctrl = Add</Trans>
             </span>
           </div>
-        </div>
+        </DropdownPanel>
       )}
     </div>
   );

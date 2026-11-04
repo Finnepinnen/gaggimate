@@ -24,6 +24,11 @@ const SOURCE_MARKER_VARIANTS = {
   },
 };
 
+/**
+ * @param {object} props
+ * @param {string | number} [props.width]
+ * @param {string | number} [props.height]
+ */
 export function GmLogoIcon({ width, height }) {
   const clipPathId = useId();
 
@@ -68,9 +73,16 @@ export function GmLogoIcon({ width, height }) {
   );
 }
 
+/**
+ * @param {object} props
+ * @param {string} [props.source]
+ * @param {string} [props.variant] compact, library or large
+ */
 export function SourceMarker({ source, variant = 'compact' }) {
   // Central size map for the GM/Web source markers.
-  const resolvedVariant = SOURCE_MARKER_VARIANTS[variant] || SOURCE_MARKER_VARIANTS.compact;
+  const resolvedVariant =
+    SOURCE_MARKER_VARIANTS[/** @type {keyof typeof SOURCE_MARKER_VARIANTS} */ (variant)] ||
+    SOURCE_MARKER_VARIANTS.compact;
   const isGaggiMate = source === 'gaggimate';
 
   return (

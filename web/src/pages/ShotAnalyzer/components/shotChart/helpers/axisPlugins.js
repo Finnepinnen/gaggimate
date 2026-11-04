@@ -6,6 +6,79 @@ import {
 } from './canvasDrawing';
 import { readCssColorVar } from './chartTheme';
 
+/**
+ * @typedef {import('chart.js').Chart} ChartInstance
+ * @typedef {import('@fortawesome/fontawesome-svg-core').IconDefinition} IconDefinition
+ * @typedef {'left' | 'right' | 'center'} AxisLabelAlign
+ * @typedef {'top' | 'middle'} AxisLabelBaseline
+ * @typedef {'left' | 'right' | 'center'} AxisUnitSide
+ * @typedef {'bottom-right' | 'top-right' | 'top-left'} ChartLabelPosition
+ */
+
+/**
+ * @typedef {object} AxisUnitYLabel
+ * @property {string} scaleId
+ * @property {string} label
+ * @property {AxisUnitSide | string} [side]
+ * @property {number} [fontSize]
+ * @property {number | null} [yOffset]
+ */
+
+/**
+ * @typedef {object} AxisUnitChartLabel
+ * @property {string} [label]
+ * @property {IconDefinition | null} [iconDef]
+ * @property {ChartLabelPosition | string} [position]
+ * @property {number} [fontSize]
+ * @property {number} [xOffset]
+ * @property {number} [yOffset]
+ */
+
+/**
+ * @typedef {object} AxisUnitLabelPluginOptions
+ * @property {AxisUnitYLabel[]} [yLabels]
+ * @property {AxisUnitChartLabel[]} [chartLabels]
+ * @property {string} [xScaleId]
+ * @property {string} [xLabel]
+ * @property {'inside' | string} [xLabelPlacement]
+ * @property {number} [xLabelYOffset]
+ * @property {boolean} [reserveXLabelSpace]
+ */
+
+/**
+ * @typedef {object} PhaseLabelMeta
+ * @property {boolean} [display]
+ * @property {string | number} [label]
+ * @property {number} xValue
+ * @property {boolean} [usePhaseNumbers]
+ */
+
+/**
+ * @typedef {object} PhaseLabelOverlayPluginOptions
+ * @property {PhaseLabelMeta[]} [labels]
+ */
+
+/**
+ * @typedef {object} AxisLabelBox
+ * @property {number} x
+ * @property {number} y
+ * @property {number} width
+ * @property {number} height
+ * @property {AxisLabelAlign} align
+ * @property {AxisLabelBaseline} baseline
+ */
+
+/**
+ * @typedef {object} AxisLabelTextStyle
+ * @property {number} x
+ * @property {number} y
+ * @property {AxisLabelAlign} align
+ * @property {AxisLabelBaseline} baseline
+ * @property {number} fontSize
+ * @property {string} textFont
+ * @property {boolean} background
+ */
+
 const NEUTRAL_AXIS_TICK_FALLBACK = '#1f2937';
 
 const AXIS_UNIT_TOP_PADDING = 24;
@@ -25,10 +98,15 @@ const PHASE_LABEL_FONT =
 
 const BREW_LABEL_ICONS = ['⏱', '⚖'];
 
+/** @returns {string} */
 export function getNeutralAxisTickColor() {
   return readCssColorVar('--color-base-content', NEUTRAL_AXIS_TICK_FALLBACK);
 }
 
+/**
+ * @param {AxisUnitLabelPluginOptions} [pluginOptions]
+ * @returns {{ top: number, right: number, bottom: number, left: number }}
+ */
 export function getAxisUnitReservedPadding(pluginOptions = {}) {
   const yLabels = Array.isArray(pluginOptions.yLabels) ? pluginOptions.yLabels : [];
   const reserveXLabelSpace = pluginOptions.reserveXLabelSpace !== false;
@@ -40,6 +118,10 @@ export function getAxisUnitReservedPadding(pluginOptions = {}) {
   };
 }
 
+/**
+ * @param {unknown} text
+ * @returns {{ icon: string, label: string } | null}
+ */
 function splitLeadingBrewIcon(text) {
   const value = String(text || '');
   const icon = BREW_LABEL_ICONS.find(candidate => value.startsWith(candidate));
@@ -52,10 +134,18 @@ function splitLeadingBrewIcon(text) {
   return { icon, label };
 }
 
+/**
+ * @param {unknown} text
+ * @returns {boolean}
+ */
 function isBrewIconOnly(text) {
   return BREW_LABEL_ICONS.includes(String(text || ''));
 }
 
+/**
+ * @param {AxisLabelBox} box
+ * @returns {{ left: number, top: number }}
+ */
 function getAxisLabelBackgroundAnchor({ x, y, width, height, align, baseline }) {
   let left = x;
   if (align === 'right') left = x - width;
@@ -64,12 +154,20 @@ function getAxisLabelBackgroundAnchor({ x, y, width, height, align, baseline }) 
   return { left, top };
 }
 
+/**
+ * @param {{ x: number, width: number, align: AxisLabelAlign }} box
+ * @returns {number}
+ */
 function getAlignedStartX({ x, width, align }) {
   if (align === 'right') return x - width;
   if (align === 'center') return x - width / 2;
   return x;
 }
 
+/**
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {AxisLabelBox} box
+ */
 function drawAxisUnitBackground(ctx, { x, y, width, height, align, baseline }) {
   const { left, top } = getAxisLabelBackgroundAnchor({ x, y, width, height, align, baseline });
   ctx.save();
@@ -87,6 +185,10 @@ function drawAxisUnitBackground(ctx, { x, y, width, height, align, baseline }) {
   ctx.restore();
 }
 
+/**
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {AxisLabelTextStyle & { text: unknown, iconDef: IconDefinition }} options
+ */
 function drawIconAxisUnitLabel(
   ctx,
   { x, y, text, align, baseline, fontSize, textFont, background, iconDef },
@@ -124,6 +226,10 @@ function drawIconAxisUnitLabel(
   ctx.fillText(labelText, startX + iconSize + iconGap, y);
 }
 
+/**
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {AxisLabelTextStyle & { brewLabel: { icon: string, label: string } }} options
+ */
 function drawBrewAxisUnitLabel(
   ctx,
   { x, y, brewLabel, align, baseline, fontSize, textFont, background },
@@ -158,6 +264,10 @@ function drawBrewAxisUnitLabel(
   ctx.fillText(brewLabel.label, startX + iconWidth + iconGap, y);
 }
 
+/**
+ * @param {{ side: AxisUnitSide | string, chart: ChartInstance, scale: import('chart.js').Scale }} options
+ * @returns {number}
+ */
 function getAxisUnitSideX({ side, chart, scale }) {
   if (side === 'center') return (chart.chartArea.left + chart.chartArea.right) / 2;
   if (side === 'right')
@@ -165,12 +275,20 @@ function getAxisUnitSideX({ side, chart, scale }) {
   return Math.max(2, (scale.left ?? chart.chartArea.left) + 2);
 }
 
+/**
+ * @param {AxisUnitSide | string} side
+ * @returns {AxisLabelAlign}
+ */
 function getAxisUnitSideAlign(side) {
   if (side === 'center') return 'center';
   if (side === 'right') return 'right';
   return 'left';
 }
 
+/**
+ * @param {{ chart: ChartInstance, position: string, xOffset: number, yOffset: number }} options
+ * @returns {{ x: number, y: number, align: AxisLabelAlign }}
+ */
 function getChartLabelPosition({ chart, position, xOffset, yOffset }) {
   const rightAligned = position === 'bottom-right' || position === 'top-right';
   const x = rightAligned
@@ -200,6 +318,10 @@ function getChartLabelPosition({ chart, position, xOffset, yOffset }) {
   };
 }
 
+/**
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {{ x: number, y: number, text?: string, align?: AxisLabelAlign, baseline?: AxisLabelBaseline, fontSize?: number, background?: boolean, iconDef?: IconDefinition | null }} options
+ */
 function drawAxisUnitLabel(
   ctx,
   {
@@ -268,10 +390,12 @@ function drawAxisUnitLabel(
       baseline,
     });
   }
-  ctx.fillText(text, x, y);
+  // Non-empty: the early return only lets an empty text through with an iconDef.
+  ctx.fillText(/** @type {string} */ (text), x, y);
   ctx.restore();
 }
 
+/** @type {import('chart.js').Plugin<import('chart.js').ChartType, AxisUnitLabelPluginOptions>} */
 export const axisUnitLabelPlugin = {
   id: 'axisUnitLabels',
   afterDraw(chart, _args, pluginOptions = {}) {
@@ -283,7 +407,9 @@ export const axisUnitLabelPlugin = {
     const labelScale = getChartLabelScale(chart);
 
     yLabels.forEach(({ scaleId, label, side = 'left', fontSize = 10, yOffset }, index) => {
-      const scale = chart.scales[scaleId];
+      const scale = /** @type {import('chart.js').Scale & { display?: boolean }} */ (
+        chart.scales[scaleId]
+      );
       if (!scale || scale.display === false) return;
 
       const y = Math.max(2, top - 22) + (yOffset == null ? index * 14 : yOffset);
@@ -331,6 +457,7 @@ export const axisUnitLabelPlugin = {
   },
 };
 
+/** @type {import('chart.js').Plugin<import('chart.js').ChartType, PhaseLabelOverlayPluginOptions>} */
 export const phaseLabelOverlayPlugin = {
   id: 'phaseLabelOverlay',
   afterDraw(chart, _args, pluginOptions = {}) {

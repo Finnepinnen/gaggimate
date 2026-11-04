@@ -9,12 +9,26 @@ import {
 } from '../constants';
 import { getShotChartShortLabel } from '../labelVisuals';
 
+/**
+ * @typedef {'block' | 'dashed' | 'line'} ExportLegendItemStyle
+ * @typedef {{ label: string, color: string, style: ExportLegendItemStyle, lineWidth: number }} ExportLegendItem
+ * @typedef {{ name?: string, storageKey?: string, id?: string | number, profile?: string | { label?: string, name?: string } | null }} ExportShotNameSource
+ */
+
+/**
+ * @param {string} label
+ * @returns {ExportLegendItemStyle}
+ */
 function getLegendItemStyle(label) {
   if (LEGEND_BLOCK_LABELS.has(label)) return 'block';
   if (LEGEND_DASHED_LABELS.has(label)) return 'dashed';
   return 'line';
 }
 
+/**
+ * @param {{ legendColorByLabel: Record<string, string>, visibility: Record<string, boolean>, hasWeightData: boolean, hasWeightFlowData: boolean }} options
+ * @returns {ExportLegendItem[]}
+ */
 export function getVisibleLegendItemsForExport({
   legendColorByLabel,
   visibility,
@@ -27,7 +41,7 @@ export function getVisibleLegendItemsForExport({
     if (label === 'Weight' && !hasWeightData) return items;
     if (label === 'Weight Flow' && !hasWeightFlowData) return items;
 
-    const key = VISIBILITY_KEY_BY_LABEL[label];
+    const key = /** @type {Record<string, string>} */ (VISIBILITY_KEY_BY_LABEL)[label];
     if (key && !visibility[key]) return items;
 
     items.push({
@@ -37,15 +51,23 @@ export function getVisibleLegendItemsForExport({
       lineWidth: LEGEND_THIN_LINE_LABELS.has(label) ? THIN_LINE_WIDTH : STANDARD_LINE_WIDTH,
     });
     return items;
-  }, []);
+  }, /** @type {ExportLegendItem[]} */ ([]));
 }
 
+/**
+ * @param {unknown} value
+ * @returns {string}
+ */
 function stripExportFileExtension(value) {
   return String(value || '')
     .trim()
     .replace(/\.[^./\\]{1,8}$/, '');
 }
 
+/**
+ * @param {unknown} value
+ * @returns {string}
+ */
 function sanitizeExportFilenameSegment(value) {
   return stripExportFileExtension(value)
     .replace(/[^\w.-]+/g, '-')
@@ -53,6 +75,11 @@ function sanitizeExportFilenameSegment(value) {
     .replace(/^-|-$/g, '');
 }
 
+/**
+ * @param {ExportShotNameSource | null | undefined} shotData
+ * @param {string} fallbackStem
+ * @returns {string}
+ */
 function resolveShotExportStem(shotData, fallbackStem) {
   const profileValue =
     typeof shotData?.profile === 'string'
@@ -67,12 +94,23 @@ function resolveShotExportStem(shotData, fallbackStem) {
   );
 }
 
+/**
+ * @param {ExportShotNameSource | null | undefined} shotData
+ * @param {boolean} includeLegend
+ * @param {string | null} [exportFormat]
+ * @returns {string}
+ */
 export function buildReplayExportFilename(shotData, includeLegend, exportFormat = 'mp4') {
   const stem = resolveShotExportStem(shotData, 'shot-analyzer-replay');
   const extension = exportFormat === 'webm' ? 'webm' : 'mp4';
   return `${stem}${includeLegend ? '-with-legend' : ''}-replay.${extension}`;
 }
 
+/**
+ * @param {ExportShotNameSource | null | undefined} shotData
+ * @param {boolean} includeLegend
+ * @returns {string}
+ */
 export function buildReplayImageFilename(shotData, includeLegend) {
   const stem = resolveShotExportStem(shotData, 'shot-analyzer-chart');
   return `${stem}${includeLegend ? '-with-legend' : ''}.png`;

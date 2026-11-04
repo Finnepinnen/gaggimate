@@ -3,11 +3,20 @@ import { Chart } from 'chart.js';
 import { ChartComponent } from './Chart.jsx';
 import { t } from '@lingui/core/macro';
 
+/** @typedef {import('../types').HistoryEntry} HistoryEntry */
+/** @typedef {import('../types').ProcessProgress} ProcessProgress */
+/** @typedef {{ timestamp: Date, phaseName: string, phaseType: ProcessProgress['s'] }} LivePhaseTransition */
+
 // Global state to track phase transitions during brewing
+/** @type {LivePhaseTransition[]} */
 let phaseTransitions = [];
+/** @type {string | null} */
 let lastKnownPhase = null;
+/** @type {Date | null} */
 let brewStartTime = null;
+/** @type {string | null} */
 let lastProcessState = null;
+/** @type {string | null | undefined} */
 let initialPhaseName = null; // Store the first phase name
 
 // Function to clear phase transitions (can be called from outside)
@@ -19,6 +28,7 @@ export const clearPhaseTransitions = () => {
   initialPhaseName = null;
 };
 
+/** @param {HistoryEntry[]} data */
 function getChartData(data) {
   // Stabilize the end time by rounding to the nearest second to prevent jiggling
   let end = new Date();
@@ -84,8 +94,11 @@ function getChartData(data) {
   const tempMax = tempValues.length > 0 ? Math.ceil(Math.max(...tempValues) + 10) : 160;
 
   const pressureFlowMin = 0; // Always start at 0 for pressure/flow
+  // Telemetry frames always carry pr/pt, so pressures are set on every history entry.
   const pressureFlowMax =
-    pressureFlowValues.length > 0 ? Math.ceil(Math.max(...pressureFlowValues) + 2) : 16;
+    pressureFlowValues.length > 0
+      ? Math.ceil(Math.max(.../** @type {number[]} */ (pressureFlowValues)) + 2)
+      : 16;
 
   // Create a state key to detect when a new brew starts
   const processState = currentProcess
@@ -132,6 +145,8 @@ function getChartData(data) {
   lastProcessState = processState;
 
   // Create phase annotations for Chart.js
+  // Not typed as the plugin's AnnotationOptions: the labels pass `clip`, which LabelOptions lacks.
+  /** @type {Record<string, Record<string, unknown>>} */
   const phaseAnnotations = {};
   const isSmall = window.innerWidth < 640;
   // Add phase transition lines
@@ -284,15 +299,18 @@ function getChartData(data) {
             font: {
               size: window.innerWidth < 640 ? 10 : 12,
             },
+            /** @param {import('chart.js').Chart<'line'>} chart */
             generateLabels(chart) {
               const original = Chart.defaults.plugins.legend.labels.generateLabels;
+              /** @type {import('chart.js').LegendItem[]} */
               const labels = original.call(this, chart);
 
               labels.forEach((label, index) => {
                 const dataset = chart.data.datasets[index];
                 label.lineWidth = 3;
                 if (dataset.borderDash && dataset.borderDash.length > 0) {
-                  label.lineDash = dataset.borderDash;
+                  // Datasets here only set static dash arrays.
+                  label.lineDash = /** @type {number[]} */ (dataset.borderDash);
                 }
               });
 
@@ -326,7 +344,7 @@ function getChartData(data) {
             font: {
               size: window.innerWidth < 640 ? 10 : 12,
             },
-            callback: value => {
+            callback: (/** @type {number} */ value) => {
               return `${Math.round(value)} °C`; // Round displayed values to integers
             },
           },
@@ -341,7 +359,7 @@ function getChartData(data) {
             font: {
               size: window.innerWidth < 640 ? 10 : 12,
             },
-            callback: value => {
+            callback: (/** @type {number} */ value) => {
               return `${Math.round(value * 10) / 10} bar / g/s`; // Round to 1 decimal place
             },
           },
@@ -359,7 +377,7 @@ function getChartData(data) {
               font: {
                 size: window.innerWidth < 640 ? 10 : 12,
               },
-              callback: value => {
+              callback: (/** @type {number} */ value) => {
                 return `${value}g`;
               },
             },
@@ -380,7 +398,8 @@ function getChartData(data) {
             source: 'auto',
             autoSkip: true,
             autoSkipPadding: 0,
-            callback: value => {
+            // Time scale ticks are epoch ms.
+            callback: (/** @type {number} */ value) => {
               if (isBrewActive) {
                 // For brewing: show relative time from chart end in a clean format
                 const chartEnd = end.getTime();

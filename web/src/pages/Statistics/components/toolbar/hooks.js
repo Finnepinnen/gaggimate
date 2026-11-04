@@ -2,6 +2,24 @@
 import { useEffect } from 'preact/hooks';
 import { closeOpenToolbarDetails, isToolbarFloatingPanelTarget } from './helpers';
 
+/**
+ * @template S
+ * @typedef {import('../../types').SetState<S>} SetState
+ */
+/**
+ * @template T
+ * @typedef {import('preact').RefObject<T>} RefObject
+ */
+
+/**
+ * @param {object} args
+ * @param {string} args.query
+ * @param {number} args.parseErrorsLength
+ * @param {number} args.parseWarningsLength
+ * @param {boolean} args.showAdvancedSearch
+ * @param {SetState<boolean>} args.setShowAdvancedSearch
+ * @param {SetState<boolean>} args.setShowDslSelectionPreview
+ */
 export function useAdvancedSearchSync({
   query,
   parseErrorsLength,
@@ -29,6 +47,13 @@ export function useAdvancedSearchSync({
   }, [query, setShowDslSelectionPreview]);
 }
 
+/**
+ * @param {object} args
+ * @param {boolean} args.shouldShowDslSelectionPreview
+ * @param {boolean} args.isToolbarExpanded
+ * @param {RefObject<HTMLDivElement>} args.dslInputRef
+ * @param {SetState<boolean>} args.setShowDslSelectionPreview
+ */
 export function useDslPreviewOutsideDismiss({
   shouldShowDslSelectionPreview,
   isToolbarExpanded,
@@ -38,10 +63,11 @@ export function useDslPreviewOutsideDismiss({
   useEffect(() => {
     if (!shouldShowDslSelectionPreview || !isToolbarExpanded) return;
 
+    /** @param {PointerEvent} event */
     const handlePointerDown = event => {
       const inputNode = dslInputRef.current;
       if (!inputNode) return;
-      if (inputNode.contains(event.target)) return;
+      if (inputNode.contains(/** @type {Node | null} */ (event.target))) return;
       setShowDslSelectionPreview(false);
     };
 
@@ -52,6 +78,16 @@ export function useDslPreviewOutsideDismiss({
   }, [shouldShowDslSelectionPreview, isToolbarExpanded, dslInputRef, setShowDslSelectionPreview]);
 }
 
+/**
+ * @param {object} args
+ * @param {boolean} args.isToolbarExpanded
+ * @param {boolean} args.isBusy
+ * @param {boolean} args.shouldCollapseToolbar
+ * @param {boolean} args.isCollapsedStripExpanded
+ * @param {RefObject<HTMLDivElement>} args.toolbarContainerRef
+ * @param {SetState<boolean>} args.setShowDslSelectionPreview
+ * @param {SetState<boolean>} args.setIsCollapsedStripExpanded
+ */
 export function useToolbarCollapseBehavior({
   isToolbarExpanded,
   isBusy,
@@ -89,10 +125,11 @@ export function useToolbarCollapseBehavior({
   useEffect(() => {
     if (!shouldCollapseToolbar || !isCollapsedStripExpanded) return;
 
+    /** @param {PointerEvent} event */
     const handlePointerDown = event => {
       const toolbarNode = toolbarContainerRef.current;
       if (!toolbarNode) return;
-      if (toolbarNode.contains(event.target)) return;
+      if (toolbarNode.contains(/** @type {Node | null} */ (event.target))) return;
       if (isToolbarFloatingPanelTarget(event.target)) return;
       setIsCollapsedStripExpanded(false);
     };
@@ -111,6 +148,7 @@ export function useToolbarCollapseBehavior({
   useEffect(() => {
     if (!shouldCollapseToolbar || !isCollapsedStripExpanded) return;
 
+    /** @param {KeyboardEvent} event */
     const handleKeyDown = event => {
       if (event.key !== 'Escape') return;
 
@@ -143,24 +181,33 @@ export function useToolbarCollapseBehavior({
   ]);
 }
 
+/**
+ * @param {object} args
+ * @param {RefObject<HTMLDivElement>} args.toolbarContainerRef
+ * @param {boolean} args.isToolbarExpanded
+ */
 export function useToolbarDropdownBehavior({ toolbarContainerRef, isToolbarExpanded }) {
   useEffect(() => {
     const toolbarNode = toolbarContainerRef.current;
     if (!toolbarNode) return;
 
+    /** @param {MouseEvent} event */
     const handleClick = event => {
-      if (event.target.closest('[data-statistics-multiselect-trigger]')) {
+      const eventTarget = /** @type {Element} */ (event.target);
+      if (eventTarget.closest('[data-statistics-multiselect-trigger]')) {
         closeOpenToolbarDetails(toolbarNode);
         return;
       }
 
-      const summary = event.target.closest('summary');
+      const summary = eventTarget.closest('summary');
       if (!summary) return;
-      const details = summary.parentElement;
+      const details = /** @type {HTMLDetailsElement | null} */ (summary.parentElement);
       if (details?.tagName !== 'DETAILS') return;
       if (details.open) return;
 
-      toolbarNode.querySelectorAll('details[open]').forEach(detailsNode => {
+      /** @type {NodeListOf<HTMLDetailsElement>} */ (
+        toolbarNode.querySelectorAll('details[open]')
+      ).forEach(detailsNode => {
         if (detailsNode !== details) {
           detailsNode.open = false;
         }
@@ -176,13 +223,16 @@ export function useToolbarDropdownBehavior({ toolbarContainerRef, isToolbarExpan
   useEffect(() => {
     if (!isToolbarExpanded) return;
 
+    /** @param {PointerEvent} event */
     const handlePointerDown = event => {
       const toolbarNode = toolbarContainerRef.current;
       if (!toolbarNode) return;
       const target = event.target instanceof Element ? event.target : null;
       if (!target) return;
 
-      toolbarNode.querySelectorAll('details[data-close-on-outside][open]').forEach(detailsNode => {
+      /** @type {NodeListOf<HTMLDetailsElement>} */ (
+        toolbarNode.querySelectorAll('details[data-close-on-outside][open]')
+      ).forEach(detailsNode => {
         if (detailsNode.contains(target)) return;
         detailsNode.open = false;
       });

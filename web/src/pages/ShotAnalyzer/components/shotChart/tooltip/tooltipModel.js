@@ -11,14 +11,43 @@ import { t } from '@lingui/core/macro';
 import { getShotChartDisplayLabel } from '../labelVisuals';
 import { createHiddenExternalTooltipState } from './tooltipState';
 
+/** @typedef {import('./tooltipTypes').ShotChartInstance} ShotChartInstance */
+/** @typedef {import('./tooltipTypes').ShotChartTooltipModel} ShotChartTooltipModel */
+/** @typedef {import('./tooltipTypes').ShotChartTooltipItem} ShotChartTooltipItem */
+/** @typedef {import('./tooltipTypes').ShotChartTooltipDataset} ShotChartTooltipDataset */
+/** @typedef {import('./tooltipTypes').HoverWaterValuesGetter} HoverWaterValuesGetter */
+/** @typedef {import('./tooltipTypes').TooltipRow} TooltipRow */
+/** @typedef {import('./tooltipTypes').TooltipPhaseSummary} TooltipPhaseSummary */
+/** @typedef {import('./tooltipTypes').PhaseTooltipRow} PhaseTooltipRow */
+/** @typedef {import('./tooltipTypes').PhaseTooltipGroup} PhaseTooltipGroup */
+/** @typedef {import('./tooltipTypes').ExternalTooltipState} ExternalTooltipState */
+/** @typedef {{ x?: unknown, y?: unknown }} ChartPointLike */
+
+/**
+ * @param {string | null | undefined} label
+ * @returns {boolean}
+ */
 export function shouldRenderTooltipLabel(label) {
   return Boolean(label) && label !== 'Phases' && label !== 'Stops';
 }
 
+/**
+ * @param {{ dataset?: { label?: string } } | null | undefined} a
+ * @param {{ dataset?: { label?: string } } | null | undefined} b
+ * @returns {number}
+ */
 export function sortTooltipItems(a, b) {
-  return (TOOLTIP_INDEX[a?.dataset?.label] ?? 999) - (TOOLTIP_INDEX[b?.dataset?.label] ?? 999);
+  return (
+    (TOOLTIP_INDEX[a?.dataset?.label ?? ''] ?? 999) -
+    (TOOLTIP_INDEX[b?.dataset?.label ?? ''] ?? 999)
+  );
 }
 
+/**
+ * @param {unknown} dataPoints
+ * @param {number} xValue
+ * @returns {ChartPointLike | null}
+ */
 function findClosestPointAtX(dataPoints, xValue) {
   if (!Array.isArray(dataPoints) || dataPoints.length === 0 || !Number.isFinite(xValue)) {
     return null;
@@ -29,7 +58,7 @@ function findClosestPointAtX(dataPoints, xValue) {
 
   while (low < high) {
     const mid = Math.floor((low + high) / 2);
-    const midX = Number(dataPoints[mid]?.x);
+    const midX = Number(/** @type {ChartPointLike | null} */ (dataPoints[mid])?.x);
 
     if (!Number.isFinite(midX) || midX < xValue) {
       low = mid + 1;
@@ -39,12 +68,13 @@ function findClosestPointAtX(dataPoints, xValue) {
   }
 
   const candidateIndexes = [low - 1, low, low + 1];
+  /** @type {ChartPointLike | null} */
   let bestPoint = null;
   let bestDistance = Number.POSITIVE_INFINITY;
 
   candidateIndexes.forEach(index => {
     if (index < 0 || index >= dataPoints.length) return;
-    const point = dataPoints[index];
+    const point = /** @type {ChartPointLike | null} */ (dataPoints[index]);
     const pointX = Number(point?.x);
     const pointY = Number(point?.y);
 
@@ -60,19 +90,27 @@ function findClosestPointAtX(dataPoints, xValue) {
   return bestPoint;
 }
 
+/** @param {string} label */
 function getTooltipGroupKey(label) {
   return TOOLTIP_GROUP_BY_LABEL[label] || null;
 }
 
+/**
+ * @param {TooltipRow[]} rows
+ * @returns {TooltipRow | null}
+ */
 function buildCompareDifferenceRow(rows) {
   if (!Array.isArray(rows) || rows.length !== 2) return null;
 
-  const [firstRow, secondRow] = [...rows].sort((a, b) => a.shotOrder - b.shotOrder);
+  const [firstRow, secondRow] = [...rows].sort(
+    (a, b) => /** @type {number} */ (a.shotOrder) - /** @type {number} */ (b.shotOrder),
+  );
   if (!Number.isFinite(firstRow?.numericValue) || !Number.isFinite(secondRow?.numericValue)) {
     return null;
   }
 
-  const delta = secondRow.numericValue - firstRow.numericValue;
+  const delta =
+    /** @type {number} */ (secondRow.numericValue) - /** @type {number} */ (firstRow.numericValue);
   const unit = UNIT_BY_LABEL[firstRow.label];
   const deltaPrefix = delta > 0 ? '+' : '';
   const deltaSuffix = unit ? ` ${unit}` : '';
@@ -88,15 +126,34 @@ function buildCompareDifferenceRow(rows) {
   };
 }
 
+/** @param {number | null | undefined} value */
 function formatWaterValue(value) {
-  return Number.isFinite(value) ? `${value.toFixed(1)} ml` : '-';
+  return Number.isFinite(value) ? `${/** @type {number} */ (value).toFixed(1)} ml` : '-';
 }
 
+/**
+ * @param {number | null | undefined} phaseWaterMl
+ * @param {number | null | undefined} phaseTotalWaterMl
+ */
 function formatPhaseWaterValue(phaseWaterMl, phaseTotalWaterMl) {
   if (!Number.isFinite(phaseWaterMl) || !Number.isFinite(phaseTotalWaterMl)) return '-';
   return `${formatWaterValue(phaseWaterMl)} → ${formatWaterValue(phaseTotalWaterMl)}`;
 }
 
+/**
+ * @typedef {object} CompareWaterValues
+ * @property {string} shotLabel
+ * @property {number} shotOrder
+ * @property {number | null} phaseWaterMl
+ * @property {number | null} phaseTotalWaterMl
+ * @property {number | null} totalWaterMl
+ * @property {string} color
+ */
+
+/**
+ * @param {CompareWaterValues} values
+ * @returns {TooltipRow[]}
+ */
 function buildCompareWaterRows({
   shotLabel,
   shotOrder,
@@ -125,18 +182,38 @@ function buildCompareWaterRows({
   ];
 }
 
+/**
+ * @param {ShotChartInstance} chart
+ * @param {ShotChartTooltipModel} tooltip
+ * @returns {number}
+ */
 function resolveTooltipAnchorX(chart, tooltip) {
-  if (Number.isFinite(chart.$fixedTooltipPointerX)) return chart.$fixedTooltipPointerX;
+  if (Number.isFinite(chart.$fixedTooltipPointerX)) {
+    return /** @type {number} */ (chart.$fixedTooltipPointerX);
+  }
   if (Number.isFinite(tooltip.caretX)) return tooltip.caretX;
   return chart.chartArea.left + EXTERNAL_TOOLTIP_FALLBACK_OFFSET_X;
 }
 
+/**
+ * @param {ShotChartInstance} chart
+ * @param {ShotChartTooltipModel} tooltip
+ * @returns {number}
+ */
 function resolveTooltipAnchorY(chart, tooltip) {
-  if (Number.isFinite(chart.$fixedTooltipPointerY)) return chart.$fixedTooltipPointerY;
+  if (Number.isFinite(chart.$fixedTooltipPointerY)) {
+    return /** @type {number} */ (chart.$fixedTooltipPointerY);
+  }
   if (Number.isFinite(tooltip.caretY)) return tooltip.caretY;
   return chart.chartArea.top;
 }
 
+/**
+ * @param {ShotChartTooltipItem} tooltipItem
+ * @param {HoverWaterValuesGetter} getHoverWaterValuesAtX
+ * @param {Record<string, string>} tooltipColorByLabel
+ * @returns {TooltipRow | null}
+ */
 function buildTooltipRowModel(tooltipItem, getHoverWaterValuesAtX, tooltipColorByLabel) {
   const label = tooltipItem?.dataset?.label;
   if (!label || !shouldRenderTooltipLabel(label)) return null;
@@ -164,11 +241,18 @@ function buildTooltipRowModel(tooltipItem, getHoverWaterValuesAtX, tooltipColorB
   };
 }
 
+/**
+ * @param {ShotChartTooltipItem[]} tooltipItems
+ * @param {HoverWaterValuesGetter} getHoverWaterValuesAtX
+ * @param {Record<string, string>} tooltipColorByLabel
+ * @returns {TooltipRow[]}
+ */
 function buildExternalTooltipRows(tooltipItems, getHoverWaterValuesAtX, tooltipColorByLabel) {
   const sortedItems = [...(tooltipItems || [])]
     .filter(item => shouldRenderTooltipLabel(item?.dataset?.label))
     .sort(sortTooltipItems);
 
+  /** @type {string | null} */
   let previousGroupKey = null;
 
   return sortedItems.reduce((rows, item) => {
@@ -183,24 +267,34 @@ function buildExternalTooltipRows(tooltipItems, getHoverWaterValuesAtX, tooltipC
     if (groupKey !== null) previousGroupKey = groupKey;
     rows.push(row);
     return rows;
-  }, []);
+  }, /** @type {TooltipRow[]} */ ([]));
 }
 
+/**
+ * @param {object} options
+ * @param {ShotChartInstance} options.chart
+ * @param {number | null} options.xValue
+ * @returns {TooltipRow[]}
+ */
 function buildCompareExternalTooltipRows({ chart, xValue }) {
   if (!chart || !Number.isFinite(xValue)) return [];
 
+  /** @type {ShotChartTooltipDataset[]} */
   const datasets = Array.isArray(chart.data?.datasets) ? chart.data.datasets : [];
+  const xValueAt = /** @type {number} */ (xValue);
+  /** @type {Map<number, CompareWaterValues>} */
   const waterByShotOrder = new Map();
 
   // Compare tooltips are grouped by metric first so Shot 1 / Shot 2 values sit
   // directly next to each other before the optional difference row.
+  /** @type {TooltipRow[]} */
   const compareRows = datasets
     .map((dataset, datasetIndex) => {
       if (!dataset?.compareTooltipBaseLabel || !chart.isDatasetVisible(datasetIndex)) {
         return null;
       }
 
-      const point = findClosestPointAtX(dataset.data, xValue);
+      const point = findClosestPointAtX(dataset.data, xValueAt);
       if (!point) return null;
 
       const baseLabel = dataset.compareTooltipBaseLabel;
@@ -208,20 +302,20 @@ function buildCompareExternalTooltipRows({ chart, xValue }) {
       if (!Number.isFinite(value)) return null;
 
       const shotOrder = Number.isFinite(dataset.compareTooltipShotOrder)
-        ? dataset.compareTooltipShotOrder
+        ? /** @type {number} */ (dataset.compareTooltipShotOrder)
         : 999;
       const shotNumber = shotOrder + 1;
       const shotLabel = t`Shot ${shotNumber}`;
       const waterGetter = dataset.compareTooltipGetHoverWaterValuesAtX;
       if (typeof waterGetter === 'function' && !waterByShotOrder.has(shotOrder)) {
-        const { totalWaterMl, phaseWaterMl, phaseTotalWaterMl } = waterGetter(xValue);
+        const { totalWaterMl, phaseWaterMl, phaseTotalWaterMl } = waterGetter(xValueAt);
         waterByShotOrder.set(shotOrder, {
           shotLabel,
           shotOrder,
           phaseWaterMl,
           phaseTotalWaterMl,
           totalWaterMl,
-          color: dataset.borderColor || '#94a3b8',
+          color: /** @type {string} */ (dataset.borderColor) || '#94a3b8',
         });
       }
 
@@ -233,10 +327,10 @@ function buildCompareExternalTooltipRows({ chart, xValue }) {
         numericValue: value,
         displayLabel: getShotChartDisplayLabel(baseLabel),
         valueText: unit ? `${value.toFixed(1)} ${unit}` : `${value.toFixed(1)}`,
-        color: dataset.borderColor || '#94a3b8',
+        color: /** @type {string} */ (dataset.borderColor) || '#94a3b8',
       };
     })
-    .filter(Boolean);
+    .filter(row => row !== null);
 
   waterByShotOrder.forEach(waterValues => {
     compareRows.push(...buildCompareWaterRows(waterValues));
@@ -245,7 +339,7 @@ function buildCompareExternalTooltipRows({ chart, xValue }) {
   compareRows.sort((a, b) => {
     const labelOrder = (TOOLTIP_INDEX[a.label] ?? 999) - (TOOLTIP_INDEX[b.label] ?? 999);
     if (labelOrder !== 0) return labelOrder;
-    return a.shotOrder - b.shotOrder;
+    return /** @type {number} */ (a.shotOrder) - /** @type {number} */ (b.shotOrder);
   });
 
   const groupedRows = compareRows.reduce((groups, row) => {
@@ -256,7 +350,7 @@ function buildCompareExternalTooltipRows({ chart, xValue }) {
     }
     lastGroup.push(row);
     return groups;
-  }, []);
+  }, /** @type {TooltipRow[][]} */ ([]));
 
   return groupedRows.flatMap((rows, groupIndex) => {
     const normalizedRows = rows.map((row, rowIndex) => ({
@@ -273,15 +367,34 @@ function buildCompareExternalTooltipRows({ chart, xValue }) {
   });
 }
 
+/**
+ * @param {ShotChartInstance} chart
+ * @param {ShotChartTooltipModel} tooltip
+ * @param {ShotChartTooltipItem[]} tooltipItems
+ * @param {boolean} isCompareTooltipMode
+ * @returns {number | null}
+ */
 function resolveCompareXValue(chart, tooltip, tooltipItems, isCompareTooltipMode) {
   if (!isCompareTooltipMode) return null;
-  if (Number.isFinite(chart?.$fixedTooltipXValue)) return chart.$fixedTooltipXValue;
+  if (Number.isFinite(chart?.$fixedTooltipXValue)) {
+    return /** @type {number} */ (chart.$fixedTooltipXValue);
+  }
   if (Number.isFinite(tooltipItems[0]?.parsed?.x)) return tooltipItems[0].parsed.x;
 
   const scaleXValue = chart.scales?.x?.getValueForPixel?.(tooltip.caretX);
-  return Number.isFinite(scaleXValue) ? scaleXValue : null;
+  return Number.isFinite(scaleXValue) ? /** @type {number} */ (scaleXValue) : null;
 }
 
+/**
+ * @param {object} options
+ * @param {string} options.tooltipMode
+ * @param {ShotChartInstance} options.chart
+ * @param {number | null} options.compareXValue
+ * @param {ShotChartTooltipItem[]} options.tooltipItems
+ * @param {HoverWaterValuesGetter} [options.getHoverWaterValuesAtX]
+ * @param {Record<string, string>} [options.tooltipColorByLabel]
+ * @returns {TooltipRow[]}
+ */
 function resolveTooltipRows({
   tooltipMode,
   chart,
@@ -296,19 +409,39 @@ function resolveTooltipRows({
   if (tooltipMode === 'compareTitleOnly') {
     return [];
   }
-  return buildExternalTooltipRows(tooltipItems, getHoverWaterValuesAtX, tooltipColorByLabel);
+  // Single mode: the caller must supply the water getter and colour map.
+  return buildExternalTooltipRows(
+    tooltipItems,
+    /** @type {HoverWaterValuesGetter} */ (getHoverWaterValuesAtX),
+    /** @type {Record<string, string>} */ (tooltipColorByLabel),
+  );
 }
 
+/**
+ * @param {ShotChartInstance} chart
+ * @param {ShotChartTooltipModel} tooltip
+ * @param {ShotChartTooltipItem[]} tooltipItems
+ * @returns {number | null}
+ */
 function resolveSingleXValue(chart, tooltip, tooltipItems) {
-  if (Number.isFinite(chart?.$fixedTooltipXValue)) return chart.$fixedTooltipXValue;
+  if (Number.isFinite(chart?.$fixedTooltipXValue)) {
+    return /** @type {number} */ (chart.$fixedTooltipXValue);
+  }
   if (Number.isFinite(tooltipItems?.[0]?.parsed?.x)) return tooltipItems[0].parsed.x;
   const scaleXValue = chart?.scales?.x?.getValueForPixel?.(tooltip?.caretX);
-  return Number.isFinite(scaleXValue) ? scaleXValue : null;
+  return Number.isFinite(scaleXValue) ? /** @type {number} */ (scaleXValue) : null;
 }
 
+/**
+ * @param {PhaseTooltipRow[] | undefined} rows
+ * @param {number | null} xValue
+ * @returns {PhaseTooltipRow | null}
+ */
 function findPhaseRowAtX(rows, xValue) {
   if (!Array.isArray(rows) || !Number.isFinite(xValue)) return null;
+  const x = /** @type {number} */ (xValue);
 
+  /** @type {PhaseTooltipRow | null} */
   let closestRow = null;
   let closestDistance = 0.25;
 
@@ -317,13 +450,13 @@ function findPhaseRowAtX(rows, xValue) {
     const end = Number(row?.end);
     if (!Number.isFinite(start) || !Number.isFinite(end)) return;
 
-    if (xValue >= start && xValue <= end) {
+    if (x >= start && x <= end) {
       closestRow = row;
       closestDistance = 0;
       return;
     }
 
-    const distance = Math.max(0, start - xValue, xValue - end);
+    const distance = Math.max(0, start - x, x - end);
     if (distance < closestDistance) {
       closestDistance = distance;
       closestRow = row;
@@ -333,6 +466,14 @@ function findPhaseRowAtX(rows, xValue) {
   return closestRow;
 }
 
+/**
+ * @param {object} options
+ * @param {number | null} options.xValue
+ * @param {PhaseTooltipGroup[]} options.phaseTooltipGroups
+ * @param {boolean} options.showPhaseNames
+ * @param {boolean} options.showStops
+ * @returns {TooltipPhaseSummary[]}
+ */
 function buildPhaseTooltipSummaries({ xValue, phaseTooltipGroups, showPhaseNames, showStops }) {
   if (!showPhaseNames && !showStops) return [];
   if (!Array.isArray(phaseTooltipGroups) || phaseTooltipGroups.length === 0) return [];
@@ -366,17 +507,31 @@ function buildPhaseTooltipSummaries({ xValue, phaseTooltipGroups, showPhaseNames
       color: group.color || null,
     });
     return summaries;
-  }, []);
+  }, /** @type {TooltipPhaseSummary[]} */ ([]));
 }
 
+/**
+ * @param {number | string} phaseNumber
+ * @param {string} phaseName
+ * @returns {string}
+ */
 function buildPhaseLabel(phaseNumber, phaseName) {
   if (!phaseName) return t`Phase ${phaseNumber}`;
   return t`Phase ${phaseNumber}: ${phaseName}`;
 }
 
+/**
+ * @param {object} options
+ * @param {boolean} options.isCompareTooltipMode
+ * @param {number | null} options.compareXValue
+ * @param {ShotChartTooltipModel} options.tooltip
+ * @returns {string[]}
+ */
 function resolveTitleLines({ isCompareTooltipMode, compareXValue, tooltip }) {
   if (isCompareTooltipMode) {
-    return Number.isFinite(compareXValue) ? [`${compareXValue.toFixed(2)} s`] : [];
+    return Number.isFinite(compareXValue)
+      ? [`${/** @type {number} */ (compareXValue).toFixed(2)} s`]
+      : [];
   }
 
   return Array.isArray(tooltip.title)
@@ -386,15 +541,15 @@ function resolveTitleLines({ isCompareTooltipMode, compareXValue, tooltip }) {
 
 /**
  * @param {object} options
- * @param {any} options.chart Chart.js chart instance.
- * @param {any} options.tooltip Chart.js tooltip model.
- * @param {(xValue: number) => { totalWaterMl: number, phaseWaterMl: number, phaseTotalWaterMl: number }} [options.getHoverWaterValuesAtX]
- *   Required for the 'single' tooltip mode.
+ * @param {ShotChartInstance} options.chart
+ * @param {ShotChartTooltipModel} options.tooltip
+ * @param {HoverWaterValuesGetter} [options.getHoverWaterValuesAtX] Required for the 'single' tooltip mode.
  * @param {Record<string, string>} [options.tooltipColorByLabel] Required for the 'single' tooltip mode.
  * @param {string} [options.tooltipMode]
- * @param {any[]} [options.phaseTooltipGroups]
+ * @param {PhaseTooltipGroup[]} [options.phaseTooltipGroups]
  * @param {boolean} [options.showPhaseNames]
  * @param {boolean} [options.showStops]
+ * @returns {ExternalTooltipState}
  */
 export function buildExternalTooltipState({
   chart,

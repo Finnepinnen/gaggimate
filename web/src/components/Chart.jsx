@@ -12,8 +12,8 @@ Chart.register(annotationPlugin);
  * @param {import('preact').JSX.CSSProperties} [props.style]
  */
 export function ChartComponent({ data, className, chartClassName, style }) {
-  const [chart, setChart] = useState(null);
-  const ref = useRef();
+  const [chart, setChart] = useState(/** @type {Chart | null} */ (null));
+  const ref = useRef(/** @type {HTMLCanvasElement | null} */ (null));
 
   // Create chart on mount
   useEffect(() => {
@@ -59,6 +59,11 @@ export function ChartComponent({ data, className, chartClassName, style }) {
     if (!chart) return;
 
     // Generic "get or create" helper for nested option objects.
+    /**
+     * @param {Record<string, any>} obj Chart.js options node (shape varies by path).
+     * @param {string} key
+     * @param {object} def
+     */
     const ensure = (obj, key, def) => {
       if (!obj[key]) obj[key] = def;
       return obj[key];
@@ -66,8 +71,12 @@ export function ChartComponent({ data, className, chartClassName, style }) {
 
     // Walk a path (array of keys) under chart.options creating objects.
     // Guarantees a font object exists so we can safely assign size.
+    /** @param {string[]} path */
     const ensureFont = path => {
-      const target = path.reduce((acc, key) => ensure(acc, key, {}), chart.options);
+      const target = path.reduce(
+        (acc, key) => ensure(acc, key, {}),
+        /** @type {Record<string, any>} */ (chart.options),
+      );
       if (!target.font) target.font = {}; // for scale tick objects that may embed font deeper
       return target;
     };

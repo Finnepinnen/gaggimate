@@ -5,6 +5,11 @@ import { CardTitle } from '../../../components/CardTitle';
 import { msg } from '@lingui/core/macro';
 import { Plural, Trans, useLingui } from '@lingui/react/macro';
 
+/**
+ * @typedef {{ dayMs: number, count: number, week: number, dow: number }} HeatmapCell
+ * @typedef {{ cell: HeatmapCell, x: number, y: number, onLeft: boolean }} HeatmapTooltip
+ */
+
 const DAY_LABELS = [
   { dow: 0, label: msg({ message: 'M', context: 'weekday initial: Monday' }) },
   { dow: 2, label: msg({ message: 'W', context: 'weekday initial: Wednesday' }) },
@@ -12,7 +17,9 @@ const DAY_LABELS = [
 ];
 const MS_PER_DAY = 86400000;
 
+/** @type {Intl.DateTimeFormatOptions} */
 const TOOLTIP_DATE_OPTIONS = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+/** @type {Intl.DateTimeFormatOptions} */
 const MONTH_LABEL_OPTIONS = { month: 'short', year: '2-digit' };
 
 const SHOT_COLOR = 'var(--statistics-trend-shots-brown, #8B5E3C)';
@@ -20,6 +27,11 @@ const FUTURE_FILL = 'fill-base-content/[0.03]';
 const EMPTY_FILL = 'fill-base-content/[0.06]';
 const SHOT_FILL_OPACITY = [0.4, 0.6, 0.8, 1];
 
+/**
+ * @param {Map<number, number>} dayMap - Local day start ms to shot count
+ * @param {number} startMs
+ * @param {number} todayMs
+ */
 function computeStreaks(dayMap, startMs, todayMs) {
   const totalDaysToToday = Math.round((todayMs - startMs) / MS_PER_DAY) + 1;
   let longest = 0;
@@ -54,7 +66,9 @@ function computeStreaks(dayMap, startMs, todayMs) {
   return { longest, current };
 }
 
+/** @param {import('../types').TrendEntry[]} trends */
 function buildHeatmapData(trends) {
+  /** @type {Map<number, number>} */
   const dayMap = new Map();
   let earliestAllTime = Infinity;
   for (const entry of trends) {
@@ -67,7 +81,8 @@ function buildHeatmapData(trends) {
 
   if (dayMap.size === 0) return null;
 
-  const todayMs = getDayStartLocalMs(Date.now());
+  // Date.now() is always a finite timestamp, so the day/week starts below are never null.
+  const todayMs = /** @type {number} */ (getDayStartLocalMs(Date.now()));
 
   const endDate = new Date(todayMs);
   const endDow = (endDate.getDay() + 6) % 7;
@@ -77,7 +92,7 @@ function buildHeatmapData(trends) {
   // GitHub-style rolling window: one year back, Monday-aligned via shared utility.
   const startDate = new Date(todayMs);
   startDate.setFullYear(startDate.getFullYear() - 1);
-  const startMs = getIsoWeekStartLocalMs(startDate.getTime());
+  const startMs = /** @type {number} */ (getIsoWeekStartLocalMs(startDate.getTime()));
 
   const totalDays = Math.round((endMs - startMs) / MS_PER_DAY) + 1;
   const weeks = Math.ceil(totalDays / 7);
@@ -86,6 +101,7 @@ function buildHeatmapData(trends) {
   let daysWithShots = 0;
   let earliestShot = null;
 
+  /** @type {HeatmapCell[]} */
   const cells = [];
   const cursor = new Date(startMs);
   for (let i = 0; i < totalDays; i++) {
@@ -100,6 +116,7 @@ function buildHeatmapData(trends) {
     cursor.setDate(cursor.getDate() + 1);
   }
 
+  /** @type {{ week: number, label: string }[]} */
   const monthLabels = [];
   let lastMonth = -1;
   const weekCursor = new Date(startMs);
@@ -136,10 +153,11 @@ function buildHeatmapData(trends) {
   };
 }
 
+/** @param {{ trends: import('../types').TrendEntry[] }} props */
 export function ActivityHeatmap({ trends }) {
   const { i18n } = useLingui();
-  const [tooltip, setTooltip] = useState(null);
-  const containerRef = useRef(null);
+  const [tooltip, setTooltip] = useState(/** @type {HeatmapTooltip | null} */ (null));
+  const containerRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const [containerWidth, setContainerWidth] = useState(0);
 
   const data = useMemo(() => buildHeatmapData(trends || []), [trends]);
@@ -162,8 +180,9 @@ export function ActivityHeatmap({ trends }) {
   useEffect(() => {
     if (!tooltipOpen) return;
     const dismiss = () => setTooltip(null);
+    /** @param {PointerEvent} e */
     const onPointerDown = e => {
-      if (!containerRef.current?.contains(e.target)) setTooltip(null);
+      if (!containerRef.current?.contains(/** @type {Node | null} */ (e.target))) setTooltip(null);
     };
     window.addEventListener('scroll', dismiss, true);
     window.addEventListener('pointerdown', onPointerDown, true);
@@ -227,12 +246,17 @@ export function ActivityHeatmap({ trends }) {
             const y = topPadding + cell.dow * step;
             const isFuture = cell.dayMs > data.todayMs;
             const hasShots = !isFuture && cell.count > 0;
+            /**
+             * @param {PointerEvent} e
+             * @returns {HeatmapTooltip}
+             */
             const makeTooltip = e => ({
               cell,
               x: e.clientX,
               y: e.clientY,
               onLeft: e.clientX > window.innerWidth / 2,
             });
+            /** @param {PointerEvent} e */
             const handleHover = e => {
               if (isFuture || e.pointerType !== 'mouse') return;
               setTooltip(makeTooltip(e));

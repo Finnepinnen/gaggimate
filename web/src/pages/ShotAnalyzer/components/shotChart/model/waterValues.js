@@ -1,5 +1,15 @@
 import { findLastSampleIndexAtOrBeforeX } from '../helpers';
 
+/** @typedef {import('./types').HoverWaterValueGetter} HoverWaterValueGetter */
+/** @typedef {import('./types').PhaseHoverRange} PhaseHoverRange */
+
+/**
+ * @param {import('./types').AnalyzerResults | null | undefined} results
+ * @param {number} shotStartSec
+ * @param {number[]} sampleTimesSec
+ * @param {number[]} cumulativeWaterTotalBySample
+ * @returns {PhaseHoverRange[]}
+ */
 export function buildPhaseHoverRanges(
   results,
   shotStartSec,
@@ -30,9 +40,17 @@ export function buildPhaseHoverRanges(
           startSampleIndexFloor >= 0 ? cumulativeWaterTotalBySample[startSampleIndexFloor] || 0 : 0,
       };
     })
-    .filter(Boolean);
+    .filter(range => range !== null);
 }
 
+/**
+ * @param {{
+ *   phaseHoverRanges: PhaseHoverRange[],
+ *   sampleTimesSec: number[],
+ *   cumulativeWaterTotalBySample: number[],
+ * }} params
+ * @returns {HoverWaterValueGetter}
+ */
 export function createHoverWaterValueGetter({
   phaseHoverRanges,
   sampleTimesSec,
@@ -65,6 +83,11 @@ export function createHoverWaterValueGetter({
   };
 }
 
+/**
+ * @param {number[]} sampleTimesSec
+ * @param {number[]} cumulativeWaterTotalBySample
+ * @param {HoverWaterValueGetter} getHoverWaterValuesAtX
+ */
 export function buildWaterTooltipSeries(
   sampleTimesSec,
   cumulativeWaterTotalBySample,

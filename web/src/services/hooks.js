@@ -9,8 +9,7 @@ const useApiService = () => {
 const connected = computed(() => machine.value.connected);
 const selectedProfileId = computed(() => machine.value.status.selectedProfileId);
 
-// Full profile shape is schema/profile.json; only what this module touches is typed so far.
-/** @typedef {{ id: string, selected?: boolean, [key: string]: any }} ProfileSummary */
+/** @typedef {import('../types').Profile & { id: string }} ProfileSummary */
 
 /** @type {import('@preact/signals').Signal<ProfileSummary[]>} */
 const profiles = signal([]);
@@ -91,7 +90,8 @@ const setProfiles = update => {
 };
 
 const useProfileList = () => {
-  const apiService = useApiService();
+  // Only used under ApiServiceContext.Provider, which always has the service.
+  const apiService = /** @type {import('./ApiService.js').default} */ (useApiService());
 
   const invalidate = useCallback(async () => {
     if (profilesInflight) await profilesInflight;

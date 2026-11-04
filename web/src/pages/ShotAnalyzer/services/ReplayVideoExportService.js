@@ -1,6 +1,53 @@
 import { t } from '@lingui/core/macro';
 import { REPLAY_TARGET_FPS } from '../components/shotChart/constants';
 
+/** @typedef {import('../components/shotChart/constants').ReplayExportConfig} ReplayExportConfig */
+/** @typedef {{ x: number, y: number, width: number, height: number }} Rect px */
+/** @typedef {{ width: number, height: number }} Size px */
+/** @typedef {{ label: string, color: string, style?: string, lineWidth?: number }} ReplayLegendItem style: 'block' | 'dashed' | 'line' */
+/**
+ * @typedef {object} ExportThemeColors
+ * @property {string} pageBackground
+ * @property {string} pageText
+ * @property {string} surface
+ * @property {string} surfaceStrong
+ * @property {string} border
+ * @property {string} shadow
+ */
+/**
+ * @typedef {object} CompositionLayout
+ * @property {number} outputWidth
+ * @property {number} outputHeight
+ * @property {ExportThemeColors} colors
+ * @property {Rect} chartFrame
+ * @property {Rect | null} legendBounds
+ * @property {Rect} mainBounds
+ * @property {Rect} tempBounds
+ */
+/**
+ * @typedef {object} CompositionInput
+ * @property {HTMLCanvasElement} mainCanvas Main chart canvas
+ * @property {HTMLCanvasElement} tempCanvas Temperature chart canvas
+ * @property {ReplayLegendItem[]} legendItems
+ * @property {ReplayExportConfig} config
+ */
+/**
+ * Replay timing; `frameCount` / `totalDurationSec` win over `maxTime - shotStartSec` when finite.
+ * @typedef {object} ReplayExportRuntime
+ * @property {number} [frameCount]
+ * @property {number} [totalDurationSec]
+ * @property {number} maxTime s
+ * @property {number} shotStartSec s
+ */
+/** @typedef {(frameIndex: number, options?: { forceReset?: boolean }) => void} ApplyReplayFrame -1 resets to the start */
+/**
+ * @typedef {object} VideoExportCapabilities
+ * @property {boolean} canRecordMp4
+ * @property {boolean} canRecordWebm
+ * @property {boolean} shouldHideWebmOption
+ * @property {'mp4' | 'webm'} defaultExportFormat
+ */
+
 const EXPORT_FPS = REPLAY_TARGET_FPS;
 const EXPORT_PADDING = 24;
 const EXPORT_SECTION_GAP = 18;
@@ -10,7 +57,9 @@ const EXPORT_LEGEND_GAP = 10;
 const EXPORT_LEGEND_ITEM_GAP = 18;
 const EXPORT_LEGEND_ROW_GAP = 12;
 const EXPORT_CARD_SHADOW_BLUR = 28;
+/** @type {Size} */
 const EXPORT_OVERLAY_LANDSCAPE = { width: 1920, height: 1080 };
+/** @type {Size} */
 const EXPORT_OVERLAY_PORTRAIT = { width: 1080, height: 1920 };
 
 function getBrowserWindow() {
@@ -41,12 +90,14 @@ function isLikelySafariBrowser() {
   );
 }
 
+/** @param {AbortSignal | undefined} signal */
 function throwIfAborted(signal) {
   if (signal?.aborted) {
     throw new DOMException('Replay export aborted.', 'AbortError');
   }
 }
 
+/** @returns {number} ms */
 function getNowMs() {
   const performanceApi = globalThis.performance;
   if (typeof performanceApi?.now === 'function') {
@@ -55,6 +106,11 @@ function getNowMs() {
   return Date.now();
 }
 
+/**
+ * @param {number} ms
+ * @param {AbortSignal} [signal]
+ * @returns {Promise<void>}
+ */
 function wait(ms, signal) {
   return new Promise((resolve, reject) => {
     throwIfAborted(signal);
@@ -79,6 +135,10 @@ function wait(ms, signal) {
   });
 }
 
+/**
+ * @param {AbortSignal} [signal]
+ * @returns {Promise<void>}
+ */
 function waitForAnimationFrame(signal) {
   return new Promise((resolve, reject) => {
     throwIfAborted(signal);
@@ -100,11 +160,20 @@ function waitForAnimationFrame(signal) {
   });
 }
 
+/**
+ * @param {number} value
+ * @returns {number}
+ */
 function makeEven(value) {
   const rounded = Math.max(2, Math.round(value));
   return rounded % 2 === 0 ? rounded : rounded + 1;
 }
 
+/**
+ * @param {string} variableName
+ * @param {string} fallback
+ * @returns {string}
+ */
 function readCssVar(variableName, fallback) {
   const browserWindow = getBrowserWindow();
   const documentElement = browserWindow?.document?.documentElement;
@@ -116,6 +185,7 @@ function readCssVar(variableName, fallback) {
   return value || fallback;
 }
 
+/** @returns {ExportThemeColors} */
 function getExportThemeColors() {
   return {
     pageBackground: readCssVar('--color-base-100', '#ffffff'),
@@ -127,6 +197,14 @@ function getExportThemeColors() {
   };
 }
 
+/**
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {number} x
+ * @param {number} y
+ * @param {number} width
+ * @param {number} height
+ * @param {number} radius
+ */
 function createRoundedRectPath(ctx, x, y, width, height, radius) {
   const safeRadius = Math.max(0, Math.min(radius, width / 2, height / 2));
   ctx.beginPath();
@@ -142,6 +220,14 @@ function createRoundedRectPath(ctx, x, y, width, height, radius) {
   ctx.closePath();
 }
 
+/**
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {number} x
+ * @param {number} y
+ * @param {number} width
+ * @param {number} height
+ * @param {ExportThemeColors} colors
+ */
 function drawCard(ctx, x, y, width, height, colors) {
   ctx.save();
   ctx.shadowColor = colors.shadow;
@@ -158,6 +244,11 @@ function drawCard(ctx, x, y, width, height, colors) {
   ctx.restore();
 }
 
+/**
+ * @param {HTMLCanvasElement} mainCanvas
+ * @param {HTMLCanvasElement} tempCanvas
+ * @returns {Size}
+ */
 function getChartStackSize(mainCanvas, tempCanvas) {
   return {
     width: Math.max(mainCanvas.width, tempCanvas.width),
@@ -165,10 +256,18 @@ function getChartStackSize(mainCanvas, tempCanvas) {
   };
 }
 
+/**
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {ReplayLegendItem[]} legendItems
+ * @param {number} maxWidth px
+ * @returns {ReplayLegendItem[][]}
+ */
 function measureLegendRows(ctx, legendItems, maxWidth) {
   if (!legendItems.length) return [];
 
+  /** @type {ReplayLegendItem[][]} */
   const rows = [];
+  /** @type {ReplayLegendItem[]} */
   let currentRow = [];
   let currentWidth = 0;
 
@@ -194,6 +293,13 @@ function measureLegendRows(ctx, legendItems, maxWidth) {
   return rows;
 }
 
+/**
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {ReplayLegendItem} item
+ * @param {number} x
+ * @param {number} y
+ * @returns {number} Swatch width px
+ */
 function drawLegendSwatch(ctx, item, x, y) {
   ctx.save();
   ctx.strokeStyle = item.color;
@@ -219,6 +325,12 @@ function drawLegendSwatch(ctx, item, x, y) {
   return 22;
 }
 
+/**
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {ReplayLegendItem[]} legendItems
+ * @param {Rect} bounds
+ * @param {ExportThemeColors} colors
+ */
 function drawLegend(ctx, legendItems, bounds, colors) {
   if (!legendItems.length) return;
 
@@ -242,6 +354,11 @@ function drawLegend(ctx, legendItems, bounds, colors) {
   ctx.restore();
 }
 
+/**
+ * @param {string} layoutPreset
+ * @param {Size} chartStackSize
+ * @returns {Size}
+ */
 function getOverlayCanvasSize(layoutPreset, chartStackSize) {
   if (layoutPreset === 'overlay_landscape') return EXPORT_OVERLAY_LANDSCAPE;
   if (layoutPreset === 'overlay_portrait') return EXPORT_OVERLAY_PORTRAIT;
@@ -251,6 +368,15 @@ function getOverlayCanvasSize(layoutPreset, chartStackSize) {
   };
 }
 
+/**
+ * @param {object} options
+ * @param {string} options.layoutPreset
+ * @param {import('../components/shotChart/constants').NormalizedRect | null} options.chartPlacement
+ * @param {number} options.outputWidth
+ * @param {number} options.outputHeight
+ * @param {Size} options.chartStackSize
+ * @returns {Rect}
+ */
 function resolveChartFrame({
   layoutPreset,
   chartPlacement,
@@ -301,6 +427,10 @@ function resolveChartFrame({
   };
 }
 
+/**
+ * @param {CompositionInput} input
+ * @returns {CompositionLayout}
+ */
 function resolveCompositionLayout({ config, mainCanvas, tempCanvas, legendItems }) {
   const chartStackSize = getChartStackSize(mainCanvas, tempCanvas);
   const baseCanvasSize = getOverlayCanvasSize(config.layoutPreset, chartStackSize);
@@ -391,12 +521,19 @@ function resolveCompositionLayout({ config, mainCanvas, tempCanvas, legendItems 
   };
 }
 
+/**
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {CompositionLayout} layout
+ * @param {ReplayExportConfig} config
+ */
 function drawVideoLayer(ctx, layout, config) {
   const { videoSource, videoCrop } = config;
   if (!videoSource) return;
 
-  const sourceWidth = videoSource.videoWidth || videoSource.width || 0;
-  const sourceHeight = videoSource.videoHeight || videoSource.height || 0;
+  const sourceWidth =
+    /** @type {HTMLVideoElement} */ (videoSource).videoWidth || videoSource.width || 0;
+  const sourceHeight =
+    /** @type {HTMLVideoElement} */ (videoSource).videoHeight || videoSource.height || 0;
   if (!sourceWidth || !sourceHeight) return;
 
   const crop = videoCrop || { x: 0, y: 0, width: 1, height: 1 };
@@ -407,6 +544,11 @@ function drawVideoLayer(ctx, layout, config) {
   ctx.drawImage(videoSource, sx, sy, sw, sh, 0, 0, layout.outputWidth, layout.outputHeight);
 }
 
+/**
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {CompositionLayout} layout
+ * @param {CompositionInput} input
+ */
 function renderCompositionFrame(ctx, layout, { config, mainCanvas, tempCanvas, legendItems }) {
   ctx.save();
   ctx.fillStyle = layout.colors.pageBackground;
@@ -442,6 +584,10 @@ function renderCompositionFrame(ctx, layout, { config, mainCanvas, tempCanvas, l
   ctx.restore();
 }
 
+/**
+ * @param {CompositionInput} input
+ * @returns {{ compositionCanvas: HTMLCanvasElement, layout: CompositionLayout, ctx: CanvasRenderingContext2D }}
+ */
 function createCompositionCanvas({ mainCanvas, tempCanvas, legendItems, config }) {
   const compositionCanvas = createExportCanvas();
   const layout = resolveCompositionLayout({
@@ -460,6 +606,11 @@ function createCompositionCanvas({ mainCanvas, tempCanvas, legendItems, config }
   return { compositionCanvas, layout, ctx };
 }
 
+/**
+ * @param {HTMLCanvasElement} canvas
+ * @param {string} mimeType
+ * @returns {Promise<Blob>}
+ */
 function canvasToBlob(canvas, mimeType) {
   return new Promise((resolve, reject) => {
     canvas.toBlob(blob => {
@@ -472,6 +623,10 @@ function canvasToBlob(canvas, mimeType) {
   });
 }
 
+/**
+ * @param {string | null} targetFormat 'mp4' | 'webm' (anything else: webm)
+ * @returns {string | null} First MediaRecorder-supported mime type
+ */
 function resolveRecorderMimeType(targetFormat) {
   const MediaRecorderCtor = getMediaRecorderConstructor();
   if (MediaRecorderCtor === undefined) return null;
@@ -488,6 +643,7 @@ function resolveRecorderMimeType(targetFormat) {
   );
 }
 
+/** @returns {VideoExportCapabilities} */
 export function getVideoExportCapabilities() {
   const preferredMp4MimeType = resolveRecorderMimeType('mp4');
   const preferredWebmMimeType = resolveRecorderMimeType('webm');
@@ -505,6 +661,14 @@ export function getVideoExportCapabilities() {
   };
 }
 
+/**
+ * @param {HTMLCanvasElement} canvas
+ * @param {number} fps
+ * @param {() => Promise<void>} renderFrames
+ * @param {AbortSignal | undefined} signal
+ * @param {string | null} recorderMimeType
+ * @returns {Promise<Blob>}
+ */
 async function recordCanvas(canvas, fps, renderFrames, signal, recorderMimeType) {
   if (typeof canvas.captureStream !== 'function') {
     throw new TypeError(t`Canvas capture is not supported in this browser.`);
@@ -515,10 +679,15 @@ async function recordCanvas(canvas, fps, renderFrames, signal, recorderMimeType)
   }
 
   const stream = canvas.captureStream(fps);
+  /** @type {Blob[]} */
   const chunks = [];
+  /** @type {unknown} */
   let recorderError = null;
+  /** @type {(() => void) | null} */
   let stopHandler = null;
+  /** @type {((event: Event & { error?: unknown }) => void) | null} */
   let errorHandler = null;
+  /** @type {((event: BlobEvent) => void) | null} */
   let dataHandler = null;
 
   const recorder = recorderMimeType
@@ -530,6 +699,7 @@ async function recordCanvas(canvas, fps, renderFrames, signal, recorderMimeType)
         videoBitsPerSecond: 10_000_000,
       });
 
+  /** @type {Promise<Blob>} */
   const stopPromise = new Promise((resolve, reject) => {
     dataHandler = event => {
       if (event.data && event.data.size > 0) {
@@ -557,10 +727,17 @@ async function recordCanvas(canvas, fps, renderFrames, signal, recorderMimeType)
     recorder.addEventListener('stop', stopHandler);
   });
 
+  // The Promise executor above ran synchronously, so all three handlers are set.
   const cleanup = () => {
-    recorder.removeEventListener('dataavailable', dataHandler);
-    recorder.removeEventListener('error', errorHandler);
-    recorder.removeEventListener('stop', stopHandler);
+    recorder.removeEventListener(
+      'dataavailable',
+      /** @type {(event: BlobEvent) => void} */ (dataHandler),
+    );
+    recorder.removeEventListener(
+      'error',
+      /** @type {(event: Event & { error?: unknown }) => void} */ (errorHandler),
+    );
+    recorder.removeEventListener('stop', /** @type {() => void} */ (stopHandler));
     stream.getTracks().forEach(track => track.stop());
   };
 
@@ -587,6 +764,19 @@ async function recordCanvas(canvas, fps, renderFrames, signal, recorderMimeType)
   }
 }
 
+/**
+ * Records the replay into a video via MediaRecorder on a detached composition canvas.
+ * @param {object} options
+ * @param {HTMLCanvasElement} options.mainCanvas
+ * @param {HTMLCanvasElement} options.tempCanvas
+ * @param {ReplayExportRuntime} options.runtime
+ * @param {ApplyReplayFrame} options.applyReplayFrame
+ * @param {ReplayLegendItem[]} [options.legendItems]
+ * @param {ReplayExportConfig} options.config
+ * @param {(status: string) => void} [options.onStatusChange]
+ * @param {AbortSignal} [options.signal]
+ * @returns {Promise<{ blob: Blob, mimeType: string, width: number, height: number, fps: number }>}
+ */
 export async function exportReplayVideo({
   mainCanvas,
   tempCanvas,
@@ -621,13 +811,13 @@ export async function exportReplayVideo({
   const totalDurationSec = Math.max(
     0,
     Number.isFinite(runtime.totalDurationSec)
-      ? runtime.totalDurationSec
+      ? /** @type {number} */ (runtime.totalDurationSec)
       : runtime.maxTime - runtime.shotStartSec,
   );
   const totalFrames = Math.max(
     1,
     Number.isFinite(runtime.frameCount)
-      ? runtime.frameCount
+      ? /** @type {number} */ (runtime.frameCount)
       : Math.ceil(totalDurationSec * EXPORT_FPS),
   );
   const frameDurationMs =
@@ -684,6 +874,15 @@ export async function exportReplayVideo({
   };
 }
 
+/**
+ * @param {object} options
+ * @param {HTMLCanvasElement} options.mainCanvas
+ * @param {HTMLCanvasElement} options.tempCanvas
+ * @param {ReplayLegendItem[]} [options.legendItems]
+ * @param {ReplayExportConfig} options.config
+ * @param {AbortSignal} [options.signal]
+ * @returns {Promise<{ blob: Blob, mimeType: string, width: number, height: number }>}
+ */
 export async function exportReplayImage({
   mainCanvas,
   tempCanvas,

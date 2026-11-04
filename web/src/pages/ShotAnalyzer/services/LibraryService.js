@@ -13,6 +13,16 @@ import { indexedDBService } from './IndexedDBService';
 import { notesService } from './NotesService';
 import { getProfileDisplayLabel, getShotStorageKey } from '../utils/analyzerUtils';
 
+/** @typedef {import('../../../types').ShotSample} ShotSample */
+/** @typedef {import('../../../types').ShotNotes} ShotNotes */
+/** @typedef {import('../types').AnalyzerShot} AnalyzerShot */
+/** @typedef {import('../types').AnalyzerProfile} AnalyzerProfile */
+/** @typedef {import('../types').LibrarySource} LibrarySource */
+/** @typedef {import('../types').LibrarySourceFilter} LibrarySourceFilter */
+/** @typedef {Required<Omit<ShotNotes, 'id' | 'rating'>> & { id: string, rating: number }} HistoryExportNotes */
+/** @typedef {{ total: number, shots: number, profiles: number }} SourceStats */
+
+/** @type {HistoryExportNotes} */
 const HISTORY_NOTES_DEFAULTS = {
   id: '',
   rating: 0,
@@ -25,12 +35,21 @@ const HISTORY_NOTES_DEFAULTS = {
   notes: '',
 };
 
+/**
+ * @template {number | null | undefined} T
+ * @param {T} v
+ * @returns {T}
+ */
 function round2(v) {
   if (v == null || Number.isNaN(v)) return v;
-  return Math.round((v + Number.EPSILON) * 100) / 100;
+  return /** @type {T} */ (Math.round((v + Number.EPSILON) * 100) / 100);
 }
 
-function normalizeShotSampleForHistoryExport(sample = {}) {
+/**
+ * @param {ShotSample} [sample]
+ * @returns {ShotSample}
+ */
+function normalizeShotSampleForHistoryExport(sample = /** @type {ShotSample} */ ({})) {
   return {
     t: sample.t,
     tt: round2(sample.tt),
@@ -51,6 +70,11 @@ function normalizeShotSampleForHistoryExport(sample = {}) {
   };
 }
 
+/**
+ * @param {Partial<import('../types').AnalyzerNotes> | null | undefined} notes
+ * @param {string | number | undefined} shotId
+ * @returns {HistoryExportNotes}
+ */
 function normalizeNotesForHistoryExport(notes, shotId) {
   const merged = {
     ...HISTORY_NOTES_DEFAULTS,
@@ -71,6 +95,11 @@ function normalizeNotesForHistoryExport(notes, shotId) {
   };
 }
 
+/**
+ * @param {AnalyzerShot} rawShot
+ * @param {AnalyzerShot} listItem
+ * @param {Partial<import('../types').AnalyzerNotes> | null} notes
+ */
 function buildHistoryLikeShotExport(rawShot, listItem, notes) {
   const shotId = rawShot?.id ?? listItem?.id ?? listItem?.name ?? '';
 
@@ -88,7 +117,7 @@ function buildHistoryLikeShotExport(rawShot, listItem, notes) {
     incomplete: listItem?.incomplete ?? rawShot?.incomplete ?? false,
     notes: normalizeNotesForHistoryExport(notes, shotId),
     loaded: true,
-    data: null,
+    data: /** @type {null} */ (null),
   };
 
   return {
@@ -100,7 +129,7 @@ function buildHistoryLikeShotExport(rawShot, listItem, notes) {
     incomplete: base.incomplete,
     notes: base.notes,
     loaded: true,
-    data: null,
+    data: /** @type {null} */ (null),
   };
 }
 
@@ -118,6 +147,10 @@ const PROFILE_EXPORT_METADATA_FIELDS = [
   'data',
 ];
 
+/**
+ * @param {string | number | null | undefined} filename
+ * @returns {string}
+ */
 function ensureJsonFilename(filename) {
   const resolvedFilename = String(filename || 'export.json');
   if (
@@ -129,17 +162,31 @@ function ensureJsonFilename(filename) {
   return `${resolvedFilename}.json`;
 }
 
+/**
+ * @param {AnalyzerProfile} profile
+ * @param {string} [fallback]
+ * @returns {string}
+ */
 function getProfileExportFilename(profile, fallback = 'profile') {
   const label = getProfileDisplayLabel(profile, fallback);
   return ensureJsonFilename(label || fallback || 'profile');
 }
 
+/**
+ * @param {AnalyzerShot} item
+ * @returns {string}
+ */
 function getShotExportFilename(item) {
   if (item?.exportName) return ensureJsonFilename(item.exportName);
   if (item?.id) return ensureJsonFilename(`shot-${item.id}`);
   return ensureJsonFilename(item?.storageKey || item?.fileName || item?.name || 'shot');
 }
 
+/**
+ * @param {AnalyzerProfile} profile
+ * @param {AnalyzerProfile | null} [fallbackProfile]
+ * @returns {AnalyzerProfile}
+ */
 function cleanProfileForExport(profile, fallbackProfile = null) {
   const clean = { ...profile };
   if (!clean.label && fallbackProfile) {
@@ -147,13 +194,14 @@ function cleanProfileForExport(profile, fallbackProfile = null) {
   }
 
   PROFILE_EXPORT_METADATA_FIELDS.forEach(field => {
-    delete clean[field];
+    delete clean[/** @type {keyof AnalyzerProfile} */ (field)];
   });
 
   return clean;
 }
 
 class LibraryService {
+  /** @type {import('../../../services/ApiService.js').default | null} */
   apiService = null;
 
   /**
@@ -166,7 +214,7 @@ class LibraryService {
 
   /**
    * Get shots from GaggiMate controller
-   * @returns {Promise<Object[]>} List of GaggiMate shots with source tag
+   * @returns {Promise<AnalyzerShot[]>} List of GaggiMate shots with source tag
    */
   async getGaggiMateShots() {
     try {
@@ -184,12 +232,15 @@ class LibraryService {
       const shotList = indexToShotList(indexData);
 
       // Add source tag and ensure name property exists
-      return shotList.map(shot => ({
-        ...shot,
-        name: shot.profile || shot.id || 'Unknown', // Display Name for UI (e.g. "Turbo Bloom")
-        exportName: `shot-${shot.id}.json`, // Real Filename for Export (e.g. "shot-1701234.json")
-        source: 'gaggimate',
-      }));
+      return shotList.map(
+        /** @returns {AnalyzerShot} */
+        shot => ({
+          ...shot,
+          name: shot.profile || shot.id || 'Unknown', // Display Name for UI (e.g. "Turbo Bloom")
+          exportName: `shot-${shot.id}.json`, // Real Filename for Export (e.g. "shot-1701234.json")
+          source: 'gaggimate',
+        }),
+      );
     } catch (error) {
       console.error('Failed to load GaggiMate shots:', error);
       return [];
@@ -198,7 +249,7 @@ class LibraryService {
 
   /**
    * Get shots from browser uploads
-   * @returns {Promise<Object[]>} List of browser shots with source tag
+   * @returns {Promise<AnalyzerShot[]>} List of browser shots with source tag
    */
   async getBrowserShots() {
     try {
@@ -215,10 +266,11 @@ class LibraryService {
 
   /**
    * Get merged shot list from all sources
-   * @param {string} sourceFilter - 'both', 'gaggimate', or 'browser'
-   * @returns {Promise<Object[]>} Filtered and merged shot list
+   * @param {LibrarySourceFilter} [sourceFilter] - 'both', 'gaggimate', or 'browser'
+   * @returns {Promise<AnalyzerShot[]>} Filtered and merged shot list
    */
   async getAllShots(sourceFilter = 'both') {
+    /** @type {Promise<AnalyzerShot[]>[]} */
     const promises = [];
 
     // Load from selected sources
@@ -233,12 +285,14 @@ class LibraryService {
     const merged = results.flat();
 
     // Sort by timestamp (newest first)
-    return merged.sort((a, b) => b.timestamp - a.timestamp);
+    return merged.sort(
+      (a, b) => /** @type {number} */ (b.timestamp) - /** @type {number} */ (a.timestamp),
+    );
   }
 
   /**
    * Get profiles from GaggiMate controller
-   * @returns {Promise<Object[]>} List of GaggiMate profiles with source tag
+   * @returns {Promise<AnalyzerProfile[]>} List of GaggiMate profiles with source tag
    */
   async getGaggiMateProfiles() {
     if (this.apiService?.socket?.readyState !== WebSocket.OPEN) {
@@ -255,13 +309,19 @@ class LibraryService {
       }
 
       // Add source tag and preserve the API id for req:profiles:load.
-      return response.profiles.map(profile => ({
-        ...profile,
-        exportName: getProfileExportFilename(profile),
-        profileId: profile.id, // Keep real API id for req:profiles:load
-        label: profile.label,
-        source: 'gaggimate',
-      }));
+      return response.profiles.map(
+        /**
+         * @param {AnalyzerProfile} profile
+         * @returns {AnalyzerProfile}
+         */
+        profile => ({
+          ...profile,
+          exportName: getProfileExportFilename(profile),
+          profileId: profile.id, // Keep real API id for req:profiles:load
+          label: profile.label,
+          source: 'gaggimate',
+        }),
+      );
     } catch (error) {
       console.error('Failed to load GaggiMate profiles:', error);
       return [];
@@ -270,7 +330,7 @@ class LibraryService {
 
   /**
    * Get profiles from browser uploads
-   * @returns {Promise<Object[]>} List of browser profiles with source tag
+   * @returns {Promise<AnalyzerProfile[]>} List of browser profiles with source tag
    */
   async getBrowserProfiles() {
     try {
@@ -283,10 +343,11 @@ class LibraryService {
 
   /**
    * Get merged profile list from all sources
-   * @param {string} sourceFilter - 'both', 'gaggimate', or 'browser'
-   * @returns {Promise<Object[]>} Filtered and merged profile list
+   * @param {LibrarySourceFilter} [sourceFilter] - 'both', 'gaggimate', or 'browser'
+   * @returns {Promise<AnalyzerProfile[]>} Filtered and merged profile list
    */
   async getAllProfiles(sourceFilter = 'both') {
+    /** @type {Promise<AnalyzerProfile[]>[]} */
     const promises = [];
 
     if (sourceFilter === 'both' || sourceFilter === 'gaggimate') {
@@ -306,10 +367,10 @@ class LibraryService {
 
   /**
    * Load full shot data
-   * @param {string} id - Shot ID
-   * @param {string} source - 'gaggimate' or 'browser'
-   * @param {{ signal?: AbortSignal }} options - Optional request controls for GaggiMate fetches
-   * @returns {Promise<Object>} Full shot data with samples
+   * @param {string | number} id - Shot ID
+   * @param {LibrarySource | undefined} source - 'gaggimate' or 'browser' (anything else: browser)
+   * @param {{ signal?: AbortSignal }} [options] - Optional request controls for GaggiMate fetches
+   * @returns {Promise<AnalyzerShot>} Full shot data with samples
    */
   async loadShot(id, source, { signal } = {}) {
     const idStr = String(id);
@@ -324,6 +385,7 @@ class LibraryService {
       }
 
       const arrayBuffer = await response.arrayBuffer();
+      /** @type {AnalyzerShot} */
       const shot = parseBinaryShot(arrayBuffer, idStr);
       shot.source = 'gaggimate';
       return shot;
@@ -340,8 +402,8 @@ class LibraryService {
   /**
    * Load full profile data
    * @param {string} nameOrId - Profile name/ID (for GM: use label)
-   * @param {string} source - 'gaggimate' or 'browser'
-   * @returns {Promise<Object>} Full profile data
+   * @param {LibrarySource | undefined} source - 'gaggimate' or 'browser' (anything else: browser)
+   * @returns {Promise<AnalyzerProfile>} Full profile data
    */
   async loadProfile(nameOrId, source) {
     if (source === 'gaggimate') {
@@ -373,14 +435,16 @@ class LibraryService {
   /**
    * PREPARE EXPORT DATA
    * Fetches the original data and cleans it for export.
-   * @param {Object} item - The library item (shot or profile)
+   * @param {AnalyzerShot | AnalyzerProfile} item - The library item (shot or profile)
    * @param {boolean} isShot - True if item is a shot
-   * @returns {Promise<{ exportData: Object, filename: string }>} Export payload and filename
+   * @returns {Promise<{ exportData: object, filename: string }>} Export payload and filename
    */
   async exportItem(item, isShot) {
+    const shotItem = /** @type {AnalyzerShot} */ (item);
+    const profileItem = /** @type {AnalyzerProfile} */ (item);
     let exportData = null;
     let filename = isShot
-      ? getShotExportFilename(item)
+      ? getShotExportFilename(shotItem)
       : ensureJsonFilename(item.exportName || item.name || item.id || 'export.json');
 
     if (item.source === 'gaggimate') {
@@ -388,44 +452,54 @@ class LibraryService {
         // SHOT EXPORT (GM):
         // We MUST load the full shot because the list item only has summary data.
         // Use the 'id' (timestamp) to load, ignoring the 'name' (profile name).
-        const loadId = item.id;
+        const loadId = shotItem.id;
         if (!loadId) throw new Error(t`Shot ID missing for export`);
 
         const fullShot = await this.loadShot(loadId, 'gaggimate');
         delete fullShot.source;
 
         const notes = await notesService.loadNotes(loadId, 'gaggimate');
-        exportData = buildHistoryLikeShotExport(fullShot, item, notes);
+        exportData = buildHistoryLikeShotExport(fullShot, shotItem, notes);
       } else {
         // PROFILE EXPORT (GM):
         // Load fresh from controller using the hidden profileId
-        const loadId = item.profileId || item.id;
+        const loadId = profileItem.profileId || profileItem.id;
         if (!loadId) throw new Error(t`Profile ID missing for export`);
 
         const raw = await this.loadProfile(loadId, 'gaggimate');
         filename = getProfileExportFilename(
           raw,
-          item.label || item.name || item.fileName || item.exportName || item.id || 'profile',
+          profileItem.label ||
+            profileItem.name ||
+            profileItem.fileName ||
+            profileItem.exportName ||
+            profileItem.id ||
+            'profile',
         );
-        exportData = cleanProfileForExport(raw, item);
+        exportData = cleanProfileForExport(raw, profileItem);
       }
     } else if (isShot) {
       // BROWSER EXPORT:
       // Just clean up our internal tags
-      const exportShot = { ...(item.data || item) };
+      const exportShot = { ...(shotItem.data || shotItem) };
       delete exportShot.source;
       delete exportShot.uploadedAt;
 
-      const shotNotesKey = getShotStorageKey(item);
+      const shotNotesKey = getShotStorageKey(shotItem);
       const notes = await notesService.loadNotes(shotNotesKey, 'browser');
-      exportData = buildHistoryLikeShotExport(exportShot, item, notes);
+      exportData = buildHistoryLikeShotExport(exportShot, shotItem, notes);
     } else {
-      const rawProfile = item.data || item;
+      const rawProfile = profileItem.data || profileItem;
       filename = getProfileExportFilename(
         rawProfile,
-        item.label || item.name || item.fileName || item.exportName || item.id || 'profile',
+        profileItem.label ||
+          profileItem.name ||
+          profileItem.fileName ||
+          profileItem.exportName ||
+          profileItem.id ||
+          'profile',
       );
-      exportData = cleanProfileForExport(rawProfile, item);
+      exportData = cleanProfileForExport(rawProfile, profileItem);
     }
 
     // Return raw object
@@ -436,7 +510,7 @@ class LibraryService {
   /**
    * Delete a shot
    * @param {string} id - Shot ID
-   * @param {string} source - 'gaggimate' or 'browser'
+   * @param {LibrarySource | undefined} source - 'gaggimate' or 'browser' (anything else: browser)
    */
   async deleteShot(id, source) {
     if (source === 'gaggimate') {
@@ -451,7 +525,7 @@ class LibraryService {
   /**
    * Delete a profile
    * @param {string} id - Profile ID (gaggimate: internal API id, browser: name)
-   * @param {string} source - 'gaggimate' or 'browser'
+   * @param {LibrarySource | undefined} source - 'gaggimate' or 'browser' (anything else: browser)
    */
   async deleteProfile(id, source) {
     if (source === 'gaggimate') {
@@ -464,7 +538,7 @@ class LibraryService {
 
   /**
    * Get storage statistics
-   * @returns {Promise<Object>} Stats from all sources
+   * @returns {Promise<{ gaggimate: Omit<SourceStats, 'total'>, browser: Omit<SourceStats, 'total'>, total: Omit<SourceStats, 'total'> }>} Stats from all sources
    */
   async getStats() {
     const [gmShots, browserShots, gmProfiles, browserProfiles] = await Promise.all([

@@ -6,6 +6,7 @@ import { useLingui } from '@lingui/react/macro';
 import { StatisticsMetricHeader } from './StatisticsMetricHeader';
 
 // Presentational only: renders a high-signal summary layer from StatisticsService.summary.
+/** @param {number} seconds */
 function formatDuration(seconds) {
   if (!Number.isFinite(seconds) || seconds <= 0) return '0 s';
   const totalSeconds = Math.max(0, Math.round(seconds));
@@ -21,10 +22,15 @@ function formatDuration(seconds) {
   return parts.join(' ');
 }
 
+/**
+ * @param {number} value
+ * @param {number} [digits]
+ */
 function fmtNumber(value, digits = 1) {
   return Number.isFinite(value) ? value.toFixed(digits) : '-';
 }
 
+/** @param {unknown} value - g */
 function formatWeight(value) {
   const numericValue = Number(value);
   if (!Number.isFinite(numericValue)) return '-';
@@ -32,6 +38,7 @@ function formatWeight(value) {
   return `${fmtNumber(numericValue)} g`;
 }
 
+/** @param {unknown} value - ml */
 function formatWater(value) {
   const numericValue = Number(value);
   if (!Number.isFinite(numericValue)) return '-';
@@ -39,6 +46,13 @@ function formatWater(value) {
   return `${fmtNumber(numericValue)} ml`;
 }
 
+/**
+ * @param {object} props
+ * @param {import('@fortawesome/fontawesome-svg-core').IconDefinition} props.icon
+ * @param {string} props.label
+ * @param {string} props.value
+ * @param {string} props.accentColorVar - CSS custom property name, e.g. `--analyzer-weight-text`
+ */
 function SummaryStatCard({ icon, label, value, accentColorVar }) {
   const accent = `var(${accentColorVar})`;
 
@@ -55,6 +69,7 @@ function SummaryStatCard({ icon, label, value, accentColorVar }) {
   );
 }
 
+/** @param {{ summary: import('../types').StatisticsSummary | null | undefined }} props */
 export function SummaryCards({ summary }) {
   const { t } = useLingui();
   if (!summary) return null;
@@ -95,7 +110,7 @@ export function SummaryCards({ summary }) {
     <div className='space-y-2'>
       <div className='grid grid-cols-2 gap-3 md:grid-cols-4'>
         {totalCards.map(card => (
-          <SummaryStatCard key={card.key} {...card} />
+          <SummaryStatCard {...card} key={card.key} />
         ))}
       </div>
     </div>

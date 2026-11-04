@@ -1,5 +1,12 @@
 import { Trans, useLingui } from '@lingui/react/macro';
 
+/** @typedef {import('./usePumpFlowCalibration.js').CalibrationResults} CalibrationResults */
+
+/**
+ * @param {object} props
+ * @param {CalibrationResults} props.results
+ * @param {string} [props.currentCoeffs]
+ */
 export default function ResultsPanel({ results, currentCoeffs }) {
   const { oneBar, nineBar, newCoeffs } = results;
   return (
@@ -22,6 +29,11 @@ export default function ResultsPanel({ results, currentCoeffs }) {
   );
 }
 
+/**
+ * @param {object} props
+ * @param {string} props.title
+ * @param {CalibrationResults['oneBar']} props.a
+ */
 function ResultCard({ title, a }) {
   const { t } = useLingui();
   return (
@@ -36,6 +48,11 @@ function ResultCard({ title, a }) {
   );
 }
 
+/**
+ * @param {object} props
+ * @param {string} props.label
+ * @param {string} props.value
+ */
 function Row({ label, value }) {
   return (
     <div className='flex justify-between'>

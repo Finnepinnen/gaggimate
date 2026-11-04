@@ -2,6 +2,12 @@ import { Trans, useLingui } from '@lingui/react/macro';
 import Section from '../../../components/Card.jsx';
 import { machine } from '../../../services/ApiService.js';
 
+/**
+ * @param {{
+ *   formData: import('../types').SettingsFormData,
+ *   onChange: import('../types').FormChange,
+ * }} props
+ */
 export function HeaterCoordinationSection({ formData, onChange }) {
   const { t } = useLingui();
   if (!machine.value.capabilities.dualBoiler) return null;
@@ -41,7 +47,7 @@ export function HeaterCoordinationSection({ formData, onChange }) {
           min='20'
           max='5000'
           required
-          className='input input-bordered w-full'
+          className='input w-full'
           value={formData.heaterHandoverMs}
           onChange={onChange('heaterHandoverMs')}
         />

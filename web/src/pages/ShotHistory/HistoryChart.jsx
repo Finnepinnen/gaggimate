@@ -2,7 +2,17 @@ import { Chart } from 'chart.js';
 import { ChartComponent } from '../../components/Chart.jsx';
 import { t } from '@lingui/core/macro';
 
+/** @typedef {import('../../types').Shot} Shot */
+/** @typedef {import('../../types').ShotSample} ShotSample */
+/** @typedef {{ x: number, y: number | undefined }} Point */
+/** @typedef {{ time: number, phaseNumber: number, phaseDisplayNumber: number, phaseName: string }} PhaseMarker */
+
 // Helper function to get phase name from shot data (v5+) or fallback to profile/generic
+/**
+ * @param {Shot} shot
+ * @param {number} phaseNumber
+ * @returns {string}
+ */
 function getPhaseName(shot, phaseNumber) {
   // For v5+ shots, check if we have phase transition data
   if (shot.phaseTransitions && shot.phaseTransitions.length > 0) {
@@ -16,17 +26,29 @@ function getPhaseName(shot, phaseNumber) {
   return '';
 }
 
+/**
+ * @param {Shot} shot A loaded shot (samples is an array).
+ */
 function getChartData(shot) {
   // Build sample point arrays once (numeric x for linear scale)
-  const data = shot.samples;
+  const data = /** @type {ShotSample[]} */ (shot.samples);
+  /** @type {Point[]} */
   const ct = [];
+  /** @type {Point[]} */
   const tt = [];
+  /** @type {Point[]} */
   const cp = [];
+  /** @type {Point[]} */
   const tp = [];
+  /** @type {Point[]} */
   const fl = [];
+  /** @type {Point[]} */
   const pf = [];
+  /** @type {Point[]} */
   const tf = [];
+  /** @type {Point[]} */
   const v = [];
+  /** @type {Point[]} */
   const vf = [];
 
   // Process all samples to build data arrays
@@ -46,9 +68,10 @@ function getChartData(shot) {
   }
 
   // For v5+ files, use phase transitions from header
+  /** @type {PhaseMarker[]} */
   let phaseTransitions = [];
 
-  if (shot.version >= 5 && shot.phaseTransitions) {
+  if (shot.version !== undefined && shot.version >= 5 && shot.phaseTransitions) {
     // Use phase transitions directly from header
     phaseTransitions = shot.phaseTransitions.map(t => ({
       time: (t.sampleIndex * (shot.sampleInterval || 250)) / 1000.0,
@@ -58,7 +81,8 @@ function getChartData(shot) {
     }));
   }
   // No phase tracking for versions before v5
-  const tempValues = ct.map(i => i.y).concat(tt.map(i => i.y));
+  // Math.min/max turn a missing temperature into NaN, as before.
+  const tempValues = /** @type {number[]} */ (ct.map(i => i.y).concat(tt.map(i => i.y)));
   const timeValues = ct.map(i => i.x);
   const minTemp = Math.floor(Math.min(...tempValues));
   const maxTemp = Math.ceil(Math.max(...tempValues));
@@ -67,10 +91,11 @@ function getChartData(shot) {
   const padding = maxTemp - minTemp > 10 ? 2 : 5;
 
   // Check if weight data has any non-zero values
-  const hasWeight = v.some(point => point.y > 0);
-  const hasWeightFlow = vf.some(point => point.y > 0);
+  const hasWeight = v.some(point => (point.y ?? 0) > 0);
+  const hasWeightFlow = vf.some(point => (point.y ?? 0) > 0);
 
   // Create phase annotations
+  /** @type {Record<string, object>} */
   const phaseAnnotations = {};
   const isSmall = window.innerWidth < 640;
 
@@ -232,15 +257,17 @@ function getChartData(shot) {
             font: {
               size: window.innerWidth < 640 ? 10 : 12,
             },
+            /** @param {import('chart.js').Chart<'line'>} chart */
             generateLabels(chart) {
               const original = Chart.defaults.plugins.legend.labels.generateLabels;
+              /** @type {import('chart.js').LegendItem[]} */
               const labels = original.call(this, chart);
 
               labels.forEach((label, index) => {
                 const dataset = chart.data.datasets[index];
                 label.lineWidth = 3;
                 if (dataset.borderDash && dataset.borderDash.length > 0) {
-                  label.lineDash = dataset.borderDash;
+                  label.lineDash = /** @type {number[]} */ (dataset.borderDash);
                 }
               });
 
@@ -267,7 +294,7 @@ function getChartData(shot) {
         y: {
           type: 'linear',
           ticks: {
-            callback: value => `${value.toFixed()} °C`,
+            callback: /** @param {number} value */ value => `${value.toFixed()} °C`,
             font: {
               size: window.innerWidth < 640 ? 10 : 12,
             },
@@ -281,7 +308,7 @@ function getChartData(shot) {
           max: 16,
           position: 'right',
           ticks: {
-            callback: value => `${value.toFixed()} bar / g/s`,
+            callback: /** @param {number} value */ value => `${value.toFixed()} bar / g/s`,
             font: {
               size: window.innerWidth < 640 ? 10 : 12,
             },
@@ -296,7 +323,7 @@ function getChartData(shot) {
                 position: 'right',
                 offset: true,
                 ticks: {
-                  callback: value => `${value.toFixed()} g`,
+                  callback: /** @param {number} value */ value => `${value.toFixed()} g`,
                   font: {
                     size: window.innerWidth < 640 ? 10 : 12,
                   },
@@ -310,6 +337,10 @@ function getChartData(shot) {
   };
 }
 
+/**
+ * @param {object} props
+ * @param {Shot} props.shot
+ */
 export function HistoryChart({ shot }) {
   const chartData = getChartData(shot);
 

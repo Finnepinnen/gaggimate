@@ -7,16 +7,26 @@ import {
   formatTrendBucketTickLabel,
   formatTrendBucketTooltipTitle,
 } from '../utils/trendBuckets';
-import {
-  ANALYZER_COMPACT_CONTROL_HEIGHT_CLASS,
-  getAnalyzerSurfaceTriggerClasses,
-} from '../../ShotAnalyzer/components/analyzerControlStyles';
+import { AnalyzerControl } from '../../ShotAnalyzer/components/AnalyzerControl.jsx';
 import { CardTitle } from '../../../components/CardTitle';
 import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react/macro';
 
+/**
+ * @typedef {import('../types').TrendEntry} TrendEntry
+ * @typedef {import('../types').TrendMetricKey} TrendMetricKey
+ * @typedef {import('../types').TrendGranularity} TrendGranularity
+ * @typedef {{
+ *   key: TrendMetricKey,
+ *   label: import('@lingui/core').MessageDescriptor,
+ *   colorVar: string,
+ *   color: string,
+ * }} TrendMetricDef
+ */
+
 // Chart-level trend aggregation stays local to this component so users can switch
 // metric and bucket size without rerunning StatisticsService.
+/** @type {TrendMetricDef[]} */
 const TREND_METRICS = [
   {
     key: 'duration',
@@ -63,6 +73,7 @@ const TREND_METRICS = [
   },
 ];
 
+/** @type {{ value: TrendGranularity, label: import('@lingui/core').MessageDescriptor }[]} */
 const GRANULARITY_OPTIONS = [
   { value: 'day', label: msg({ message: 'Day', context: 'time bucket' }) },
   { value: 'week', label: msg({ message: 'Week', context: 'time bucket' }) },
@@ -70,6 +81,7 @@ const GRANULARITY_OPTIONS = [
   { value: 'year', label: msg({ message: 'Year', context: 'time bucket' }) },
 ];
 
+/** @param {TrendGranularity} granularity */
 function getGranularityLabel(granularity) {
   return (
     GRANULARITY_OPTIONS.find(option => option.value === granularity)?.label ||
@@ -77,6 +89,7 @@ function getGranularityLabel(granularity) {
   );
 }
 
+/** @param {number} containerWidth - px */
 function getAdaptiveMaxTicks(containerWidth) {
   if (!Number.isFinite(containerWidth) || containerWidth <= 0) return 8;
   if (containerWidth < 360) return 4;
@@ -85,6 +98,11 @@ function getAdaptiveMaxTicks(containerWidth) {
   return 10;
 }
 
+/**
+ * @param {string | undefined} colorVar - CSS custom property name
+ * @param {string} fallback
+ * @returns {string}
+ */
 function resolveCssColorVar(colorVar, fallback) {
   if (!colorVar || globalThis.window === undefined) return fallback;
   try {
@@ -98,10 +116,15 @@ function resolveCssColorVar(colorVar, fallback) {
   }
 }
 
+/** @param {TrendMetricDef | undefined} metricDef */
 function resolveMetricColor(metricDef) {
   return resolveCssColorVar(metricDef?.colorVar, metricDef?.color || '#64748b');
 }
 
+/**
+ * @param {string} color
+ * @param {string} alphaHex - Two hex digits
+ */
 function withAlpha(color, alphaHex) {
   if (typeof color !== 'string') return color;
   const trimmed = color.trim();
@@ -113,12 +136,22 @@ function withAlpha(color, alphaHex) {
   return trimmed;
 }
 
+/**
+ * @param {unknown} value
+ * @param {TrendMetricKey} metricKey
+ */
 function formatTrendMetricValue(value, metricKey) {
   const numericValue = Number(value);
   if (!Number.isFinite(numericValue)) return '';
   return metricKey === 'shotCount' ? String(Math.round(numericValue)) : numericValue.toFixed(1);
 }
 
+/**
+ * @param {number | string} value
+ * @param {number} index
+ * @param {import('chart.js').Tick[]} ticks
+ * @param {TrendMetricKey} metricKey
+ */
 function formatUniqueTrendMetricTick(value, index, ticks, metricKey) {
   const label = formatTrendMetricValue(value, metricKey);
   if (!label || index === 0 || !Array.isArray(ticks)) return label;
@@ -132,13 +165,18 @@ const CHART_TICK_FONT = { family: CHART_FONT_FAMILY, size: 10, weight: 400 };
 const CHART_TOOLTIP_TITLE_FONT = { family: CHART_FONT_FAMILY, size: 11, weight: 700 };
 const CHART_TOOLTIP_BODY_FONT = { family: CHART_FONT_FAMILY, size: 10, weight: 400 };
 
+/** @param {{ trends: TrendEntry[] }} props */
 export function TrendChart({ trends }) {
   const { t, i18n } = useLingui();
-  const containerRef = useRef(null);
-  const canvasRef = useRef(null);
-  const chartInstance = useRef(null);
-  const [selectedMetric, setSelectedMetric] = useState('shotCount');
-  const [selectedGranularity, setSelectedGranularity] = useState('day');
+  const containerRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const canvasRef = useRef(/** @type {HTMLCanvasElement | null} */ (null));
+  const chartInstance = useRef(
+    /** @type {Chart<'line', import('../types').TrendBucketPoint[]> | null} */ (null),
+  );
+  const [selectedMetric, setSelectedMetric] = useState(/** @type {TrendMetricKey} */ ('shotCount'));
+  const [selectedGranularity, setSelectedGranularity] = useState(
+    /** @type {TrendGranularity} */ ('day'),
+  );
   const [containerWidth, setContainerWidth] = useState(0);
 
   useEffect(() => {
@@ -213,7 +251,9 @@ export function TrendChart({ trends }) {
               bodyFont: CHART_TOOLTIP_BODY_FONT,
               callbacks: {
                 title: ctx => {
-                  const raw = ctx[0]?.raw;
+                  const raw = /** @type {import('../types').TrendBucketPoint | undefined} */ (
+                    ctx[0]?.raw
+                  );
                   return formatTrendBucketTooltipTitle(raw, selectedGranularity);
                 },
                 label: ctx =>
@@ -276,15 +316,17 @@ export function TrendChart({ trends }) {
           <Trans>Trend Chart</Trans>
         </CardTitle>
         <div className='ml-auto flex items-center gap-1.5'>
-          <div
-            className={`relative flex shrink-0 ${ANALYZER_COMPACT_CONTROL_HEIGHT_CLASS} items-center`}
-          >
-            <select
-              className={getAnalyzerSurfaceTriggerClasses({
-                className: `${ANALYZER_COMPACT_CONTROL_HEIGHT_CLASS} w-[8.75rem] max-w-[8.75rem] appearance-none rounded-md border-0 bg-transparent px-2.5 pr-6 text-xs font-medium shadow-none outline-none`,
-              })}
+          <div className='relative flex h-5 min-h-0 shrink-0 items-center'>
+            <AnalyzerControl
+              as='select'
+              variant='surface'
+              size='compact'
+              className='w-[8.75rem] max-w-[8.75rem] appearance-none rounded-md border-0 bg-transparent px-2.5 pr-6 text-xs font-medium shadow-none outline-none'
               value={selectedMetric}
-              onChange={e => setSelectedMetric(e.currentTarget.value)}
+              onChange={
+                /** @param {import('preact').JSX.TargetedEvent<HTMLSelectElement, Event>} e */
+                e => setSelectedMetric(/** @type {TrendMetricKey} */ (e.currentTarget.value))
+              }
               aria-label={t`Trend metric`}
               title={t`Trend metric`}
             >
@@ -293,20 +335,22 @@ export function TrendChart({ trends }) {
                   {i18n._(m.label)}
                 </option>
               ))}
-            </select>
+            </AnalyzerControl>
             <span className='text-base-content/60 pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[10px]'>
               <FontAwesomeIcon icon={faChevronDown} />
             </span>
           </div>
-          <div
-            className={`relative flex shrink-0 ${ANALYZER_COMPACT_CONTROL_HEIGHT_CLASS} items-center`}
-          >
-            <select
-              className={getAnalyzerSurfaceTriggerClasses({
-                className: `${ANALYZER_COMPACT_CONTROL_HEIGHT_CLASS} w-[5rem] max-w-[5rem] appearance-none rounded-md border-0 bg-transparent px-2.5 pr-6 text-xs font-medium shadow-none outline-none`,
-              })}
+          <div className='relative flex h-5 min-h-0 shrink-0 items-center'>
+            <AnalyzerControl
+              as='select'
+              variant='surface'
+              size='compact'
+              className='w-[5rem] max-w-[5rem] appearance-none rounded-md border-0 bg-transparent px-2.5 pr-6 text-xs font-medium shadow-none outline-none'
               value={selectedGranularity}
-              onChange={e => setSelectedGranularity(e.currentTarget.value)}
+              onChange={
+                /** @param {import('preact').JSX.TargetedEvent<HTMLSelectElement, Event>} e */
+                e => setSelectedGranularity(/** @type {TrendGranularity} */ (e.currentTarget.value))
+              }
               aria-label={t`Trend bucket size`}
               title={t`Trend bucket size`}
             >
@@ -315,7 +359,7 @@ export function TrendChart({ trends }) {
                   {i18n._(option.label)}
                 </option>
               ))}
-            </select>
+            </AnalyzerControl>
             <span className='text-base-content/60 pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[10px]'>
               <FontAwesomeIcon icon={faChevronDown} />
             </span>

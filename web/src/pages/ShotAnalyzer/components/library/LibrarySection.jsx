@@ -12,13 +12,18 @@ import { faThumbtack } from '@fortawesome/free-solid-svg-icons/faThumbtack';
 import { faTrashCan } from '@fortawesome/free-solid-svg-icons/faTrashCan';
 import { faCircleNotch } from '@fortawesome/free-solid-svg-icons/faCircleNotch';
 import { getShotIdentityKey } from '../../utils/analyzerUtils';
-import {
-  getAnalyzerIconButtonClasses,
-  getAnalyzerSurfaceTriggerClasses,
-} from '../analyzerControlStyles';
+import { AnalyzerControl } from '../AnalyzerControl.jsx';
+import { cx } from '../../../../utils/cx.js';
 import { SourceMarker } from '../SourceMarker';
 import './LibrarySection.css';
 
+/** @typedef {import('../types').LibraryItem} LibraryItem */
+/** @typedef {import('../types').LibraryUiSourceFilter} LibraryUiSourceFilter */
+
+/**
+ * @param {LibraryItem} item
+ * @param {boolean} isShot
+ */
 function getLibraryItemKey(item, isShot) {
   if (!item) return 'unknown-item';
 
@@ -44,17 +49,20 @@ function getLibraryItemKey(item, isShot) {
   )}`;
 }
 
+/** @type {{ value: LibraryUiSourceFilter, label: string }[]} */
 const SOURCE_FILTER_OPTIONS = [
   { value: 'all', label: 'ALL' },
   { value: 'gaggimate', label: 'GM' },
   { value: 'browser', label: 'WEB' },
 ];
 
+/** @param {Element} target */
 function closeParentDetails(target) {
   const details = target.closest('details');
   if (details) details.open = false;
 }
 
+/** @param {LibraryUiSourceFilter} value */
 function renderLibrarySourceOptionContent(value) {
   if (value === 'gaggimate') {
     return (
@@ -81,6 +89,7 @@ function renderLibrarySourceOptionContent(value) {
   );
 }
 
+/** @param {LibraryUiSourceFilter} value */
 function renderLibrarySourceHeaderContent(value) {
   if (value === 'gaggimate' || value === 'browser') {
     return <SourceMarker source={value} variant='compact' />;
@@ -94,12 +103,26 @@ function renderLibrarySourceHeaderContent(value) {
   );
 }
 
+/**
+ * @param {boolean} isShot
+ * @param {boolean} showCompareSelection
+ */
 function getLibraryColumnLayout(isShot, showCompareSelection) {
   return {
     columnCount: (showCompareSelection ? 1 : 0) + 1 + 1 + 1 + (isShot ? 2 : 0) + 1,
   };
 }
 
+/**
+ * @param {object} options
+ * @param {LibraryItem} options.item
+ * @param {boolean} options.isShot
+ * @param {Set<string>} options.compareSelectionKeys
+ * @param {string[]} options.comparePendingKeys
+ * @param {string} options.compareReferenceKey
+ * @param {((item: LibraryItem) => unknown) | undefined} options.getCompareStatus
+ * @param {((item: LibraryItem) => number | null | undefined) | undefined} options.getCompareBadgeNumber
+ */
 function getLibraryCompareState({
   item,
   isShot,
@@ -127,19 +150,19 @@ function getLibraryCompareState({
 /**
  * @param {object} props
  * @param {string} props.title
- * @param {any[]} props.items
+ * @param {LibraryItem[]} props.items
  * @param {boolean} props.isShot
- * @param {number | string} props.sectionHeight
+ * @param {number | string | undefined} props.sectionHeight
  * @param {string} props.searchValue
  * @param {string} props.sortKey
  * @param {string} props.sortOrder
- * @param {string} props.sourceFilter
+ * @param {LibraryUiSourceFilter} props.sourceFilter
  * @param {(value: string) => void} props.onSearchChange
- * @param {(key: string, order?: string) => void} props.onSortChange
- * @param {(value: string) => void} props.onSourceFilterChange
- * @param {(item: any) => void} props.onLoad
- * @param {(item: any) => void} props.onExport
- * @param {(item: any) => void} props.onDelete
+ * @param {(key: string, order?: import('../types').LibrarySortOrder) => void} props.onSortChange
+ * @param {(value: LibraryUiSourceFilter) => void} props.onSourceFilterChange
+ * @param {(item: LibraryItem) => void} props.onLoad
+ * @param {(item: LibraryItem) => void} props.onExport
+ * @param {(item: LibraryItem) => void} props.onDelete
  * @param {() => void} props.onExportAll
  * @param {() => void} props.onDeleteAll
  * @param {number} [props.compareSelectedCount] Currently unused.
@@ -147,15 +170,15 @@ function getLibraryCompareState({
  * @param {string[]} [props.comparePendingKeys]
  * @param {string} [props.compareReferenceKey]
  * @param {boolean} [props.compareMode]
- * @param {(item: any, checked: boolean) => void} [props.onCompareToggle]
- * @param {(item: any) => void} [props.onShowStats]
- * @param {(item: any) => any} props.getMatchStatus
- * @param {(item: any) => any} [props.getCompareStatus]
- * @param {(item: any) => number | null | undefined} [props.getCompareBadgeNumber]
- * @param {(item: any) => any} [props.getActiveStatus]
- * @param {(item: any) => any} [props.getPinStatus]
- * @param {(item: any) => string} [props.getPinDisabledReason]
- * @param {(item: any) => void} [props.onPinToggle]
+ * @param {import('../types').OnCompareShotToggle} [props.onCompareToggle]
+ * @param {(item: LibraryItem) => void} [props.onShowStats]
+ * @param {(item: LibraryItem) => unknown} props.getMatchStatus
+ * @param {(item: LibraryItem) => unknown} [props.getCompareStatus]
+ * @param {(item: LibraryItem) => number | null | undefined} [props.getCompareBadgeNumber]
+ * @param {(item: LibraryItem) => unknown} [props.getActiveStatus]
+ * @param {(item: LibraryItem) => unknown} [props.getPinStatus]
+ * @param {(item: LibraryItem) => string} [props.getPinDisabledReason]
+ * @param {(item: LibraryItem) => void} [props.onPinToggle]
  * @param {boolean} [props.pinnedFirstEnabled]
  * @param {() => void} [props.onPinnedFirstToggle]
  * @param {boolean} props.isLoading
@@ -195,6 +218,7 @@ export function LibrarySection({
   isLoading,
 }) {
   const { t } = useLingui();
+  /** @param {string} k */
   const getSortIcon = k => {
     const isActive = sortKey === k;
     return (
@@ -258,7 +282,7 @@ export function LibrarySection({
             value={`${sortKey}-${sortOrder}`}
             onChange={e => {
               const [k, o] = e.currentTarget.value.split('-');
-              onSortChange(k, o);
+              onSortChange(k, /** @type {import('../types').LibrarySortOrder} */ (o));
             }}
             className='library-toolbar-field bg-base-100/50 border-base-content/10 hover:bg-base-content/5 hover:border-base-content/20 focus:border-primary h-9 max-w-[8.5rem] shrink-0 cursor-pointer rounded-md border px-2 text-xs transition-colors outline-none sm:max-w-none'
           >
@@ -289,50 +313,48 @@ export function LibrarySection({
             <tr>
               <th colSpan={columnCount} className='library-table-header-cell relative z-20 p-0'>
                 <div
-                  className={`library-row-grid library-row-grid--${isShot ? 'shot' : 'profile'} library-row-grid--header min-h-9 px-3`}
+                  className={`library-row-grid ${isShot ? 'library-row-grid--shot' : 'library-row-grid--profile'} library-row-grid--header min-h-9 px-3`}
                 >
-                  <button
+                  <AnalyzerControl
                     type='button'
-                    className={getAnalyzerSurfaceTriggerClasses({
-                      className:
-                        'library-row-grid__name flex h-full w-full min-w-0 cursor-pointer items-center gap-1 p-0 text-left text-xs font-medium tracking-normal',
-                    })}
+                    variant='surface'
+                    className='library-row-grid__name flex h-full w-full min-w-0 cursor-pointer items-center gap-1 p-0 text-left text-xs font-medium tracking-normal'
                     onClick={() => onSortChange('name')}
                   >
                     <span className='truncate'>
                       <Trans>Name</Trans>
                     </span>
                     {getSortIcon('name')}
-                  </button>
+                  </AnalyzerControl>
                   {onPinnedFirstToggle ? (
-                    <button
+                    <AnalyzerControl
                       type='button'
-                      className={getAnalyzerIconButtonClasses({
-                        tone: pinnedFirstEnabled ? 'primary' : 'subtle',
-                        className: `library-row-grid__pin h-full min-h-full w-5 shrink-0 justify-self-end rounded-none bg-transparent p-0 text-xs ${
-                          pinnedFirstEnabled ? 'text-primary hover:text-primary' : ''
-                        }`,
-                      })}
-                      onClick={event => {
-                        event.stopPropagation();
-                        // Header pinning is a view-level promotion toggle; it
-                        // does not mutate the pinned items themselves.
-                        onPinnedFirstToggle();
-                      }}
+                      tone={pinnedFirstEnabled ? 'primary' : 'subtle'}
+                      className={cx(
+                        'library-row-grid__pin h-full min-h-full w-5 shrink-0 justify-self-end rounded-none bg-transparent p-0 text-xs',
+                        pinnedFirstEnabled && 'text-primary hover:text-primary',
+                      )}
+                      onClick={
+                        /** @param {Event} event */ event => {
+                          event.stopPropagation();
+                          // Header pinning is a view-level promotion toggle; it
+                          // does not mutate the pinned items themselves.
+                          onPinnedFirstToggle();
+                        }
+                      }
                       aria-label={pinnedFirstLabel}
                       title={pinnedFirstLabel}
                     >
                       <FontAwesomeIcon icon={faThumbtack} />
-                    </button>
+                    </AnalyzerControl>
                   ) : (
                     <span className='library-row-grid__pin' aria-hidden='true' />
                   )}
                   <details className='library-row-grid__source dropdown block h-full w-full'>
-                    <summary
-                      className={getAnalyzerSurfaceTriggerClasses({
-                        className:
-                          'flex h-full w-full cursor-pointer list-none items-center justify-center gap-1 px-1 py-2 text-xs font-medium outline-none [&::-webkit-details-marker]:hidden',
-                      })}
+                    <AnalyzerControl
+                      as='summary'
+                      variant='surface'
+                      className='flex h-full w-full cursor-pointer list-none items-center justify-center gap-1 px-1 py-2 text-xs font-medium outline-none [&::-webkit-details-marker]:hidden'
                       aria-label={t`Filter library source`}
                       title={t`Filter library source`}
                     >
@@ -341,46 +363,46 @@ export function LibrarySection({
                         icon={faChevronDown}
                         className='library-source-filter-chevron text-[10px] opacity-60'
                       />
-                    </summary>
+                    </AnalyzerControl>
 
                     <div className='dropdown-content app-card-surface z-[65] mt-2 w-28 rounded-xl p-1.5'>
                       <div className='grid gap-1'>
                         {SOURCE_FILTER_OPTIONS.map(option => (
-                          <button
+                          <AnalyzerControl
                             key={option.value}
                             type='button'
-                            className={getAnalyzerSurfaceTriggerClasses({
-                              className: `flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-[10px] font-bold ${
-                                sourceFilter === option.value
-                                  ? 'bg-base-content/6 text-base-content'
-                                  : 'text-base-content/70'
-                              }`,
-                            })}
-                            onClick={event => {
-                              onSourceFilterChange(option.value);
-                              closeParentDetails(event.currentTarget);
-                            }}
+                            variant='surface'
+                            className={cx(
+                              'flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-[10px] font-bold',
+                              sourceFilter === option.value
+                                ? 'bg-base-content/6 text-base-content'
+                                : 'text-base-content/70',
+                            )}
+                            onClick={
+                              /** @param {import('preact').JSX.TargetedMouseEvent<HTMLElement>} event */ event => {
+                                onSourceFilterChange(option.value);
+                                closeParentDetails(event.currentTarget);
+                              }
+                            }
                           >
                             {renderLibrarySourceOptionContent(option.value)}
-                          </button>
+                          </AnalyzerControl>
                         ))}
                       </div>
                     </div>
                   </details>
                   {isShot ? (
-                    <button
+                    <AnalyzerControl
                       type='button'
-                      className={getAnalyzerSurfaceTriggerClasses({
-                        className:
-                          'library-row-grid__date flex h-full w-full cursor-pointer items-center gap-1 p-0 text-left text-xs font-medium tracking-normal',
-                      })}
+                      variant='surface'
+                      className='library-row-grid__date flex h-full w-full cursor-pointer items-center gap-1 p-0 text-left text-xs font-medium tracking-normal'
                       onClick={() => onSortChange('shotDate')}
                     >
                       <span>
                         <Trans>Date</Trans>
                       </span>
                       {getSortIcon('shotDate')}
-                    </button>
+                    </AnalyzerControl>
                   ) : null}
                   {isShot ? (
                     <span className='library-row-grid__profile text-base-content/70 text-left text-xs font-medium tracking-normal'>

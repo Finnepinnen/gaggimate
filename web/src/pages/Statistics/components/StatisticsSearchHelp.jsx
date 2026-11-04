@@ -2,15 +2,11 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleQuestion } from '@fortawesome/free-solid-svg-icons/faCircleQuestion';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { createPortal } from 'preact/compat';
-import { getAnalyzerIconButtonClasses } from '../../ShotAnalyzer/components/analyzerControlStyles';
-import {
-  STATISTICS_DROPDOWN_PANEL_SURFACE_CLASS,
-  STATISTICS_DROPDOWN_PANEL_SURFACE_STYLE,
-} from './statisticsDropdownSurface';
+import { AnalyzerControl } from '../../ShotAnalyzer/components/AnalyzerControl.jsx';
+import { DropdownPanel } from './statisticsSurfaces.jsx';
 import './StatisticsSearchHelp.css';
 import { Trans, useLingui } from '@lingui/react/macro';
 
-const STATISTICS_SEARCH_HELP_PANEL_CLASS = `dropdown-content mt-2 w-[min(92vw,34rem)] p-3 ${STATISTICS_DROPDOWN_PANEL_SURFACE_CLASS}`;
 const STATISTICS_SEARCH_HELP_FLOATING_ATTR = 'data-statistics-toolbar-floating-panel';
 
 function StatisticsSearchHelpContent() {
@@ -84,17 +80,20 @@ function StatisticsSearchHelpContent() {
 
 export function StatisticsSearchHelp() {
   const { t } = useLingui();
-  const detailsRef = useRef(null);
+  const detailsRef = useRef(/** @type {HTMLDetailsElement | null} */ (null));
   const [isOpen, setIsOpen] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(
     () => globalThis.window?.matchMedia?.('(max-width: 639px)').matches || false,
   );
-  const [mobilePortalTarget, setMobilePortalTarget] = useState(null);
+  const [mobilePortalTarget, setMobilePortalTarget] = useState(
+    /** @type {Element | null} */ (null),
+  );
 
   useEffect(() => {
     if (globalThis.window?.matchMedia === undefined) return undefined;
 
     const mediaQuery = globalThis.window.matchMedia('(max-width: 639px)');
+    /** @param {MediaQueryListEvent} event */
     const handleChange = event => setIsMobileViewport(event.matches);
     setIsMobileViewport(mediaQuery.matches);
 
@@ -130,13 +129,11 @@ export function StatisticsSearchHelp() {
   }, []);
 
   const panelStyle = {
-    ...STATISTICS_DROPDOWN_PANEL_SURFACE_STYLE,
     maxHeight: 'min(80vh, 32rem)',
     overflowY: 'auto',
     overscrollBehavior: 'contain',
   };
   const mobilePanelStyle = {
-    ...STATISTICS_DROPDOWN_PANEL_SURFACE_STYLE,
     maxHeight: 'min(70vh, 28rem)',
     overflowY: 'auto',
     overscrollBehavior: 'contain',
@@ -145,28 +142,26 @@ export function StatisticsSearchHelp() {
 
   return (
     <details ref={detailsRef} className='statistics-search-help dropdown dropdown-end'>
-      <summary
-        className={`${getAnalyzerIconButtonClasses({
-          className:
-            'text-base-content/60 hover:text-base-content flex h-9 min-h-0 w-9 list-none items-center justify-center bg-transparent px-0',
-        })} [&::-webkit-details-marker]:hidden`}
+      <AnalyzerControl
+        as='summary'
+        className='text-base-content/60 hover:text-base-content flex h-9 min-h-0 w-9 list-none items-center justify-center bg-transparent px-0 [&::-webkit-details-marker]:hidden'
         aria-label={t`Search help`}
         title={t`Search help`}
       >
         <FontAwesomeIcon icon={faCircleQuestion} className='text-sm' />
-      </summary>
-      <div className={STATISTICS_SEARCH_HELP_PANEL_CLASS} style={panelStyle}>
+      </AnalyzerControl>
+      <DropdownPanel className='dropdown-content mt-2 w-[min(92vw,34rem)] p-3' style={panelStyle}>
         <StatisticsSearchHelpContent />
-      </div>
+      </DropdownPanel>
       {isOpen && isMobileViewport && mobilePortalTarget
         ? createPortal(
-            <div
+            <DropdownPanel
               {...{ [STATISTICS_SEARCH_HELP_FLOATING_ATTR]: true }}
-              className={`statistics-search-help-mobile-panel mx-1.5 mt-1 p-3 sm:mx-2 ${STATISTICS_DROPDOWN_PANEL_SURFACE_CLASS}`}
+              className='statistics-search-help-mobile-panel mx-1.5 mt-1 p-3 sm:mx-2'
               style={mobilePanelStyle}
             >
               <StatisticsSearchHelpContent />
-            </div>,
+            </DropdownPanel>,
             mobilePortalTarget,
           )
         : null}

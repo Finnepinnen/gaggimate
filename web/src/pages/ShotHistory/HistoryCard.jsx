@@ -21,15 +21,30 @@ import { ApiServiceContext } from '../../services/ApiService.js';
 import { Tooltip } from '../../components/Tooltip.jsx';
 import { Trans, useLingui } from '@lingui/react/macro';
 
+/** @typedef {import('../../types').Shot} Shot */
+/** @typedef {import('../../types').ShotNotes} ShotNotes */
+
+/**
+ * @template {number | null | undefined} T
+ * @param {T} v
+ * @returns {T}
+ */
 function round2(v) {
   if (v == null || Number.isNaN(v)) return v;
-  return Math.round((v + Number.EPSILON) * 100) / 100;
+  return /** @type {T} */ (Math.round((v + Number.EPSILON) * 100) / 100);
 }
 
+/**
+ * @param {object} props
+ * @param {Shot} props.shot
+ * @param {(id: string) => void} props.onDelete
+ * @param {(id: string) => void} [props.onLoad]
+ * @param {() => void} [props.onNotesChanged]
+ */
 export default function HistoryCard({ shot, onDelete, onLoad, onNotesChanged }) {
   const { t } = useLingui();
   const apiService = useContext(ApiServiceContext);
-  const [shotNotes, setShotNotes] = useState(shot.notes || null);
+  const [shotNotes, setShotNotes] = useState(/** @type {ShotNotes | null} */ (shot.notes || null));
   const [expanded, setExpanded] = useState(false);
   const { armed: confirmDelete, armOrRun: confirmOrDelete } = useConfirmAction(4000);
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -65,11 +80,12 @@ export default function HistoryCard({ shot, onDelete, onLoad, onNotesChanged }) 
     downloadJson(exportData, `shot-${shot.id}.json`);
   }, [shot, shotNotes]);
 
-  const handleNotesLoaded = useCallback(notes => {
+  const handleNotesLoaded = useCallback((/** @type {ShotNotes} */ notes) => {
     setShotNotes(notes);
   }, []);
 
   const handleNotesUpdate = useCallback(
+    /** @param {ShotNotes} notes */
     notes => {
       setShotNotes(notes);
       // Notify parent that notes changed (so it can reload the index)
@@ -87,6 +103,7 @@ export default function HistoryCard({ shot, onDelete, onLoad, onNotesChanged }) 
   }
 
   const handleUpload = useCallback(
+    /** @type {(username: string, password: string, remember: boolean) => Promise<void>} */
     async (username, password) => {
       setIsUploading(true);
       try {
@@ -124,7 +141,7 @@ export default function HistoryCard({ shot, onDelete, onLoad, onNotesChanged }) 
         alert(t`Shot uploaded successfully to visualizer.coffee!`);
       } catch (error) {
         console.error('Upload failed:', error);
-        const errorMessage = error.message;
+        const errorMessage = /** @type {Error} */ (error).message;
         alert(t`Upload failed: ${errorMessage}`);
         throw error; // Re-throw to prevent modal from closing
       } finally {
@@ -152,10 +169,10 @@ export default function HistoryCard({ shot, onDelete, onLoad, onNotesChanged }) 
             <FontAwesomeIcon icon={expanded ? faMinus : faPlus} className='h-3 w-3' />
           </button>
 
-          <div className='min-w-0 flex-grow'>
+          <div className='min-w-0 grow'>
             {/* Header Row */}
             <div className='mb-1 flex flex-row items-start justify-between gap-3'>
-              <div className='min-w-0 flex-grow'>
+              <div className='min-w-0 grow'>
                 <h3 className='text-base-content truncate text-base font-semibold'>
                   {profileTitle}
                 </h3>

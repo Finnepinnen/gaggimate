@@ -44,7 +44,15 @@ const DashboardSettings = lazy(() =>
   import('./pages/DashboardSettings/index.jsx').then(m => m.DashboardSettings),
 );
 
+// preact-iso types Router's children as VNodes only, but it flattens them with toChildArray,
+// so conditional routes (`isApp && …`) and JSX comments are fine at runtime.
+const AppRouter =
+  /** @type {(props: { children?: import('preact').ComponentChildren }) => import('preact').VNode} */ (
+    Router
+  );
+
 // Created in boot() so the app knows which machine to connect to first.
+/** @type {ApiService} */
 let apiService;
 const DESKTOP_NAV_COLLAPSED_STORAGE_KEY = 'gaggimate.desktopNavCollapsed';
 
@@ -61,7 +69,9 @@ function readInitialDesktopNavCollapsed() {
   }
 }
 
+/** @param {string} to */
 const RedirectTo = to =>
+  /** @returns {null} */
   function Redirect() {
     const loc = useLocation();
     useEffect(() => {
@@ -109,7 +119,7 @@ export function App() {
               <div className='grid min-h-0 flex-1 grid-cols-1'>
                 <div className='min-h-0'>
                   <ErrorBoundary>
-                    <Router>
+                    <AppRouter>
                       <Route path='/' component={Home} />
                       <Route path='/dashboard-settings' component={DashboardSettings} />
                       <Route path='/profiles' component={ProfileList} />
@@ -130,7 +140,7 @@ export function App() {
                       {/* deep-link route (source & ID) */}
                       <Route path='/analyzer/:source/:id' component={ShotAnalyzer} />
                       <Route default component={NotFound} />
-                    </Router>
+                    </AppRouter>
                   </ErrorBoundary>
                 </div>
               </div>
@@ -162,7 +172,7 @@ async function boot() {
     <I18nProvider i18n={i18n}>
       <App />
     </I18nProvider>,
-    document.getElementById('app'),
+    /** @type {HTMLElement} */ (document.getElementById('app')),
   );
   if (isApp) onAppRendered(apiService);
 }

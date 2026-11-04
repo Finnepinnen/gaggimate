@@ -6,16 +6,34 @@ import { t } from '@lingui/core/macro';
 import { Trans } from '@lingui/react/macro';
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 
+/** @typedef {import('./StatusBar').StatusBarProps} StatusBarProps */
+/** @typedef {import('../analyzerActionBar/AnalyzerActionBar').AnalyzerActionBarProps} AnalyzerActionBarProps */
+
+/**
+ * @param {DragEvent} event
+ * @returns {event is DragEvent & { dataTransfer: DataTransfer }}
+ */
 function hasFileDrag(event) {
   const types = event?.dataTransfer?.types;
   if (!types) return false;
   if (Array.isArray(types)) return types.includes('Files');
-  if (typeof types.contains === 'function') return types.contains('Files');
+  // Legacy DOMStringList in older browsers.
+  const legacyTypes = /** @type {{ contains?: (value: string) => boolean }} */ (
+    /** @type {unknown} */ (types)
+  );
+  if (typeof legacyTypes.contains === 'function') return legacyTypes.contains('Files');
   return false;
 }
 
+/**
+ * @param {object} props
+ * @param {StatusBarProps} props.statusBarProps
+ * @param {AnalyzerActionBarProps} props.actionBarProps
+ * @param {boolean} [props.showActionBar]
+ */
 function AnalyzerPanelSlot({ statusBarProps, actionBarProps, showActionBar = true }) {
   const dragDepthRef = useRef(0);
+  /** @type {import('preact/hooks').MutableRef<number | null | undefined>} */
   const dragResetTimerRef = useRef(null);
   const [isDragActive, setIsDragActive] = useState(false);
   const [isWindowFileDragActive, setIsWindowFileDragActive] = useState(false);
@@ -51,12 +69,14 @@ function AnalyzerPanelSlot({ statusBarProps, actionBarProps, showActionBar = tru
     }
     if (globalThis.window === undefined) return undefined;
 
+    /** @param {DragEvent} event */
     const handleWindowDragEnter = event => {
       if (!hasFileDrag(event)) return;
       setIsWindowFileDragActive(true);
       armDragResetTimer();
     };
 
+    /** @param {DragEvent} event */
     const handleWindowDragOver = event => {
       if (!hasFileDrag(event)) return;
       event.preventDefault();
@@ -65,6 +85,7 @@ function AnalyzerPanelSlot({ statusBarProps, actionBarProps, showActionBar = tru
       armDragResetTimer();
     };
 
+    /** @param {DragEvent} event */
     const handleWindowDragLeave = event => {
       const isOutsideWindow =
         event.clientX <= 0 ||
@@ -74,6 +95,7 @@ function AnalyzerPanelSlot({ statusBarProps, actionBarProps, showActionBar = tru
       if (isOutsideWindow) clearDragState();
     };
 
+    /** @param {DragEvent} event */
     const handleWindowDrop = event => {
       if (!hasFileDrag(event)) return;
       event.preventDefault();
@@ -96,6 +118,7 @@ function AnalyzerPanelSlot({ statusBarProps, actionBarProps, showActionBar = tru
     };
   }, [armDragResetTimer, clearDragResetTimer, clearDragState, isImporting]);
 
+  /** @param {DragEvent} event */
   const handleDragEnter = event => {
     if (isImporting || !hasFileDrag(event)) return;
     event.preventDefault();
@@ -105,6 +128,7 @@ function AnalyzerPanelSlot({ statusBarProps, actionBarProps, showActionBar = tru
     armDragResetTimer();
   };
 
+  /** @param {DragEvent} event */
   const handleDragOver = event => {
     if (isImporting || !hasFileDrag(event)) return;
     event.preventDefault();
@@ -114,6 +138,7 @@ function AnalyzerPanelSlot({ statusBarProps, actionBarProps, showActionBar = tru
     armDragResetTimer();
   };
 
+  /** @param {DragEvent} event */
   const handleDragLeave = event => {
     if (isImporting || !isDragActive) return;
     event.preventDefault();
@@ -122,6 +147,7 @@ function AnalyzerPanelSlot({ statusBarProps, actionBarProps, showActionBar = tru
     if (dragDepthRef.current === 0) setIsDragActive(false);
   };
 
+  /** @param {DragEvent} event */
   const handleDrop = event => {
     if (isImporting || !hasFileDrag(event)) return;
     event.preventDefault();
@@ -158,6 +184,15 @@ function AnalyzerPanelSlot({ statusBarProps, actionBarProps, showActionBar = tru
   );
 }
 
+/**
+ * @param {object} props
+ * @param {boolean} props.collapsed
+ * @param {boolean} props.compareMode
+ * @param {AnalyzerActionBarProps} props.primaryActionBarProps
+ * @param {StatusBarProps} props.primaryStatusBarProps
+ * @param {AnalyzerActionBarProps} props.secondaryActionBarProps
+ * @param {StatusBarProps} props.secondaryStatusBarProps
+ */
 export function LibraryPanelStatusSlots({
   collapsed,
   compareMode,

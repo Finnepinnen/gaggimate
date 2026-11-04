@@ -2,7 +2,29 @@ import { getShotDisplayName, getShotIdentityKey } from '../utils/analyzerUtils';
 import { buildStatisticsProfileHref } from '../../Statistics/utils/statisticsRoute';
 import { buildShotDetailsEntries, getCompareDetailsKey } from './ActiveAnalysisView';
 
-/** Builds the derived chart, compare, details, and statistics navigation state. */
+/** @typedef {import('../types').AnalysisCompareEntry} AnalysisCompareEntry */
+/** @typedef {import('../types').AnalyzerProfile} AnalyzerProfile */
+/** @typedef {import('../types').AnalyzerShot} AnalyzerShot */
+/** @typedef {import('../types').CompareResultEntry} CompareResultEntry */
+/** @typedef {import('../types').CompareShotEntry} CompareShotEntry */
+/** @typedef {import('../types').PendingShotSelection} PendingShotSelection */
+/** @typedef {import('../types').ShotAnalysisResult} ShotAnalysisResult */
+
+/**
+ * Builds the derived chart, compare, details, and statistics navigation state.
+ * @param {object} options
+ * @param {ShotAnalysisResult | null} options.analysisResults
+ * @param {boolean} options.compareMode
+ * @param {string[]} options.comparePendingKeys
+ * @param {CompareResultEntry[]} options.compareResults
+ * @param {CompareShotEntry[]} options.compareShots
+ * @param {AnalyzerProfile | null} options.currentProfile
+ * @param {string} options.currentProfileName
+ * @param {AnalyzerShot | null} options.currentShot
+ * @param {string} options.currentShotName
+ * @param {PendingShotSelection | null} options.pendingCompareSelection
+ * @param {PendingShotSelection | null} options.pendingPrimarySelection
+ */
 export function buildShotAnalyzerViewModel({
   analysisResults,
   compareMode,
@@ -41,6 +63,7 @@ export function buildShotAnalyzerViewModel({
     source: compareSecondaryProfile?.source,
     profileName: compareSecondaryShot?.profileName,
   });
+  /** @type {AnalysisCompareEntry | null} */
   const referenceCompareEntry =
     currentShot && analysisResults
       ? {
@@ -55,6 +78,7 @@ export function buildShotAnalyzerViewModel({
         }
       : null;
   const compareEntryByKey = new Map(compareResults.map(entry => [entry.key, entry.results]));
+  /** @type {AnalysisCompareEntry[]} */
   const compareCollection = referenceCompareEntry
     ? [
         referenceCompareEntry,
@@ -115,9 +139,9 @@ export function buildShotAnalyzerViewModel({
  *   profileName?: string,
  *   preferredDetailSection?: string | null,
  * }} [options.context]
- * @param {any} options.currentProfile
+ * @param {AnalyzerProfile | null} options.currentProfile
  * @param {string} options.currentProfileName
- * @param {any} options.currentShot
+ * @param {AnalyzerShot | null} options.currentShot
  */
 export function persistStatisticsInitialContext({
   context = {},
@@ -131,6 +155,7 @@ export function persistStatisticsInitialContext({
     profileName = currentProfileName,
     preferredDetailSection = null,
   } = context;
+  /** @type {{ profileName: string, shotSource: string, profileSource: string, source: string, preferredDetailSection?: string }} */
   const statsInitialContext = {
     profileName,
     shotSource,

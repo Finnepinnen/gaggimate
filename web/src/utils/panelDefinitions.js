@@ -23,6 +23,22 @@ import { withTranslatedLabel } from './translatedLabel.js';
  *   props            — (ds) => object — props passed to component (inCard is injected by sidebar)
  *   containerClass   — optional CSS classes added to the wrapper div (e.g. flex height constraints)
  */
+
+/** @typedef {import('./metricDefinitions.js').DashboardState} DashboardState */
+/** @typedef {import('./metricDefinitions.js').MetricSource} MetricSource */
+/**
+ * @typedef {object} PanelDefinition
+ * @property {string} id
+ * @property {import('@lingui/core').MessageDescriptor} labelMsg
+ * @property {boolean} required
+ * @property {boolean} [supportsCompact]
+ * @property {(ds: MetricSource) => boolean} available
+ * @property {(status: import('../types').MachineStatus) => boolean} [availableInSettings]
+ * @property {import('preact').ComponentType<any>} [component] Props vary per card; `props(ds)` supplies them.
+ * @property {(ds: DashboardState) => Record<string, unknown>} [props]
+ * @property {string} [containerClass]
+ */
+
 export const SPACER_ID = '__spacer__';
 
 /**
@@ -31,14 +47,16 @@ export const SPACER_ID = '__spacer__';
  * top-packed group and a bottom-packed group. Deliberately has no
  * component/props/containerClass since it's never rendered as a real panel.
  */
-export const SPACER_DEFINITION = withTranslatedLabel({
-  id: SPACER_ID,
-  labelMsg: msg`Flexible Space`,
-  required: false,
-  available: () => true,
-});
+export const SPACER_DEFINITION = withTranslatedLabel(
+  /** @type {PanelDefinition} */ ({
+    id: SPACER_ID,
+    labelMsg: msg`Flexible Space`,
+    required: false,
+    available: () => true,
+  }),
+);
 
-export const PANEL_DEFINITIONS = [
+export const PANEL_DEFINITIONS = /** @type {PanelDefinition[]} */ ([
   {
     id: 'mode',
     labelMsg: msg`Mode Selector`,
@@ -136,4 +154,4 @@ export const PANEL_DEFINITIONS = [
       volumetricAvailable: ds.volumetricAvailable,
     }),
   },
-].map(withTranslatedLabel);
+]).map(withTranslatedLabel);

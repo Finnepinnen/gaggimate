@@ -2,6 +2,23 @@ import { useRef, useState } from 'preact/hooks';
 import { useLingui } from '@lingui/react/macro';
 import { formatMetricValue } from '../../utils/analyzerUtils';
 
+/**
+ * @typedef {object} ChartMetricRow
+ * @property {string} [key]
+ * @property {string} label
+ * @property {number | string | null | undefined} value
+ * @property {number} [digits]
+ * @property {string} [unit]
+ */
+
+/** @typedef {{ key: string }} MetricPage */
+
+/**
+ * @param {MetricPage[]} pages
+ * @param {string} activePageKey
+ * @param {number} direction
+ * @returns {string}
+ */
 function getNextMetricPageKey(pages, activePageKey, direction) {
   if (!Array.isArray(pages) || pages.length === 0) return activePageKey;
   const activeIndex = Math.max(
@@ -12,6 +29,9 @@ function getNextMetricPageKey(pages, activePageKey, direction) {
   return pages[nextIndex]?.key || activePageKey;
 }
 
+/**
+ * @param {{ className?: string, row: ChartMetricRow }} props
+ */
 export function ChartMetricValue({ className = '', row }) {
   return (
     <div className={['shot-chart-value-metric', className].filter(Boolean).join(' ')}>
@@ -26,10 +46,21 @@ export function ChartMetricValue({ className = '', row }) {
   );
 }
 
+/**
+ * @param {{ row: ChartMetricRow }} props
+ */
 export function MobileMetricValue({ row }) {
   return <ChartMetricValue className='shot-chart-compare-mobile-metric' row={row} />;
 }
 
+/**
+ * @param {object} props
+ * @param {string | null} [props.ariaLabel]
+ * @param {string} [props.className]
+ * @param {string} [props.entryClassName]
+ * @param {{ key?: string | number | null, rows: ChartMetricRow[] }[]} props.entries
+ * @param {import('preact').ComponentChildren} [props.footer]
+ */
 export function MobileMetricGrid({
   ariaLabel = null,
   className = '',
@@ -66,6 +97,15 @@ export function MobileMetricGrid({
   );
 }
 
+/**
+ * @template {MetricPage} P
+ * @param {object} props
+ * @param {string} props.activePageKey
+ * @param {string} [props.className]
+ * @param {(pageKey: string) => void} props.onPageChange
+ * @param {P[]} props.pages
+ * @param {(page: P) => import('preact').ComponentChildren} props.renderPage
+ */
 export function MobileMetricPager({
   activePageKey,
   className = '',
@@ -74,8 +114,8 @@ export function MobileMetricPager({
   renderPage,
 }) {
   const { t } = useLingui();
-  const pointerStartXRef = useRef(null);
-  const pointerStartYRef = useRef(null);
+  const pointerStartXRef = useRef(/** @type {number | null} */ (null));
+  const pointerStartYRef = useRef(/** @type {number | null} */ (null));
   const [dragOffset, setDragOffset] = useState(0);
   const activeIndex = Math.max(
     0,
@@ -89,13 +129,15 @@ export function MobileMetricPager({
     setDragOffset(0);
   };
 
+  /** @param {import('preact').JSX.TargetedPointerEvent<HTMLDivElement>} event */
   const handlePointerMove = event => {
     if (pointerStartXRef.current === null) return;
     if (event.pointerType === 'mouse' && event.buttons !== 1) return;
 
     const width = event.currentTarget.getBoundingClientRect().width;
     const deltaX = event.clientX - pointerStartXRef.current;
-    const deltaY = event.clientY - pointerStartYRef.current;
+    // Set alongside pointerStartXRef, which was just checked.
+    const deltaY = event.clientY - /** @type {number} */ (pointerStartYRef.current);
     // Let vertical page scrolling win once the gesture is clearly not a horizontal page swipe.
     if (Math.abs(deltaY) > Math.abs(deltaX) * 1.15) {
       setDragOffset(0);
@@ -110,10 +152,12 @@ export function MobileMetricPager({
     setDragOffset(Math.max(minOffset, Math.min(maxOffset, deltaX)));
   };
 
+  /** @param {import('preact').JSX.TargetedPointerEvent<HTMLDivElement>} event */
   const handlePointerEnd = event => {
     if (pointerStartXRef.current === null) return;
     const deltaX = event.clientX - pointerStartXRef.current;
-    const deltaY = event.clientY - pointerStartYRef.current;
+    // Set alongside pointerStartXRef, which was just checked.
+    const deltaY = event.clientY - /** @type {number} */ (pointerStartYRef.current);
     resetDrag();
     if (Math.abs(deltaX) < 32 || Math.abs(deltaX) <= Math.abs(deltaY) * 1.2) return;
 

@@ -1,6 +1,9 @@
 import { downloadJson, downloadJsonQueue } from '../../../utils/download';
 import { libraryService } from './LibraryService';
 
+/**
+ * @param {{ item: import('../types').AnalyzerShot | import('../types').AnalyzerProfile, isShot: boolean }[]} items
+ */
 export async function exportLibraryItems(items) {
   const exports = await Promise.all(
     items.map(({ item, isShot }) => libraryService.exportItem(item, isShot)),

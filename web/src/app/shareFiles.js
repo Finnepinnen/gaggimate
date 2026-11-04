@@ -1,6 +1,10 @@
 import { t } from '@lingui/core/macro';
 
 // App web views ignore <a download>, so exports are written to the cache and handed to the share sheet.
+/**
+ * @param {Blob} blob
+ * @returns {Promise<string>}
+ */
 function blobToBase64(blob) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -11,6 +15,10 @@ function blobToBase64(blob) {
 }
 
 // Resolves false when this native build predates the plugins, so the caller can fall back.
+/**
+ * @param {{ blob: Blob, filename: string }[]} files
+ * @returns {Promise<boolean>}
+ */
 export async function shareFiles(files) {
   const { Capacitor } = await import('@capacitor/core');
   if (!Capacitor.isPluginAvailable('Filesystem') || !Capacitor.isPluginAvailable('Share')) {
@@ -36,7 +44,7 @@ export async function shareFiles(files) {
     });
   } catch (err) {
     // Closing the share sheet rejects; that's not an error for the user.
-    if (!/cancel/i.test(err?.message ?? '')) throw err;
+    if (!/cancel/i.test(/** @type {Error | null | undefined} */ (err)?.message ?? '')) throw err;
   }
   return true;
 }

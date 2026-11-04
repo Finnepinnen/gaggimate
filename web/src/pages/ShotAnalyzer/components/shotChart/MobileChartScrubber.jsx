@@ -1,5 +1,25 @@
 import { Trans } from '@lingui/react/macro';
 
+const VARIANT_CLASSES = {
+  single: 'shot-chart-mobile-scrubber--single',
+  compare: 'shot-chart-mobile-scrubber--compare',
+};
+
+/** @typedef {import('preact').JSX.TargetedPointerEvent<HTMLDivElement>} ScrubberPointerEvent */
+
+/**
+ * @param {object} props
+ * @param {boolean} [props.active]
+ * @param {string} props.ariaLabel
+ * @param {{ left: number, right: number }} [props.insets]
+ * @param {number} props.max
+ * @param {number} [props.min]
+ * @param {(event: import('preact').JSX.TargetedEvent<HTMLInputElement, Event>) => void} props.onInput
+ * @param {(event: ScrubberPointerEvent) => void} props.onPointerUpdate
+ * @param {import('preact').Ref<HTMLDivElement>} props.scrubberRef
+ * @param {number} props.value
+ * @param {keyof typeof VARIANT_CLASSES} props.variant
+ */
 export function MobileChartScrubber({
   active = false,
   ariaLabel,
@@ -12,11 +32,13 @@ export function MobileChartScrubber({
   value,
   variant,
 }) {
+  /** @param {ScrubberPointerEvent} event */
   const handlePointerDown = event => {
     event.currentTarget.setPointerCapture?.(event.pointerId);
     onPointerUpdate(event);
   };
 
+  /** @param {ScrubberPointerEvent} event */
   const handlePointerMove = event => {
     if (event.buttons !== 1 && event.pointerType !== 'touch') return;
     onPointerUpdate(event);
@@ -25,7 +47,7 @@ export function MobileChartScrubber({
   return (
     <div
       ref={scrubberRef}
-      className={`shot-chart-mobile-scrubber shot-chart-mobile-scrubber--${variant} ${
+      className={`shot-chart-mobile-scrubber ${VARIANT_CLASSES[variant] ?? ''} ${
         active ? 'shot-chart-mobile-scrubber--active' : ''
       }`}
       style={{
@@ -42,7 +64,8 @@ export function MobileChartScrubber({
       <input
         type='range'
         min={String(min)}
-        max={max}
+        // Preact types input `max` as string only; a number renders identically.
+        max={/** @type {string} */ (/** @type {unknown} */ (max))}
         step='0.1'
         value={value}
         className='shot-chart-mobile-scrubber__range'

@@ -10,6 +10,13 @@ import { faScaleBalanced } from '@fortawesome/free-solid-svg-icons/faScaleBalanc
 import { faTemperatureHalf } from '@fortawesome/free-solid-svg-icons/faTemperatureHalf';
 import { groupColors } from '../../utils/analyzerUtils';
 
+/**
+ * @typedef {object} AnalyzerGroupVisual
+ * @property {import('@fortawesome/fontawesome-svg-core').IconDefinition} icon
+ * @property {string} color
+ */
+
+/** @type {Record<string, import('@fortawesome/fontawesome-svg-core').IconDefinition>} */
 const GROUP_ICON_BY_KEY = {
   basics: faClock,
   pressure: faGauge,
@@ -28,14 +35,23 @@ const GROUP_ICON_BY_KEY = {
 
 const WATER_ICON_COLOR = 'var(--statistics-summary-water)';
 
+/**
+ * @param {string | undefined} groupKey
+ * @returns {AnalyzerGroupVisual}
+ */
 export function getAnalyzerGroupVisual(groupKey) {
-  const colors = groupColors[groupKey] || groupColors.basics;
+  const colors =
+    groupColors[/** @type {keyof typeof groupColors} */ (groupKey)] || groupColors.basics;
   return {
-    icon: GROUP_ICON_BY_KEY[groupKey] || faClock,
+    icon: (groupKey !== undefined && GROUP_ICON_BY_KEY[groupKey]) || faClock,
     color: colors.anchor,
   };
 }
 
+/**
+ * @param {import('../../utils/columns.js').AnalyzerColumn | null | undefined} column
+ * @returns {AnalyzerGroupVisual}
+ */
 export function getAnalyzerColumnVisual(column) {
   if (column?.id === 'duration') {
     return {
@@ -54,6 +70,10 @@ export function getAnalyzerColumnVisual(column) {
   return getAnalyzerGroupVisual(column?.group);
 }
 
+/**
+ * @param {string} groupKey
+ * @returns {AnalyzerGroupVisual[]}
+ */
 export function getAnalyzerGroupCardVisuals(groupKey) {
   if (groupKey === 'basics') {
     return [

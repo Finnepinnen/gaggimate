@@ -1,5 +1,12 @@
 import { useEffect } from 'preact/hooks';
 
+/**
+ * @param {object} options
+ * @param {boolean} options.enabled
+ * @param {boolean} options.hasActiveScrubValue
+ * @param {{ current: Element | null }} options.scrubberRef
+ * @param {() => void} options.onReset
+ */
 export function useMobileScrubberReset({ enabled, hasActiveScrubValue, scrubberRef, onReset }) {
   useEffect(() => {
     if (!enabled || !hasActiveScrubValue) return undefined;
@@ -9,8 +16,9 @@ export function useMobileScrubberReset({ enabled, hasActiveScrubValue, scrubberR
 
     // A mobile scrub acts like a temporary hover state, so outside taps and page
     // scrolling should close it instead of leaving stale chart guides on screen.
+    /** @param {PointerEvent} event */
     const handlePointerDown = event => {
-      if (scrubberRef.current?.contains(event.target)) return;
+      if (scrubberRef.current?.contains(/** @type {Node | null} */ (event.target))) return;
       onReset();
     };
     const handleScroll = () => {

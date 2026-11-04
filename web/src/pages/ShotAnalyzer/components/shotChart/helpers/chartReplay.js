@@ -1,5 +1,15 @@
+/**
+ * @typedef {import('./types').ShotChartInstance} ShotChartInstance
+ * @typedef {import('./types').ChartPoint} ChartPoint
+ * @typedef {import('./types').ReplayDatasetMeta} ReplayDatasetMeta
+ * @typedef {import('./types').ReplayAnnotationMeta} ReplayAnnotationMeta
+ * @typedef {{ data?: unknown, label?: string }} ReplaySourceDataset
+ * @typedef {{ value?: unknown, display?: boolean }} ReplaySourceAnnotation
+ */
+
 export const replayRevealPlugin = {
   id: 'replayReveal',
+  /** @param {ShotChartInstance} chart */
   beforeDatasetsDraw(chart) {
     if (!chart?.$replayRevealEnabled || !chart.chartArea || !chart.scales?.x) return;
     const cutoffX = Number(chart.$replayRevealX);
@@ -28,6 +38,7 @@ export const replayRevealPlugin = {
     chart.ctx.clip();
     chart.$replayRevealClipActive = true;
   },
+  /** @param {ShotChartInstance} chart */
   afterDatasetsDraw(chart) {
     if (!chart?.$replayRevealClipActive) return;
     chart.ctx.restore();
@@ -35,11 +46,23 @@ export const replayRevealPlugin = {
   },
 };
 
+/**
+ * @param {number} value
+ * @param {number} maxIndex
+ * @returns {number}
+ */
 function clampReplayIndex(value, maxIndex) {
   if (!Number.isFinite(value)) return 0;
   return Math.max(0, Math.min(maxIndex, value));
 }
 
+/**
+ * @param {number} xValue
+ * @param {number} shotStartSec
+ * @param {number} durationSec
+ * @param {number} frameCount
+ * @returns {number}
+ */
 function getReplayFrameIndex(xValue, shotStartSec, durationSec, frameCount) {
   if (frameCount <= 0 || durationSec <= 0) return 0;
   // Replay annotations are mapped onto the same normalized frame timeline as the
@@ -48,6 +71,10 @@ function getReplayFrameIndex(xValue, shotStartSec, durationSec, frameCount) {
   return clampReplayIndex(Math.floor(progress * frameCount), frameCount);
 }
 
+/**
+ * @param {ChartPoint[]} points
+ * @param {ChartPoint | null | undefined} point
+ */
 function pushReplayPoint(points, point) {
   if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return;
   const lastPoint = points[points.length - 1];
@@ -55,6 +82,12 @@ function pushReplayPoint(points, point) {
   points.push(point);
 }
 
+/**
+ * @param {ChartPoint | null} lastVisiblePoint
+ * @param {ChartPoint | null} nextPoint
+ * @param {number} frameTime
+ * @returns {ChartPoint | null}
+ */
 function buildReplayBoundaryPoint(lastVisiblePoint, nextPoint, frameTime) {
   if (lastVisiblePoint && nextPoint && nextPoint.x > lastVisiblePoint.x) {
     // Interpolate the frame boundary so replay motion stays visually smooth even
@@ -84,7 +117,13 @@ function buildReplayBoundaryPoint(lastVisiblePoint, nextPoint, frameTime) {
   return null;
 }
 
+/**
+ * @param {ChartPoint[]} intervalPoints
+ * @param {ChartPoint | null} frameBoundaryPoint
+ * @returns {ChartPoint[]}
+ */
 function buildCarryReplayPoints(intervalPoints, frameBoundaryPoint) {
+  /** @type {ChartPoint[]} */
   const points = [];
   for (const point of intervalPoints) {
     pushReplayPoint(points, point);
@@ -97,7 +136,13 @@ function buildCarryReplayPoints(intervalPoints, frameBoundaryPoint) {
   return points;
 }
 
+/**
+ * @param {ChartPoint[]} intervalPoints
+ * @param {ChartPoint | null} frameBoundaryPoint
+ * @returns {ChartPoint[]}
+ */
 function buildExtremaReplayPoints(intervalPoints, frameBoundaryPoint) {
+  /** @type {ChartPoint[]} */
   const points = [];
 
   if (intervalPoints.length > 0) {
@@ -124,6 +169,10 @@ function buildExtremaReplayPoints(intervalPoints, frameBoundaryPoint) {
   return points;
 }
 
+/**
+ * @param {string | undefined} label
+ * @returns {'extrema' | 'carry'}
+ */
 function getReplayDatasetStrategy(label) {
   switch (label) {
     case 'Pressure':
@@ -136,6 +185,10 @@ function getReplayDatasetStrategy(label) {
   }
 }
 
+/**
+ * @param {{ data: unknown, label: string | undefined, shotStartSec: number, maxTime: number, frameCount: number, frameDurationSec: number }} options
+ * @returns {ReplayDatasetMeta}
+ */
 function buildReplayDatasetMeta({
   data,
   label,
@@ -144,11 +197,17 @@ function buildReplayDatasetMeta({
   frameCount,
   frameDurationSec,
 }) {
+  /** @type {ChartPoint[]} */
   const fullData = Array.isArray(data)
     ? data.filter(point => point && Number.isFinite(point.x) && Number.isFinite(point.y))
     : [];
+  /** @type {ChartPoint[]} */
   const activeData = [];
-  const frameChunks = Array.from({ length: frameCount + 1 }, () => []);
+  /** @type {ChartPoint[][]} */
+  const frameChunks = Array.from(
+    { length: frameCount + 1 },
+    () => /** @type {ChartPoint[]} */ ([]),
+  );
 
   if (!fullData.length) {
     return { fullData, activeData, frameChunks };
@@ -157,6 +216,7 @@ function buildReplayDatasetMeta({
   const durationSec = Math.max(0, maxTime - shotStartSec);
   const strategy = getReplayDatasetStrategy(label);
   let pointCursor = 0;
+  /** @type {ChartPoint | null} */
   let lastVisiblePoint = null;
   let previousFrameTime = shotStartSec;
 
@@ -164,6 +224,7 @@ function buildReplayDatasetMeta({
   // append cheap immutable chunks instead of reprocessing the full series per frame.
   for (let frameIndex = 0; frameIndex <= frameCount; frameIndex++) {
     const frameTime = shotStartSec + Math.min(durationSec, frameIndex * frameDurationSec);
+    /** @type {ChartPoint[]} */
     const intervalPoints = [];
 
     while (pointCursor < fullData.length && fullData[pointCursor].x <= frameTime) {
@@ -193,6 +254,13 @@ function buildReplayDatasetMeta({
   };
 }
 
+/**
+ * @param {Record<string, ReplaySourceAnnotation> | null | undefined} annotations
+ * @param {number} shotStartSec
+ * @param {number} maxTime
+ * @param {number} frameCount
+ * @returns {ReplayAnnotationMeta[]}
+ */
 function buildReplayAnnotationMeta(annotations, shotStartSec, maxTime, frameCount) {
   const durationSec = Math.max(0, maxTime - shotStartSec);
   return Object.entries(annotations || {}).reduce((acc, [key, annotation]) => {
@@ -206,9 +274,13 @@ function buildReplayAnnotationMeta(annotations, shotStartSec, maxTime, frameCoun
       frameIndex: getReplayFrameIndex(time, shotStartSec, durationSec, frameCount),
     });
     return acc;
-  }, []);
+  }, /** @type {ReplayAnnotationMeta[]} */ ([]));
 }
 
+/**
+ * @param {{ mainDatasets: ReplaySourceDataset[] | null | undefined, tempDatasets: ReplaySourceDataset[] | null | undefined, mainAnnotations: Record<string, ReplaySourceAnnotation> | null | undefined, tempAnnotations: Record<string, ReplaySourceAnnotation> | null | undefined, shotStartSec: number, maxTime: number, frameDurationSec: number }} options
+ * @returns {import('./types').ShotChartReplayModel}
+ */
 export function buildShotChartReplayModel({
   mainDatasets,
   tempDatasets,

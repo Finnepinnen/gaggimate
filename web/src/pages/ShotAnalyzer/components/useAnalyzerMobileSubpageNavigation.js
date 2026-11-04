@@ -1,27 +1,62 @@
 import { useCallback, useEffect, useState } from 'preact/hooks';
 
+/** @typedef {import('./types').MobileSubpage} MobileSubpage */
+
+/**
+ * @typedef {object} SubpageHistoryMarker
+ * @property {MobileSubpage} page
+ * @property {number} version
+ * @property {string} viewKey
+ */
+
+/**
+ * @typedef {object} SubpageAvailability
+ * @property {boolean} analysisEnabled
+ * @property {boolean} notesEnabled
+ */
+
 const ANALYZER_SUBPAGE_HISTORY_KEY = '__gaggimateAnalyzerSubpage';
 const ANALYZER_SUBPAGE_HISTORY_VERSION = 1;
 
+/**
+ * @param {unknown} state history.state
+ * @returns {SubpageHistoryMarker | null}
+ */
 function getHistoryMarker(state) {
   if (!state || typeof state !== 'object') return null;
-  const marker = state[ANALYZER_SUBPAGE_HISTORY_KEY];
+  const marker = /** @type {Record<string, SubpageHistoryMarker | undefined>} */ (state)[
+    ANALYZER_SUBPAGE_HISTORY_KEY
+  ];
   if (marker?.version !== ANALYZER_SUBPAGE_HISTORY_VERSION) return null;
   return marker;
 }
 
+/**
+ * @param {MobileSubpage} page
+ * @param {SubpageAvailability} availability
+ */
 function isSubpageAvailable(page, { analysisEnabled, notesEnabled }) {
   if (page === 'analysis') return analysisEnabled;
   if (page === 'notes') return notesEnabled;
   return false;
 }
 
+/**
+ * @param {unknown} state history.state
+ * @param {SubpageAvailability & { viewKey: string }} options
+ * @returns {MobileSubpage | null}
+ */
 function resolveHistorySubpage(state, options) {
   const marker = getHistoryMarker(state);
   if (!marker || marker.viewKey !== options.viewKey) return null;
   return isSubpageAvailable(marker.page, options) ? marker.page : null;
 }
 
+/**
+ * @param {unknown} currentState history.state
+ * @param {MobileSubpage} page
+ * @param {string} viewKey
+ */
 function buildHistoryState(currentState, page, viewKey) {
   const preservedState = currentState && typeof currentState === 'object' ? currentState : {};
   return {
@@ -38,14 +73,18 @@ function getBrowserWindow() {
   return globalThis.window;
 }
 
+/**
+ * @param {SubpageAvailability & { viewKey: string }} options
+ */
 export function useAnalyzerMobileSubpageNavigation({ analysisEnabled, notesEnabled, viewKey }) {
-  const [mobileSubpage, setMobileSubpage] = useState(null);
+  const [mobileSubpage, setMobileSubpage] = useState(/** @type {MobileSubpage | null} */ (null));
 
   useEffect(() => {
     const browserWindow = getBrowserWindow();
     if (!browserWindow?.history) return undefined;
 
     const options = { analysisEnabled, notesEnabled, viewKey };
+    /** @param {PopStateEvent} event */
     const handlePopState = event => {
       const nextSubpage = resolveHistorySubpage(event.state, options);
       setMobileSubpage(nextSubpage);
@@ -71,6 +110,7 @@ export function useAnalyzerMobileSubpageNavigation({ analysisEnabled, notesEnabl
   }, [analysisEnabled, notesEnabled, viewKey]);
 
   const openMobileSubpage = useCallback(
+    /** @param {MobileSubpage} page */
     page => {
       if (!isSubpageAvailable(page, { analysisEnabled, notesEnabled })) return;
 

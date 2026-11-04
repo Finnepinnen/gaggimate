@@ -1,16 +1,7 @@
 // Main StatisticsToolbar component: orchestrates source/mode/date controls, profile/shot selectors, run button, and search help
 import { useState, useRef } from 'preact/hooks';
-import {
-  getAnalyzerSurfaceTriggerClasses,
-  getAnalyzerTextButtonClasses,
-} from '../../../ShotAnalyzer/components/analyzerControlStyles';
 import '../StatisticsToolbar.css';
-import {
-  SOURCE_OPTIONS,
-  MODE_OPTIONS,
-  STATISTICS_TOP_ROW_CONTROL_HEIGHT_CLASS,
-  STATISTICS_RUN_BUTTON_TONE_CLASS,
-} from './constants';
+import { SOURCE_OPTIONS, MODE_OPTIONS } from './constants';
 import {
   formatShotCountLabel,
   formatProfileCountLabel,
@@ -18,8 +9,6 @@ import {
   getDateRangeDisplay,
   getCandidateSummary,
   getToolbarMessages,
-  getNeutralDropdownToneClasses,
-  getPrimaryDropdownToneClasses,
 } from './helpers';
 import {
   useAdvancedSearchSync,
@@ -37,8 +26,63 @@ import {
   DslSelectionPreview,
 } from './subcomponents';
 
-export { STATISTICS_RUN_BUTTON_TONE_CLASS };
+export { RunButtonBadge } from './subcomponents';
 
+/**
+ * @typedef {import('../../types').StatisticsSourceSelection} StatisticsSourceSelection
+ * @typedef {import('../../types').StatisticsMode} StatisticsMode
+ * @typedef {import('../../types').StatisticsDetailSection} StatisticsDetailSection
+ * @typedef {import('../../types').DateBasisMode} DateBasisMode
+ * @typedef {import('../../types').StatisticsQueryIssue} StatisticsQueryIssue
+ * @typedef {import('../../types').ProfileSelectionItem} ProfileSelectionItem
+ * @typedef {import('../../types').ShotSelectionItem} ShotSelectionItem
+ */
+
+/**
+ * @param {object} props
+ * @param {StatisticsSourceSelection} props.shotSource
+ * @param {(source: StatisticsSourceSelection) => void} props.onShotSourceChange
+ * @param {StatisticsSourceSelection} props.profileSource
+ * @param {(source: StatisticsSourceSelection) => void} props.onProfileSourceChange
+ * @param {StatisticsMode} props.mode
+ * @param {(mode: StatisticsMode) => void} props.onModeChange
+ * @param {(options?: { preferredDetailSection?: StatisticsDetailSection | null }) => void} props.onGo
+ * @param {boolean} [props.startLoading]
+ * @param {boolean} [props.loading]
+ * @param {boolean} [props.metadataLoading]
+ * @param {boolean} [props.canGo]
+ * @param {ProfileSelectionItem[]} props.profileSelectionItems
+ * @param {string[]} props.selectedProfileNames
+ * @param {(names: string[]) => void} props.onSelectedProfileNamesChange
+ * @param {(item: ProfileSelectionItem) => void} props.onProfilePinToggle
+ * @param {ShotSelectionItem[]} props.shotSelectionItems
+ * @param {string[]} props.selectedShotKeys
+ * @param {(keys: string[]) => void} props.onSelectedShotKeysChange
+ * @param {(item: ShotSelectionItem) => void} props.onShotPinToggle
+ * @param {string} props.query
+ * @param {(query: string) => void} props.onQueryChange
+ * @param {string} props.dateFromLocal
+ * @param {string} [props.dateFromPreviewLocal]
+ * @param {(value: string) => void} props.onDateFromChange
+ * @param {string} props.dateToLocal
+ * @param {string} [props.dateToPreviewLocal]
+ * @param {(value: string) => void} props.onDateToChange
+ * @param {DateBasisMode} props.dateBasisMode
+ * @param {(mode: DateBasisMode) => void} props.onDateBasisModeChange
+ * @param {boolean} [props.showDateBasisWarning]
+ * @param {string | null} [props.dateBasisWarningMessage]
+ * @param {number | null} props.candidateCount - null while unknown
+ * @param {StatisticsQueryIssue[]} [props.parseErrors]
+ * @param {StatisticsQueryIssue[]} [props.parseWarnings]
+ * @param {() => void} props.onClearFilters
+ * @param {string | null} [props.metadataError]
+ * @param {string | null} [props.selectionHint]
+ * @param {boolean} [props.hasBuiltStatistics]
+ * @param {number} [props.builtShotCount]
+ * @param {number} [props.builtProfileCount]
+ * @param {number | null} [props.builtDateRangeStartMs]
+ * @param {number | null} [props.builtDateRangeEndMs]
+ */
 export function StatisticsToolbar({
   shotSource,
   onShotSourceChange,
@@ -87,8 +131,8 @@ export function StatisticsToolbar({
   const [showDslSelectionPreview, setShowDslSelectionPreview] = useState(
     () => !!String(query || '').trim(),
   );
-  const dslInputRef = useRef(null);
-  const toolbarContainerRef = useRef(null);
+  const dslInputRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const toolbarContainerRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const [isCollapsedStripExpanded, setIsCollapsedStripExpanded] = useState(false);
 
   const isBusy = startLoading || loading || metadataLoading;
@@ -118,9 +162,9 @@ export function StatisticsToolbar({
   const currentModeOption = MODE_OPTIONS.find(opt => opt.value === mode) || MODE_OPTIONS[0];
   const hasDslQuery = !!String(query || '').trim();
   const shotSelectionItemMap = new Map((shotSelectionItems || []).map(item => [item.id, item]));
-  const selectedShotPreviewItems = (selectedShotKeys || [])
-    .map(id => shotSelectionItemMap.get(id))
-    .filter(Boolean);
+  const selectedShotPreviewItems = /** @type {ShotSelectionItem[]} */ (
+    (selectedShotKeys || []).map(id => shotSelectionItemMap.get(id)).filter(Boolean)
+  );
   const selectedProfilePreviewItems = (selectedProfileNames || [])
     .filter(Boolean)
     .map(name => ({ id: name, primary: name }));
@@ -151,32 +195,6 @@ export function StatisticsToolbar({
     builtDateRangeStartMs,
     builtDateRangeEndMs,
   );
-  const sourceTriggerClasses = getAnalyzerSurfaceTriggerClasses({
-    className: `flex h-9 min-h-0 w-[15rem] max-w-full list-none items-center justify-between gap-2 rounded-lg bg-transparent px-2 text-xs font-bold [&::-webkit-details-marker]:hidden ${getNeutralDropdownToneClasses()} ${isBusy ? 'pointer-events-none opacity-40' : ''}`,
-  });
-  const modeTriggerClasses = getAnalyzerSurfaceTriggerClasses({
-    className: `${STATISTICS_TOP_ROW_CONTROL_HEIGHT_CLASS} w-[7rem] list-none justify-between rounded-lg px-2 text-sm font-semibold [&::-webkit-details-marker]:hidden ${getPrimaryDropdownToneClasses()} ${isBusy ? 'pointer-events-none opacity-40' : ''}`,
-  });
-  const resetButtonClasses = getAnalyzerSurfaceTriggerClasses({
-    className: `inline-flex ${STATISTICS_TOP_ROW_CONTROL_HEIGHT_CLASS} w-12 flex-col items-center justify-center gap-0.5 rounded-lg bg-base-content/4 px-0 text-base-content/70 hover:bg-base-content/7 hover:text-base-content disabled:cursor-not-allowed disabled:opacity-40`,
-  });
-  const runButtonClasses = getAnalyzerSurfaceTriggerClasses({
-    className: `inline-flex ${STATISTICS_TOP_ROW_CONTROL_HEIGHT_CLASS} w-[6rem] items-center justify-center rounded-lg px-0 ${STATISTICS_RUN_BUTTON_TONE_CLASS} disabled:cursor-not-allowed disabled:opacity-40`,
-  });
-  const compactNeutralButtonClasses = getAnalyzerTextButtonClasses({
-    className:
-      'h-9 min-h-0 rounded-lg bg-transparent px-2 text-xs font-semibold text-base-content/65 hover:text-base-content disabled:cursor-not-allowed disabled:opacity-40',
-  });
-  const activeCompactNeutralButtonClasses = getAnalyzerTextButtonClasses({
-    className:
-      'h-9 min-h-0 rounded-lg bg-transparent px-2 text-xs font-semibold text-base-content hover:text-base-content disabled:cursor-not-allowed disabled:opacity-40',
-  });
-  const dateTriggerClasses = getAnalyzerSurfaceTriggerClasses({
-    className: `flex h-9 min-h-0 w-[11.25rem] list-none items-center gap-1.5 rounded-lg bg-transparent px-2 text-left text-xs sm:w-[12.5rem] md:w-[15rem] [&::-webkit-details-marker]:hidden ${
-      hasDateFilter ? 'text-base-content' : 'text-base-content/70 hover:text-base-content'
-    } ${busyDropdownClass}`,
-  });
-
   useAdvancedSearchSync({
     query,
     parseErrorsLength: parseErrors.length,
@@ -225,7 +243,6 @@ export function StatisticsToolbar({
           mode={mode}
           onModeChange={onModeChange}
           isBusy={isBusy}
-          modeTriggerClasses={modeTriggerClasses}
           currentModeOption={currentModeOption}
           profileSelectionItems={profileSelectionItems}
           selectedProfileNames={selectedProfileNames}
@@ -236,21 +253,17 @@ export function StatisticsToolbar({
           onSelectedShotKeysChange={onSelectedShotKeysChange}
           onShotPinToggle={onShotPinToggle}
           onClearFilters={onClearFilters}
-          resetButtonClasses={resetButtonClasses}
           resetAriaCount={resetAriaCount}
           candidateLabel={candidateLabel}
           onGo={onGo}
           canExecute={canExecute}
-          runButtonClasses={runButtonClasses}
           setShowDslSelectionPreview={setShowDslSelectionPreview}
-          sourceTriggerClasses={sourceTriggerClasses}
           currentShotSourceOption={currentShotSourceOption}
           currentProfileSourceOption={currentProfileSourceOption}
           shotSource={shotSource}
           onShotSourceChange={onShotSourceChange}
           profileSource={profileSource}
           onProfileSourceChange={onProfileSourceChange}
-          dateTriggerClasses={dateTriggerClasses}
           hasDateFilter={hasDateFilter}
           showDateRangeLabelInTrigger={showDateRangeLabelInTrigger}
           dateRangeDisplay={dateRangeDisplay}
@@ -258,13 +271,11 @@ export function StatisticsToolbar({
           onDateFromChange={onDateFromChange}
           dateToLocal={dateToLocal}
           onDateToChange={onDateToChange}
-          compactNeutralButtonClasses={compactNeutralButtonClasses}
           showAdvancedSearch={showAdvancedSearch}
           setShowAdvancedSearch={setShowAdvancedSearch}
           dslInputRef={dslInputRef}
           query={query}
           onQueryChange={onQueryChange}
-          activeCompactNeutralButtonClasses={activeCompactNeutralButtonClasses}
         />
       )}
 

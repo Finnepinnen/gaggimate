@@ -82,32 +82,46 @@ import {
 
 Chart.register(annotationPlugin);
 
+/**
+ * @param {{
+ *   shotData: import('../types').ShotChartShotData | null | undefined,
+ *   profileData?: import('../../../types').AnalyzerProfile | null,
+ *   results: import('../types').ShotChartAnalysisResults | null | undefined,
+ *   desktopCardHeight?: number,
+ * }} props
+ */
 export function SingleShotChart({ shotData, profileData, results, desktopCardHeight = 0 }) {
   const { t } = useLingui();
   // These refs point to the mounted DOM and Chart.js instances. They stay local
   // to the component because only the top-level orchestrator owns mounting and teardown.
-  const hoverAreaRef = useRef(null);
-  const chartShellRef = useRef(null);
-  const mobileScrubberRef = useRef(null);
-  const mobileActionsRef = useRef(null);
+  const hoverAreaRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const chartShellRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const mobileScrubberRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const mobileActionsRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const ignoreScrubInputUntilRef = useRef(0);
   const lastPointerScrubAtRef = useRef(0);
-  const mobileLegendRef = useRef(null);
-  const desktopLegendRef = useRef(null);
-  const mainChartContainerRef = useRef(null);
-  const tempChartContainerRef = useRef(null);
-  const mainChartRef = useRef(null);
-  const tempChartRef = useRef(null);
-  const exportMenuRef = useRef(null);
-  const externalTooltipRef = useRef(null);
+  const mobileLegendRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const desktopLegendRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const mainChartContainerRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const tempChartContainerRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const mainChartRef = useRef(/** @type {HTMLCanvasElement | null} */ (null));
+  const tempChartRef = useRef(/** @type {HTMLCanvasElement | null} */ (null));
+  const exportMenuRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const externalTooltipRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const [viewportResizeNonce, setViewportResizeNonce] = useState(0);
   const [standardChartSize, setStandardChartSize] = useState({
     width: 0,
     availableCombinedHeight: 0,
   });
-  const mainChartInstance = useRef(null);
-  const tempChartInstance = useRef(null);
-  const chartColorsRef = useRef(null);
+  const mainChartInstance = useRef(
+    /** @type {import('../tooltip/tooltipTypes').ShotChartInstance | null} */ (null),
+  );
+  const tempChartInstance = useRef(
+    /** @type {import('../tooltip/tooltipTypes').ShotChartInstance | null} */ (null),
+  );
+  const chartColorsRef = useRef(
+    /** @type {import('../model/types').ShotChartColors | null} */ (null),
+  );
 
   const [visibility, setVisibility] = useState(() =>
     normalizeSingleChartVisibility(loadFromStorage(ANALYZER_DB_KEYS.SINGLE_CHART_VISIBILITY)),
@@ -120,7 +134,7 @@ export function SingleShotChart({ shotData, profileData, results, desktopCardHei
   );
   const [isMobileSeriesLegendExpanded, setIsMobileSeriesLegendExpanded] = useState(false);
   const [useStaticTooltip, setUseStaticTooltip] = useState(isStaticMobileTooltipViewport);
-  const [scrubXValue, setScrubXValue] = useState(null);
+  const [scrubXValue, setScrubXValue] = useState(/** @type {number | null} */ (null));
   const [singleMetricPageKey, setSingleMetricPageKey] = useState(SINGLE_METRIC_PAGE_KEYS.BASICS);
   const [chartMaxTime, setChartMaxTime] = useState(0);
   const [scrubberInsets, setScrubberInsets] = useState({ left: 0, right: 0 });
@@ -156,6 +170,7 @@ export function SingleShotChart({ shotData, profileData, results, desktopCardHei
     );
   }, []);
   const updateScrubberFromPointer = useCallback(
+    /** @param {import('preact').JSX.TargetedPointerEvent<HTMLDivElement>} event */
     event => {
       if (Date.now() < ignoreScrubInputUntilRef.current) return;
       if (scrubberMax <= 0) return;
@@ -171,6 +186,7 @@ export function SingleShotChart({ shotData, profileData, results, desktopCardHei
     [scrubberMax],
   );
   const updateScrubberFromNativeInput = useCallback(
+    /** @param {import('preact').JSX.TargetedEvent<HTMLInputElement, Event>} event */
     event => {
       const nextValue = getScrubberValueFromNativeInputEvent(event, {
         min: 0,
@@ -287,6 +303,7 @@ export function SingleShotChart({ shotData, profileData, results, desktopCardHei
     if (typeof browserWindow?.matchMedia !== 'function') return undefined;
 
     const mediaQuery = browserWindow.matchMedia('(max-width: 640px)');
+    /** @param {boolean} isMobile */
     const applyViewportVisibility = isMobile => {
       setUseStaticTooltip(isMobile);
 
@@ -309,6 +326,7 @@ export function SingleShotChart({ shotData, profileData, results, desktopCardHei
 
       setVisibility(prev => ({ ...prev, ...INITIAL_VISIBILITY }));
     };
+    /** @param {MediaQueryListEvent} event */
     const handleChange = event => applyViewportVisibility(event.matches);
 
     if (mediaQuery.matches) {
@@ -326,6 +344,7 @@ export function SingleShotChart({ shotData, profileData, results, desktopCardHei
 
     setStandardChartSize({ width: 0, availableCombinedHeight: 0 });
 
+    /** @type {import('./singleChartLayout').ViewportResizeHandles} */
     const handles = { frameId: 0, timeoutIds: [] };
     scheduleViewportResizeBumps(browserWindow, setViewportResizeNonce, handles, [120, 320]);
 
@@ -338,6 +357,7 @@ export function SingleShotChart({ shotData, profileData, results, desktopCardHei
     const browserWindow = getBrowserWindow();
     if (!browserWindow || !useStaticTooltip) return undefined;
 
+    /** @type {import('./singleChartLayout').ViewportResizeHandles} */
     const handles = { frameId: 0, timeoutIds: [] };
     scheduleViewportResizeBumps(browserWindow, setViewportResizeNonce, handles, [80, 180, 360]);
 
@@ -380,6 +400,7 @@ export function SingleShotChart({ shotData, profileData, results, desktopCardHei
     const browserWindow = getBrowserWindow();
     if (!browserWindow) return undefined;
 
+    /** @type {import('./singleChartLayout').ViewportResizeHandles} */
     const handles = { frameId: 0, timeoutIds: [] };
     const bumpViewportSize = () => {
       clearViewportResizeBumps(browserWindow, handles);
@@ -462,6 +483,7 @@ export function SingleShotChart({ shotData, profileData, results, desktopCardHei
     viewportResizeNonce,
   ]);
 
+  /** @param {string} label */
   const handleLegendToggle = label => {
     if (isExportingRef.current) return;
     const key = VISIBILITY_KEY_BY_LABEL[label];
@@ -472,6 +494,7 @@ export function SingleShotChart({ shotData, profileData, results, desktopCardHei
   };
 
   const handleSingleMetricPageChange = useCallback(
+    /** @param {string} nextPageKey */
     nextPageKey => {
       if (nextPageKey === singleMetricPageKey) return;
 
@@ -561,6 +584,7 @@ export function SingleShotChart({ shotData, profileData, results, desktopCardHei
     });
     setChartMaxTime(model.maxTime || 0);
     const tooltipColorByLabel = getTooltipColorByLabel(colors);
+    /** @param {{ chart: import('chart.js').Chart, tooltip: import('chart.js').TooltipModel<'line'> }} context */
     const updateExternalTooltip = ({ chart, tooltip }) => {
       const tooltipState = buildExternalTooltipState({
         chart,

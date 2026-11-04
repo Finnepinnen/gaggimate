@@ -61,11 +61,38 @@ Chart.register(
   Legend,
 );
 
+/** @typedef {import('../../services/hooks.js').ProfileSummary} ProfileSummary */
+/** @typedef {import('../../types').ProfilePhase} ProfilePhase */
+/** @typedef {import('../../types').PhaseTarget} PhaseTarget */
+/** @typedef {import('./utils.js').ImportedProfile} ImportedProfile */
+/** @typedef {import('sortablejs').SortableEvent} SortableEvent */
+
+/**
+ * @typedef {{
+ *   data: ProfileSummary,
+ *   onDelete: (id: string) => Promise<void>,
+ *   onSelect: (id: string) => Promise<void>,
+ *   onFavorite: (id: string) => Promise<void>,
+ *   onUnfavorite: (id: string) => Promise<void>,
+ *   onDuplicate: (id: string) => Promise<void>,
+ *   favoriteDisabled: boolean,
+ *   unfavoriteDisabled: boolean,
+ *   disabledDrag: boolean,
+ *   isDragging: boolean,
+ *   onMoveTop: (id: string) => void,
+ *   onMoveBottom: (id: string) => void,
+ *   isFirst: boolean,
+ *   isLast: boolean,
+ * }} ProfileCardProps
+ */
+
+/** @type {Record<import('../../types').PhaseType, import('@lingui/core').MessageDescriptor>} */
 const PhaseLabels = {
   preinfusion: msg`Pre-Infusion`,
   brew: msg({ message: 'Brew', context: 'phase type' }),
 };
 
+/** @param {ProfileCardProps} props */
 function ProfileCard({
   data,
   onDelete,
@@ -134,14 +161,17 @@ function ProfileCard({
 
   // Sum total duration from phases (in seconds)
   const totalDurationSeconds = phases.reduce(
-    (sum, p) => sum + (Number.isFinite(p?.duration) ? p.duration : 0),
+    (/** @type {number} */ sum, /** @type {ProfilePhase} */ p) =>
+      sum + (Number.isFinite(p?.duration) ? p.duration : 0),
     0,
   );
 
   // Mobile actions menu — state-driven (was using the Popover API which isn't
   // supported in Safari <17 / Firefox <125, leaving the menu broken on most
   // iPads and many phones).
+  /** @type {import('preact').RefObject<HTMLButtonElement>} */
   const kebabRef = useRef(null);
+  /** @type {import('preact').RefObject<HTMLDivElement>} */
   const popoverRef = useRef(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -169,7 +199,7 @@ function ProfileCard({
 
   const closeMenu = useCallback(() => setMenuOpen(false), []);
 
-  const toggleMenu = useCallback(e => {
+  const toggleMenu = useCallback((/** @type {Event | undefined} */ e) => {
     e?.preventDefault?.();
     setMenuOpen(v => !v);
   }, []);
@@ -180,13 +210,16 @@ function ProfileCard({
     // in the tree this tick) and then re-position on resize/scroll.
     positionPopover();
     const onResize = () => positionPopover();
+    /** @param {MouseEvent | TouchEvent} e */
     const onDocClick = e => {
       const pop = popoverRef.current;
       const btn = kebabRef.current;
       if (!pop || !btn) return;
-      if (pop.contains(e.target) || btn.contains(e.target)) return;
+      const target = /** @type {Node | null} */ (e.target);
+      if (pop.contains(target) || btn.contains(target)) return;
       setMenuOpen(false);
     };
+    /** @param {KeyboardEvent} e */
     const onKey = e => {
       if (e.key === 'Escape') setMenuOpen(false);
     };
@@ -211,9 +244,9 @@ function ProfileCard({
         role='group'
         aria-labelledby={`profile-${data.id}-title`}
       >
-        <div className='flex flex-grow flex-col overflow-hidden'>
+        <div className='flex grow flex-col overflow-hidden'>
           <div className='mx-2 flex flex-row items-center gap-2 align-middle'>
-            <div className='flex min-w-0 flex-grow flex-row items-center gap-4'>
+            <div className='flex min-w-0 grow flex-row items-center gap-4'>
               {/* CheckBox */}
               <div>
                 <label className='cursor-pointer'>
@@ -288,7 +321,7 @@ function ProfileCard({
                       id={`profile-${data.id}-menu`}
                       ref={popoverRef}
                       role='menu'
-                      className='bg-base-100 rounded-box z-50 w-56 p-2 shadow'
+                      className='bg-base-100 rounded-box z-50 w-56 p-2 shadow-sm'
                       onKeyDown={e => {
                         if (e.key === 'Escape') closeMenu();
                       }}
@@ -383,7 +416,7 @@ function ProfileCard({
                                   closeMenu();
                                 });
                               }}
-                              className={`justify-start ${confirmDelete ? 'bg-error text-error-content rounded font-semibold' : 'text-error'}`}
+                              className={`justify-start ${confirmDelete ? 'bg-error text-error-content rounded-sm font-semibold' : 'text-error'}`}
                               aria-label={
                                 confirmDelete
                                   ? t`Confirm deletion of ${label} profile`
@@ -498,10 +531,13 @@ function ProfileCard({
                     {totalDurationSeconds}s
                   </span>
                   {phases.length > 0 &&
-                    phases[phases.length - 1]?.targets?.some(tg => tg.type === 'volumetric') && (
+                    phases[phases.length - 1]?.targets?.some(
+                      (/** @type {PhaseTarget} */ tg) => tg.type === 'volumetric',
+                    ) && (
                       <span className='text-base-content/60 badge badge-xs md:badge-sm badge-outline'>
                         <FontAwesomeIcon icon={faScaleBalanced} />
-                        {`${phases[phases.length - 1].targets.find(tg => tg.type === 'volumetric').value}g`}
+                        {/* Guarded by the .some() above. */}
+                        {`${/** @type {PhaseTarget} */ (/** @type {PhaseTarget[]} */ (phases[phases.length - 1].targets).find((/** @type {PhaseTarget} */ tg) => tg.type === 'volumetric')).value}g`}
                       </span>
                     )}
                   {phases.length > 0 && (
@@ -518,7 +554,7 @@ function ProfileCard({
                   <button
                     onClick={handleMoveTop}
                     disabled={isFirst}
-                    className='drag-to-top btn btn-sm btn-ghost'
+                    className='btn btn-sm btn-ghost'
                     aria-label={t`Move ${label} to top`}
                     aria-disabled={isFirst}
                   >
@@ -539,7 +575,7 @@ function ProfileCard({
                   <button
                     onClick={handleMoveBottom}
                     disabled={isLast}
-                    className='drag-to-bottom btn btn-sm btn-ghost'
+                    className='btn btn-sm btn-ghost'
                     aria-label={t`Move ${label} to bottom`}
                     aria-disabled={isLast}
                   >
@@ -547,7 +583,7 @@ function ProfileCard({
                   </button>
                 </Tooltip>
               </div>
-              <div className='flex-grow overflow-x-auto'>
+              <div className='grow overflow-x-auto'>
                 {data.type === 'pro' ? (
                   <ExtendedProfileChart data={{ ...data, phases }} className='max-h-36' />
                 ) : (
@@ -562,6 +598,7 @@ function ProfileCard({
   );
 }
 
+/** @param {{ phases: ProfilePhase[] }} props */
 function SimpleContent({ phases }) {
   const { t } = useLingui();
   if (phases.length === 0) {
@@ -574,7 +611,7 @@ function SimpleContent({ phases }) {
 
   return (
     <div className='flex flex-row items-center gap-2' role='list' aria-label={t`Brew phases`}>
-      {phases.map((phase, i) => (
+      {phases.map((/** @type {ProfilePhase} */ phase, /** @type {number} */ i) => (
         <div key={i} className='flex flex-row items-center gap-2' role='listitem'>
           {i > 0 && <SimpleDivider />}
           <SimpleStep
@@ -595,6 +632,14 @@ function SimpleDivider() {
   );
 }
 
+/**
+ * @param {{
+ *   phase: import('../../types').PhaseType,
+ *   type: string,
+ *   duration: number,
+ *   targets: PhaseTarget[],
+ * }} props
+ */
 function SimpleStep(props) {
   const { i18n } = useLingui();
   const duration = props.duration;
@@ -628,11 +673,18 @@ function SimpleStep(props) {
 }
 
 // Profile images only exist with an SD card; without one the export carries no "image" field.
+/**
+ * @param {ProfileSummary} profile
+ * @returns {Promise<ImportedProfile>}
+ */
 async function withExportedImage(profile) {
+  /** @type {ImportedProfile} */
   const copy = { ...profile };
   delete copy.image;
   if (machine.value.capabilities.sdCard) {
-    const image = await exportProfileImage(profile.id).catch(() => null);
+    const image = await exportProfileImage(profile.id).catch(
+      () => /** @type {string | null} */ (null),
+    );
     if (image) copy.image = image;
   }
   return copy;
@@ -640,7 +692,10 @@ async function withExportedImage(profile) {
 
 export function ProfileList() {
   const { t } = useLingui();
-  const apiService = useContext(ApiServiceContext);
+  // Provided at the app root, so never null here.
+  const apiService = /** @type {import('../../services/ApiService.js').default} */ (
+    useContext(ApiServiceContext)
+  );
   const {
     profiles,
     loading,
@@ -651,8 +706,10 @@ export function ProfileList() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('extraction');
   const [isDragging, setIsDragging] = useState(false);
-  const containerRef = useRef(null);
-  const favoriteCount = profiles.map(p => (p.favorite ? 1 : 0)).reduce((a, b) => a + b, 0);
+  const containerRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const favoriteCount = profiles
+    .map(p => (p.favorite ? 1 : 0))
+    .reduce((a, b) => a + b, /** @type {number} */ (0));
   const unfavoriteDisabled = favoriteCount <= 1;
   const favoriteDisabled = favoriteCount >= 10;
   const hasUtilityProfiles = useMemo(() => profiles.some(p => p.utility), [profiles]);
@@ -665,9 +722,12 @@ export function ProfileList() {
 
   // Placeholder for future persistence of order (intentionally empty)
   // Debounced persistence of profile order (300ms)
+  /** @type {import('preact').RefObject<ReturnType<typeof setTimeout>>} */
   const orderDebounceRef = useRef(null);
+  /** @type {import('preact').RefObject<string[]>} */
   const pendingOrderRef = useRef(null);
   const persistProfileOrder = useCallback(
+    /** @param {ProfileSummary[]} orderedProfiles */
     orderedProfiles => {
       pendingOrderRef.current = orderedProfiles.map(p => p.id);
       if (orderDebounceRef.current) {
@@ -718,12 +778,13 @@ export function ProfileList() {
   const clearDropHighlights = useCallback(() => {
     if (!containerRef.current) return;
     const highlighted = containerRef.current.querySelectorAll('.drop-highlight');
-    highlighted.forEach(el => {
+    highlighted.forEach((/** @type {Element} */ el) => {
       el.classList.remove('drop-highlight');
     });
   }, []);
 
   const moveProfileTop = useCallback(
+    /** @param {string} id */
     id => {
       setProfiles(prev => {
         const idx = prev.findIndex(p => p.id === id);
@@ -745,6 +806,7 @@ export function ProfileList() {
   );
 
   const moveProfileBottom = useCallback(
+    /** @param {string} id */
     id => {
       setProfiles(prev => {
         const idx = prev.findIndex(p => p.id === id);
@@ -776,6 +838,7 @@ export function ProfileList() {
   }, [clearDropHighlights]);
 
   const onDragChange = useCallback(
+    /** @param {SortableEvent} evt */
     evt => {
       const { newIndex, oldIndex } = evt;
       if (newIndex == null || oldIndex == null) return;
@@ -796,13 +859,16 @@ export function ProfileList() {
   );
 
   const onDragEnd = useCallback(
+    /** @param {SortableEvent} evt */
     evt => {
       setIsDragging(false);
 
       // Clear any drop highlights
       clearDropHighlights();
 
-      const { oldIndex, newIndex, oldIndicies } = evt;
+      // Sortable always sets both indices on onEnd.
+      const { oldIndex, newIndex, oldIndicies } =
+        /** @type {SortableEvent & { oldIndex: number, newIndex: number }} */ (evt);
       if (oldIndex === newIndex) return;
 
       setProfiles(prev => {
@@ -863,6 +929,7 @@ export function ProfileList() {
   }, [loading, searchTerm, onDragStart, onDragChange, onDragEnd]);
 
   const onDelete = useCallback(
+    /** @param {string} id */
     async id => {
       setLoading(true);
       await apiService.request({ tp: 'req:profiles:delete', id });
@@ -873,6 +940,7 @@ export function ProfileList() {
 
   // The status broadcast carries the new selection into the cached list
   const onSelect = useCallback(
+    /** @param {string} id */
     async id => {
       await apiService.request({ tp: 'req:profiles:select', id });
     },
@@ -880,6 +948,7 @@ export function ProfileList() {
   );
 
   const onFavorite = useCallback(
+    /** @param {string} id */
     async id => {
       setLoading(true);
       await apiService.request({ tp: 'req:profiles:favorite', id });
@@ -889,6 +958,7 @@ export function ProfileList() {
   );
 
   const onUnfavorite = useCallback(
+    /** @param {string} id */
     async id => {
       setLoading(true);
       await apiService.request({ tp: 'req:profiles:unfavorite', id });
@@ -898,10 +968,12 @@ export function ProfileList() {
   );
 
   const onDuplicate = useCallback(
+    /** @param {string} id */
     async id => {
       setLoading(true);
       const original = profiles.find(p => p.id === id);
       if (original) {
+        /** @type {Partial<typeof original>} */
         const copy = { ...original };
         delete copy.id;
         delete copy.selected;
@@ -927,12 +999,15 @@ export function ProfileList() {
     downloadJson(exportedProfiles, 'profiles.json');
   }, [profiles]);
 
+  /** @param {import('preact').JSX.TargetedEvent<HTMLInputElement, Event>} evt */
   const onUpload = function (evt) {
-    if (evt.target.files.length) {
-      const file = evt.target.files[0];
+    // A file input always has a FileList.
+    const files = /** @type {FileList} */ (/** @type {HTMLInputElement} */ (evt.target).files);
+    if (files.length) {
+      const file = files[0];
       const reader = new FileReader();
       reader.onload = async e => {
-        const result = e.target.result;
+        const result = /** @type {FileReader} */ (e.target).result;
         if (typeof result === 'string') {
           setLoading(true);
           try {
@@ -980,7 +1055,7 @@ export function ProfileList() {
   return (
     <>
       <div className='mb-4 flex flex-row items-center gap-2'>
-        <h1 className='flex-grow text-2xl font-bold sm:text-3xl'>
+        <h1 className='grow text-2xl font-bold sm:text-3xl'>
           <Trans>Profiles</Trans>
         </h1>
       </div>
@@ -1002,7 +1077,7 @@ export function ProfileList() {
             />
           </label>
         </div>
-        <div className='flex flex-grow items-center justify-end gap-2'>
+        <div className='flex grow items-center justify-end gap-2'>
           <Tooltip content={t`Export all profiles`}>
             <button
               id='export-profiles'

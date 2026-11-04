@@ -32,6 +32,7 @@ function detectLocale() {
   return 'en';
 }
 
+/** @param {string} preference Locale code or AUTO_LOCALE. */
 function resolveLocale(preference) {
   return preference && preference !== AUTO_LOCALE ? preference : detectLocale();
 }
@@ -44,6 +45,7 @@ export async function activateLocale(preference = getStoredLocale()) {
   document.documentElement.lang = locale;
 }
 
+/** @param {string} preference Locale code or AUTO_LOCALE. */
 export async function setLocale(preference) {
   try {
     localStorage.setItem(STORAGE_KEY, preference);

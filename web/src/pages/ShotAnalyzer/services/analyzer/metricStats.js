@@ -1,8 +1,13 @@
+/** @typedef {import('../../../../types').ShotSample} ShotSample */
+/** @typedef {import('../../types').MetricStats} MetricStats */
+/** @typedef {import('../../types').PhaseStats} PhaseStats */
+/** @typedef {Exclude<{ [K in keyof ShotSample]-?: ShotSample[K] extends number | undefined ? K : never }[keyof ShotSample], undefined>} NumericSampleKey */
+
 /**
  * Helper: Calculate statistics for a metric across samples
- * @param {Array} samples - Shot samples
- * @param {string} key - Metric key (e.g., 'cp', 'fl', 'ct')
- * @returns {Object} { start, end, min, max, avg }
+ * @param {ShotSample[]} samples - Shot samples
+ * @param {NumericSampleKey} key - Metric key (e.g., 'cp', 'fl', 'ct')
+ * @returns {MetricStats} { start, end, min, max, avg }
  */
 export function getMetricStats(samples, key) {
   let min = Infinity;
@@ -12,7 +17,7 @@ export function getMetricStats(samples, key) {
 
   // Start and End values
   const start = normalizeMetricValue(samples[0][key]);
-  const end = normalizeMetricValue(samples.at(-1)[key]);
+  const end = normalizeMetricValue(samples[samples.length - 1][key]);
 
   // Min, Max, and Time-Weighted Average
   let previousSample = null;
@@ -43,14 +48,20 @@ export function getMetricStats(samples, key) {
   return { start, end, min, max, avg };
 }
 
+/**
+ * @param {number | null | undefined} value
+ * @returns {number}
+ */
 function normalizeMetricValue(value) {
   return value == null ? 0 : value;
 }
 
+/** @returns {MetricStats} */
 export function createEmptyMetricStats() {
   return { start: null, end: null, min: null, max: null, avg: null };
 }
 
+/** @returns {PhaseStats} */
 export function createEmptyPhaseStats() {
   return {
     p: createEmptyMetricStats(),

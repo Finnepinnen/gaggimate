@@ -38,6 +38,43 @@ import {
 } from './analysis';
 import { t } from '@lingui/core/macro';
 
+/**
+ * @typedef {import('../../types').DateBasisMode} DateBasisMode
+ * @typedef {import('../../types').StatisticsMode} StatisticsMode
+ * @typedef {import('../../types').StatisticsSourceSelection} StatisticsSourceSelection
+ * @typedef {import('../../types').StatisticsDetailSection} StatisticsDetailSection
+ * @typedef {import('../../types').StatisticsShotMeta} StatisticsShotMeta
+ * @typedef {import('../../types').StatisticsProfileMeta} StatisticsProfileMeta
+ * @typedef {import('../../types').StatisticsEntry} StatisticsEntry
+ * @typedef {import('../../types').StatisticsResult} StatisticsResult
+ * @typedef {import('../../types').StatisticsRunRequest} StatisticsRunRequest
+ * @typedef {import('../../types').StatisticsProgress} StatisticsProgress
+ * @typedef {import('../../types').PinnedShotsByProfile} PinnedShotsByProfile
+ * @typedef {import('../../types').ProfileSelectionItem} ProfileSelectionItem
+ * @typedef {import('../../types').ShotSelectionItem} ShotSelectionItem
+ * @typedef {import('../../types').ShotMetaPredicate} ShotMetaPredicate
+ * @typedef {import('./helpers').ShotKeyToCanonicalProfile} ShotKeyToCanonicalProfile
+ */
+/**
+ * @template S
+ * @typedef {import('../../types').SetState<S>} SetState
+ */
+/**
+ * @template T
+ * @typedef {import('preact/hooks').MutableRef<T>} MutableRef
+ */
+
+/**
+ * Loads the shot and profile lists for the selected sources and keeps the selection valid.
+ *
+ * @param {object} args
+ * @param {import('../../../../services/ApiService.js').default} args.apiService
+ * @param {StatisticsSourceSelection} args.shotSource
+ * @param {StatisticsSourceSelection} args.profileSource
+ * @param {string} args.initialProfileName
+ * @param {SetState<string[]>} args.setSelectedProfileNames
+ * @param {SetState<string[]>} args.setSelectedShotKeys
+ */
 export function useStatisticsMetadataState({
   apiService,
   shotSource,
@@ -46,11 +83,13 @@ export function useStatisticsMetadataState({
   setSelectedProfileNames,
   setSelectedShotKeys,
 }) {
-  const [rawShotCandidates, setRawShotCandidates] = useState([]);
-  const [rawProfiles, setRawProfiles] = useState([]);
+  const [rawShotCandidates, setRawShotCandidates] = useState(
+    /** @type {StatisticsShotMeta[]} */ ([]),
+  );
+  const [rawProfiles, setRawProfiles] = useState(/** @type {StatisticsProfileMeta[]} */ ([]));
   const [metadataLoading, setMetadataLoading] = useState(false);
   const [metadataLoaded, setMetadataLoaded] = useState(false);
-  const [metadataError, setMetadataError] = useState(null);
+  const [metadataError, setMetadataError] = useState(/** @type {string | null} */ (null));
   const [metadataReloadNonce, setMetadataReloadNonce] = useState(0);
   const metaLoadIdRef = useRef(0);
   const initialProfilePresetAppliedRef = useRef(false);
@@ -105,6 +144,7 @@ export function useStatisticsMetadataState({
 
   const availableProfiles = useMemo(() => getAvailableProfileNames(rawProfiles), [rawProfiles]);
   const normalizedAvailableProfilesMap = useMemo(() => {
+    /** @type {Map<string, string>} */
     const map = new Map();
     for (const name of availableProfiles) {
       const normalized = cleanName(name).toLowerCase();
@@ -121,6 +161,7 @@ export function useStatisticsMetadataState({
   );
 
   const shotKeyToCanonicalProfile = useMemo(() => {
+    /** @type {ShotKeyToCanonicalProfile} */
     const map = new Map();
     for (const shot of rawShotCandidates || []) {
       const key = getShotSelectionKey(shot);
@@ -135,6 +176,7 @@ export function useStatisticsMetadataState({
   useEffect(() => {
     if (!metadataLoaded) return;
 
+    /** @type {Map<string, string>} */
     const normalizedAvailableProfiles = new Map();
     for (const name of availableProfiles) {
       const normalized = cleanName(name).toLowerCase();
@@ -144,7 +186,9 @@ export function useStatisticsMetadataState({
     }
 
     setSelectedProfileNames(prev => {
+      /** @type {string[]} */
       const next = [];
+      /** @type {Set<string>} */
       const seen = new Set();
       for (const name of prev) {
         const normalized = cleanName(name).toLowerCase();
@@ -227,6 +271,26 @@ export function useStatisticsMetadataState({
   };
 }
 
+/**
+ * Derives filter state, selectable items and selection handlers from the loaded metadata.
+ *
+ * @param {object} args
+ * @param {StatisticsShotMeta[]} args.rawShotCandidates
+ * @param {string[]} args.availableProfiles
+ * @param {string[]} args.rawShotKeyOrder
+ * @param {ShotKeyToCanonicalProfile} args.shotKeyToCanonicalProfile
+ * @param {string[]} args.pinnedProfiles
+ * @param {PinnedShotsByProfile} args.pinnedShotsByProfile
+ * @param {StatisticsMode} args.mode
+ * @param {string[]} args.selectedProfileNames
+ * @param {SetState<string[]>} args.setSelectedProfileNames
+ * @param {string[]} args.selectedShotKeys
+ * @param {SetState<string[]>} args.setSelectedShotKeys
+ * @param {string} args.query
+ * @param {string} args.dateFromLocal
+ * @param {string} args.dateToLocal
+ * @param {DateBasisMode} args.dateBasisMode
+ */
 export function useStatisticsSelectionModel({
   rawShotCandidates,
   availableProfiles,
@@ -245,6 +309,7 @@ export function useStatisticsSelectionModel({
   dateBasisMode,
 }) {
   const matchesPinnedShotMeta = useCallback(
+    /** @type {ShotMetaPredicate} */
     shotMeta =>
       matchesPinnedShotMetaWithPins(shotMeta, {
         shotKeyToCanonicalProfile,
@@ -255,11 +320,13 @@ export function useStatisticsSelectionModel({
   );
 
   const getProfilePinDisabledReason = useCallback(
+    /** @param {string} profileName */
     profileName => getProfilePinDisabledReasonText(profileName, pinnedProfiles),
     [pinnedProfiles],
   );
 
   const getShotPinDisabledReason = useCallback(
+    /** @param {StatisticsShotMeta} shotMeta */
     shotMeta =>
       getShotPinDisabledReasonText(shotMeta, shotKeyToCanonicalProfile, pinnedShotsByProfile),
     [shotKeyToCanonicalProfile, pinnedShotsByProfile],
@@ -308,6 +375,7 @@ export function useStatisticsSelectionModel({
   );
 
   const profilesPresentInBaseFilteredShots = useMemo(() => {
+    /** @type {Set<string>} */
     const set = new Set();
     for (const shot of selectionScopeShots || []) {
       const key = getShotSelectionKey(shot);
@@ -319,6 +387,7 @@ export function useStatisticsSelectionModel({
   }, [selectionScopeShots, shotKeyToCanonicalProfile]);
 
   const baseCanonicalProfileToShotKeys = useMemo(() => {
+    /** @type {Map<string, string[]>} */
     const map = new Map();
     for (const shot of selectionScopeShots || []) {
       const key = getShotSelectionKey(shot);
@@ -326,7 +395,7 @@ export function useStatisticsSelectionModel({
       const canonical = shotKeyToCanonicalProfile.get(key);
       if (!canonical) continue;
       if (!map.has(canonical)) map.set(canonical, []);
-      map.get(canonical).push(key);
+      /** @type {string[]} */ (map.get(canonical)).push(key);
     }
     return map;
   }, [selectionScopeShots, shotKeyToCanonicalProfile]);
@@ -335,13 +404,16 @@ export function useStatisticsSelectionModel({
     () =>
       availableProfiles
         .filter(name => profilesPresentInBaseFilteredShots.has(name))
-        .map(name => ({
-          id: name,
-          primary: name,
-          searchText: name,
-          isPinned: isProfilePinned(name, pinnedProfiles),
-          pinDisabledReason: getProfilePinDisabledReason(name),
-        })),
+        .map(
+          /** @returns {ProfileSelectionItem} */
+          name => ({
+            id: name,
+            primary: name,
+            searchText: name,
+            isPinned: isProfilePinned(name, pinnedProfiles),
+            pinDisabledReason: getProfilePinDisabledReason(name),
+          }),
+        ),
     [
       availableProfiles,
       profilesPresentInBaseFilteredShots,
@@ -438,6 +510,7 @@ export function useStatisticsSelectionModel({
   const selectedShotKeySet = useMemo(() => new Set(selectedShotKeys || []), [selectedShotKeys]);
 
   const derivedProfilesFromSelectedShots = useMemo(() => {
+    /** @type {Set<string>} */
     const selectedProfileSet = new Set();
     for (const shot of selectionScopeShots || []) {
       const key = getShotSelectionKey(shot);
@@ -482,7 +555,7 @@ export function useStatisticsSelectionModel({
     let maxTs = -Infinity;
     for (const shot of candidateFilterState.filteredShots || []) {
       const ts = resolveShotEffectiveTimestampMs(shot, dateBasisMode);
-      if (!Number.isFinite(ts)) continue;
+      if (ts === null || !Number.isFinite(ts)) continue;
       if (ts < minTs) minTs = ts;
       if (ts > maxTs) maxTs = ts;
     }
@@ -497,8 +570,10 @@ export function useStatisticsSelectionModel({
     };
   }, [candidateFilterState.filteredShots, dateBasisMode, dateFromLocal, dateToLocal]);
 
+  /** @param {Set<string>} nextSet */
   const orderShotSelection = nextSet => rawShotKeyOrder.filter(key => nextSet.has(key));
 
+  /** @param {string[]} nextProfileNames */
   const handleProfileSelectionChange = nextProfileNames => {
     const nextProfiles = Array.isArray(nextProfileNames) ? nextProfileNames : [];
     setSelectedProfileNames(nextProfiles);
@@ -517,18 +592,21 @@ export function useStatisticsSelectionModel({
               if (!canonical) return null;
               return nextProfileSet.has(cleanName(canonical).toLowerCase()) ? key : null;
             })
-            .filter(Boolean);
+            .filter(/** @returns {key is string} */ key => Boolean(key));
     setSelectedShotKeys(nextShotKeys);
   };
 
+  /** @param {string[]} nextShotKeys */
   const handleByProfileShotSelectionChange = nextShotKeys => {
     setSelectedShotKeys(Array.isArray(nextShotKeys) ? nextShotKeys : []);
   };
 
+  /** @param {string[]} nextShotKeys */
   const handleShotSelectionChange = nextShotKeys => {
     setSelectedShotKeys(Array.isArray(nextShotKeys) ? nextShotKeys : []);
   };
 
+  /** @param {string[]} nextProfileNames */
   const handleByShotsProfileSelectionChange = nextProfileNames => {
     if (hasBaseParseErrors) return;
 
@@ -572,6 +650,23 @@ export function useStatisticsSelectionModel({
   };
 }
 
+/**
+ * Keeps profile/shot selections inside the current filter scope as mode and filters change.
+ *
+ * @param {object} args
+ * @param {StatisticsMode} args.mode
+ * @param {boolean} args.metadataLoaded
+ * @param {boolean} args.hasBaseParseErrors
+ * @param {Set<string>} args.visibleProfileIdSet
+ * @param {StatisticsSourceSelection} args.shotSource
+ * @param {StatisticsSourceSelection} args.profileSource
+ * @param {string[]} args.selectedProfileNames
+ * @param {string[]} args.byProfileEligibleShotKeys
+ * @param {Set<string>} args.byProfileEligibleShotKeySet
+ * @param {Set<string>} args.selectionScopeShotKeySet
+ * @param {SetState<string[]>} args.setSelectedProfileNames
+ * @param {SetState<string[]>} args.setSelectedShotKeys
+ */
 export function useStatisticsSelectionSync({
   mode,
   metadataLoaded,
@@ -648,6 +743,18 @@ export function useStatisticsSelectionSync({
   }, [mode, metadataLoaded, hasBaseParseErrors, selectionScopeShotKeySet, setSelectedShotKeys]);
 }
 
+/**
+ * Runs the analysis for each new run request and stores the computed statistics.
+ *
+ * @param {object} args
+ * @param {StatisticsRunRequest | null} args.runRequest
+ * @param {MutableRef<number>} args.analyzeLoadIdRef
+ * @param {MutableRef<StatisticsEntry[] | null>} args.entriesRef
+ * @param {SetState<boolean>} args.setLoading
+ * @param {SetState<string | null>} args.setError
+ * @param {SetState<StatisticsResult | null>} args.setResult
+ * @param {SetState<StatisticsProgress>} args.setProgress
+ */
 export function useStatisticsRunExecution({
   runRequest,
   analyzeLoadIdRef,
@@ -659,6 +766,7 @@ export function useStatisticsRunExecution({
 }) {
   useEffect(() => {
     if (!runRequest) return;
+    const currentRunRequest = runRequest;
 
     const loadId = ++analyzeLoadIdRef.current;
     let cancelled = false;
@@ -673,7 +781,7 @@ export function useStatisticsRunExecution({
         const entries = await runStatisticsAnalysis({
           isCurrentRun: () => !cancelled && loadId === analyzeLoadIdRef.current,
           onProgress: setProgress,
-          runRequest,
+          runRequest: currentRunRequest,
         });
         if (!entries) return;
 
@@ -697,6 +805,21 @@ export function useStatisticsRunExecution({
   }, [runRequest, analyzeLoadIdRef, entriesRef, setError, setLoading, setProgress, setResult]);
 }
 
+/**
+ * Picks the detail section for a finished run and derives what the result view shows.
+ *
+ * @param {object} args
+ * @param {StatisticsResult | null} args.result
+ * @param {StatisticsRunRequest | null} args.runRequest
+ * @param {StatisticsDetailSection} args.statisticsDetailSection
+ * @param {SetState<StatisticsDetailSection>} args.setStatisticsDetailSection
+ * @param {MutableRef<string | null>} args.initializedDetailSectionRunIdRef
+ * @param {MutableRef<StatisticsEntry[] | null>} args.entriesRef
+ * @param {boolean} args.preparingRun
+ * @param {boolean} args.loading
+ * @param {string | null} args.error
+ * @param {string | null} args.metadataError
+ */
 export function useStatisticsResultViewState({
   result,
   runRequest,
@@ -748,8 +871,8 @@ export function useStatisticsResultViewState({
     statisticsDetailSection,
   ]);
 
-  const hasProfileGroupStatistics = result?.profileGroups?.length > 0;
-  const hasPhaseStatistics = result?.phaseStats?.length > 0;
+  const hasProfileGroupStatistics = (result?.profileGroups?.length ?? 0) > 0;
+  const hasPhaseStatistics = (result?.phaseStats?.length ?? 0) > 0;
   const hasMetricStatistics = Boolean(result?.metrics && Object.keys(result.metrics).length > 0);
   const hasTrendStatistics = Array.isArray(result?.trends) && result.trends.length > 1;
   const hasStatisticsCompare = Array.isArray(entriesRef.current) && entriesRef.current.length > 0;
@@ -779,8 +902,9 @@ export function useStatisticsResultViewState({
     [entriesRef, result, runRequest],
   );
   const shouldHidePhaseExitReasons = statisticsCompareEntries.length > 2;
-  const builtShotCount = Number.isFinite(result?.summary?.totalShots)
-    ? result.summary.totalShots
+  const builtTotalShots = result?.summary?.totalShots;
+  const builtShotCount = Number.isFinite(builtTotalShots)
+    ? /** @type {number} */ (builtTotalShots)
     : 0;
   const builtProfileCount = useMemo(
     () => getBuiltProfileCount(entriesRef),

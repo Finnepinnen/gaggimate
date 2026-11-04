@@ -30,6 +30,6 @@ jobs:
         run: npm run lint:check
       - name: Format check
         run: npm run format:check
-      # Checks files that opt in with `// @ts-check`; see web/jsconfig.json.
+      # Type-checks every .js/.jsx file with noImplicitAny; see web/jsconfig.json.
       - name: Type check
         run: npm run typecheck

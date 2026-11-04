@@ -10,6 +10,12 @@ import { ApiServiceContext } from '../../../services/ApiService.js';
 import Section from '../../../components/Card.jsx';
 import { InputGroupField } from '../../../components/SettingsFormField.jsx';
 
+/** @typedef {(typeof TASKS)[number]} CleaningTaskDef */
+
+/**
+ * @param {number | undefined} timestamp Epoch seconds, 0 = never.
+ * @param {string} never
+ */
 const formatTimestamp = (timestamp, never) =>
   timestamp ? new Date(timestamp * 1000).toLocaleString() : never;
 
@@ -36,6 +42,15 @@ const TASKS = [
   },
 ];
 
+/**
+ * @param {{
+ *   task: CleaningTaskDef,
+ *   formData: import('../types').SettingsFormData,
+ *   onChange: import('../types').FormChange,
+ *   onStart: () => void,
+ *   onComplete: () => void,
+ * }} props
+ */
 function CleaningTask({ task, formData, onChange, onStart, onComplete }) {
   const { t, i18n } = useLingui();
   const shotsSince = formData[task.shotsSinceField] ?? 0;
@@ -97,16 +112,28 @@ CleaningTask.propTypes = {
   onComplete: PropTypes.func.isRequired,
 };
 
+/**
+ * @param {{
+ *   formData: import('../types').SettingsFormData,
+ *   onChange: import('../types').FormChange,
+ *   setField: import('../types').SetField,
+ * }} props
+ */
 export function CleaningSection({ formData, onChange, setField }) {
-  const apiService = useContext(ApiServiceContext);
+  // Provided at the app root, so never null here.
+  const apiService = /** @type {import('../../../services/ApiService.js').default} */ (
+    useContext(ApiServiceContext)
+  );
   const { route } = useLocation();
   const { t } = useLingui();
 
+  /** @param {CleaningTaskDef} task */
   const start = task => {
     apiService.send({ tp: `req:cleaning:${task.key}:start` });
     route('/');
   };
 
+  /** @param {CleaningTaskDef} task */
   const complete = task => {
     apiService.send({ tp: `req:cleaning:${task.key}:complete` });
     setField(task.lastTimeField, Math.floor(Date.now() / 1000));

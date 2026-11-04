@@ -9,6 +9,27 @@ import {
   METRICS_LAST_ROW_FILLS,
 } from '../../../utils/dashboardManager.js';
 
+/**
+ * One rendered metric cell, built from a MetricDefinition by MetricsPanelWrapper.
+ * @typedef {object} MetricItem
+ * @property {string} id
+ * @property {string} label
+ * @property {string} current
+ * @property {string | null} target
+ * @property {string} [unit]
+ * @property {boolean} adjustable
+ * @property {boolean} [disabled]
+ * @property {(() => void) | undefined} [onDecrease]
+ * @property {(() => void) | undefined} [onIncrease]
+ */
+
+/**
+ * @param {object} props
+ * @param {import('@fortawesome/fontawesome-svg-core').IconProp} props.icon
+ * @param {(() => void) | undefined} props.onClick
+ * @param {boolean} props.visible
+ * @param {boolean} props.disabled
+ */
 function AdjBtn({ icon, onClick, visible, disabled }) {
   if (!visible) return <span className='h-6 w-6 shrink-0' />;
   return (
@@ -22,6 +43,9 @@ function AdjBtn({ icon, onClick, visible, disabled }) {
   );
 }
 
+/**
+ * @param {Omit<MetricItem, 'id'> & { inCard?: boolean, compact?: boolean }} props
+ */
 function MetricCell({
   label,
   current,
@@ -66,6 +90,12 @@ function MetricCell({
   );
 }
 
+/**
+ * @param {object} props
+ * @param {MetricItem} props.m
+ * @param {boolean} props.inCard
+ * @param {boolean} props.compact
+ */
 function MetricCellItem({ m, inCard, compact }) {
   return (
     <MetricCell
@@ -83,7 +113,14 @@ function MetricCellItem({ m, inCard, compact }) {
   );
 }
 
+/**
+ * @param {object} props
+ * @param {MetricItem[]} [props.metrics]
+ * @param {boolean} [props.inCard]
+ * @param {boolean} [props.compact]
+ */
 export function MetricsGrid({ metrics = [], inCard = false, compact = false }) {
+  /** @type {import('preact').RefObject<HTMLDivElement>} */
   const containerRef = useRef(null);
   const userCols = metricsColumnsSignal.value;
   const lastRowFill = metricsLastRowFillSignal.value;

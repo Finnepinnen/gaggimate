@@ -32,18 +32,23 @@ import {
   stopDiscovery,
 } from './discovery.js';
 
+/** @typedef {import('./machines.js').SavedMachine} SavedMachine */
+/** @typedef {import('./discovery.js').DiscoveredMachine} DiscoveredMachine */
+/** @typedef {import('@preact/signals').Signal<import('../types').MachineState>} MachineStateSignal */
+
 const SECTION_TITLE =
   'text-base-content/60 flex items-center gap-2 px-1 text-xs font-medium tracking-wide uppercase';
 const CORNER_BUTTON =
   'btn btn-ghost btn-circle btn-xs text-base-content/50 absolute top-1.5 right-1.5 z-[1]';
 
 // App-only screen for adding a machine or picking a saved one; mandatory while none is active.
+/** @param {{ mandatory?: boolean }} props */
 export function MachineSetup({ mandatory = false }) {
   const { t } = useLingui();
-  const [error, setError] = useState(null);
+  const [error, setError] = useState(/** @type {string | null} */ (null));
   // Host currently being connected to, from discovery or the address form.
-  const [connectingHost, setConnectingHost] = useState(null);
-  const [removing, setRemoving] = useState(null);
+  const [connectingHost, setConnectingHost] = useState(/** @type {string | null} */ (null));
+  const [removing, setRemoving] = useState(/** @type {SavedMachine | null} */ (null));
   const connecting = connectingHost !== null;
   const saved = machines.value;
   const found = discoveredMachines.value;
@@ -59,6 +64,10 @@ export function MachineSetup({ mandatory = false }) {
     };
   }, []);
 
+  /**
+   * @param {string} host
+   * @param {string} [preferredName]
+   */
   const connect = async (host, preferredName) => {
     setError(null);
     // Already saved: switch instead of probing, which would open a second socket to it.
@@ -72,8 +81,9 @@ export function MachineSetup({ mandatory = false }) {
       const { settings, version } = await probeMachine(host);
       await addMachine({ host, name: preferredName || settings.mdnsName || host, version });
     } catch (err) {
-      console.error('Machine probe failed', host, err?.message);
-      const reason = err?.message || err;
+      const e = /** @type {Error | null | undefined} */ (err);
+      console.error('Machine probe failed', host, e?.message);
+      const reason = e?.message || err;
       setError(
         t`Couldn't connect to ${host}: ${reason}. Make sure the machine is on and your phone is on the same Wi-Fi network.`,
       );
@@ -180,6 +190,14 @@ export function MachineSetup({ mandatory = false }) {
 }
 
 // Tappable status card for a saved machine; the X asks before removing it.
+/**
+ * @param {object} props
+ * @param {SavedMachine} props.machine
+ * @param {MachineStateSignal} props.state Live state of this machine.
+ * @param {boolean | null} props.onNetwork Seen via mDNS; null when discovery is unavailable.
+ * @param {boolean} props.disabled
+ * @param {() => void} props.onRemove
+ */
 function SavedMachineCard({ machine, state, onNetwork, disabled, onRemove }) {
   const { t } = useLingui();
   const name = machine.name;
@@ -245,10 +263,12 @@ function SavedMachineCard({ machine, state, onNetwork, disabled, onRemove }) {
   );
 }
 
+/** @param {{ machine: SavedMachine, onDone: () => void }} props */
 function RenameCard({ machine, onDone }) {
   const { t } = useLingui();
   const host = machine.host;
   const [draft, setDraft] = useState(machine.name);
+  /** @type {import('preact').RefObject<HTMLInputElement>} */
   const input = useRef(null);
 
   // Select the whole name so typing replaces it.
@@ -300,6 +320,7 @@ function RenameCard({ machine, onDone }) {
 }
 
 // Unsaved machine seen via mDNS; tapping anywhere (or the +) connects and saves it.
+/** @param {{ machine: DiscoveredMachine, connecting: boolean, disabled: boolean, onAdd: () => void }} props */
 function DiscoveredMachineCard({ machine, connecting, disabled, onAdd }) {
   const { t } = useLingui();
   const name = machine.name;
@@ -329,6 +350,13 @@ function DiscoveredMachineCard({ machine, connecting, disabled, onAdd }) {
 }
 
 // Manual entry; always open without saved machines, otherwise a section that slides open.
+/**
+ * @param {object} props
+ * @param {boolean} props.collapsible
+ * @param {string | null} props.connectingHost
+ * @param {(host: string, name: string) => void} props.onConnect
+ * @param {(message: string) => void} props.onInvalid
+ */
 function AddByAddress({ collapsible, connectingHost, onConnect, onInvalid }) {
   const { t } = useLingui();
   const [open, setOpen] = useState(!collapsible);
@@ -338,6 +366,7 @@ function AddByAddress({ collapsible, connectingHost, onConnect, onInvalid }) {
   const connectingHere = connecting && connectingHost === normalizeHost(address);
   const expanded = open || !collapsible;
 
+  /** @param {import('preact').JSX.TargetedSubmitEvent<HTMLFormElement>} event */
   const onSubmit = event => {
     event.preventDefault();
     const host = normalizeHost(address);
@@ -421,6 +450,7 @@ function AddByAddress({ collapsible, connectingHost, onConnect, onInvalid }) {
 }
 
 // Portaled to <body> so it sits above the full-screen setup overlay.
+/** @param {{ machine: SavedMachine, onCancel: () => void, onConfirm: () => void }} props */
 function RemoveMachineModal({ machine, onCancel, onConfirm }) {
   const { t } = useLingui();
   const name = machine.name;

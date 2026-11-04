@@ -34,11 +34,17 @@ import { faFilter } from '@fortawesome/free-solid-svg-icons/faFilter';
 
 const connected = computed(() => machine.value.connected);
 
+/** @typedef {import('../../types').Shot} Shot */
+/** @typedef {import('../../types').ShotLog} ShotLog */
+
 export function ShotHistory() {
   const { t } = useLingui();
   const isConnected = connected.value;
-  const apiService = useContext(ApiServiceContext);
-  const [history, setHistory] = useState([]);
+  // Provided at the app root, so never null here.
+  const apiService = /** @type {import('../../services/ApiService.js').default} */ (
+    useContext(ApiServiceContext)
+  );
+  const [history, setHistory] = useState(/** @type {Shot[]} */ ([]));
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('date'); // date, rating, profile, duration, volume
@@ -46,7 +52,7 @@ export function ShotHistory() {
   const [filterBy, setFilterBy] = useState('all'); // all, rated, unrated
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const loadHistoryAbortRef = useRef(null);
+  const loadHistoryAbortRef = useRef(/** @type {AbortController | null} */ (null));
   const loadHistory = async () => {
     // Abort any in-flight fetch to prevent request pileup on the ESP32.
     loadHistoryAbortRef.current?.abort();
@@ -91,7 +97,7 @@ export function ShotHistory() {
       });
       setLoading(false);
     } catch (error) {
-      if (error.name === 'AbortError') return; // Intentional abort, not an error.
+      if (/** @type {Error} */ (error).name === 'AbortError') return; // Intentional abort, not an error.
       console.error('Failed to load shot history:', error);
       setHistory([]);
       setLoading(false);
@@ -105,6 +111,7 @@ export function ShotHistory() {
   }, [isConnected]);
 
   const onDelete = useCallback(
+    /** @param {string} id */
     async id => {
       setLoading(true);
       await apiService.request({ tp: 'req:history:delete', id });
@@ -204,7 +211,7 @@ export function ShotHistory() {
     <>
       <div className='mb-6'>
         <div className='mb-4 flex flex-row items-center gap-2'>
-          <h2 className='flex-grow text-2xl font-bold sm:text-3xl'>
+          <h2 className='grow text-2xl font-bold sm:text-3xl'>
             <Trans>Shot History</Trans>
           </h2>
           <span className='text-base-content/70 text-sm'>
@@ -216,7 +223,7 @@ export function ShotHistory() {
         {/* Controls Row */}
         <div className='flex flex-col gap-3 sm:flex-row sm:items-center'>
           {/* Search */}
-          <div className='relative max-w-md flex-grow'>
+          <div className='relative max-w-md grow'>
             <FontAwesomeIcon
               icon={faSearch}
               className='text-base-content/50 absolute top-1/2 left-3 -translate-y-1/2 transform text-sm'
@@ -229,7 +236,7 @@ export function ShotHistory() {
                 setSearchTerm(e.currentTarget.value);
                 setCurrentPage(1); // Reset to page 1 when searching
               }}
-              className='input input-bordered w-full pr-4 pl-10 text-sm'
+              className='input w-full pr-4 pl-10 text-sm'
             />
           </div>
 
@@ -244,7 +251,7 @@ export function ShotHistory() {
                 setSortOrder(newSortOrder);
                 setCurrentPage(1); // Reset to page 1 when sorting
               }}
-              className='select select-bordered text-sm'
+              className='select text-sm'
             >
               <option value='date-desc'>{t`Newest First`}</option>
               <option value='date-asc'>{t`Oldest First`}</option>
@@ -270,7 +277,7 @@ export function ShotHistory() {
                 setFilterBy(e.currentTarget.value);
                 setCurrentPage(1); // Reset to page 1 when filtering
               }}
-              className='select select-bordered text-sm'
+              className='select text-sm'
             >
               <option value='all'>{t`All Shots`}</option>
               <option value='rated'>{t`Rated Only`}</option>
@@ -297,6 +304,7 @@ export function ShotHistory() {
                 const resp = await fetch(`/api/history/${paddedId}.slog`);
                 if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
                 const buf = await resp.arrayBuffer();
+                /** @type {ShotLog & Partial<Pick<Shot, 'notes' | 'rating'>>} */
                 const parsed = parseBinaryShot(buf, id);
                 parsed.incomplete = (target?.incomplete ?? false) || parsed.incomplete;
                 if (target?.notes) parsed.notes = target.notes;
@@ -308,7 +316,9 @@ export function ShotHistory() {
                           ...parsed,
                           // Preserve index metadata over shot file data
                           volume: h.volume ?? parsed.volume, // Use index volume if available, fallback to shot volume
-                          rating: h.rating ?? parsed.rating, // Use index rating if available
+                          // Use index rating if available. parseBinaryShot never sets one, so an
+                          // unrated shot ends up undefined here; Shot types it number | null.
+                          rating: /** @type {number | null} */ (h.rating ?? parsed.rating),
                           incomplete: h.incomplete ?? parsed.incomplete,
                           loaded: true,
                         }

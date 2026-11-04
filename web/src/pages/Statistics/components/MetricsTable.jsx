@@ -11,8 +11,25 @@ import { msg } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react/macro';
 import { fmt } from '../utils/format';
 import { StatisticsMetricHeader } from './StatisticsMetricHeader';
-import { STATISTICS_DENSE_VALUE_CLASS, STATISTICS_SMALL_LABEL_CLASS } from './statisticsUi';
+import { DenseValue, SmallLabel } from './statisticsUi.jsx';
 
+/**
+ * @typedef {import('../types').AggregatedStat} AggregatedStat
+ * @typedef {{
+ *   key: import('../types').StatisticsMetricKey,
+ *   label: import('@lingui/core').MessageDescriptor,
+ *   unit: string,
+ *   colorClass: string,
+ *   accentColor: string,
+ *   icon: import('@fortawesome/fontawesome-svg-core').IconDefinition,
+ *   averageDescription: string,
+ *   digits?: number,
+ *   avgPrefix?: string,
+ *   requiresData?: boolean,
+ * }} MetricRow
+ */
+
+/** @type {MetricRow[]} */
 const METRIC_ROWS = [
   {
     key: 'w',
@@ -127,16 +144,26 @@ const METRIC_ROWS = [
   },
 ];
 
+/**
+ * @param {number} value
+ * @param {number} min
+ * @param {number} max
+ */
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
+/**
+ * @param {number} value
+ * @param {MetricRow} row
+ */
 function formatMetricValue(value, row) {
   const formatted = fmt(value, row.digits);
   if (formatted === '-') return formatted;
   return `${row.avgPrefix || ''}${formatted}`;
 }
 
+/** @param {AggregatedStat | undefined} metric */
 function getSpreadRatio(metric) {
   if (!metric) return 0;
   const stdDev = Number(metric.stdDev);
@@ -157,6 +184,7 @@ function getSpreadRatio(metric) {
   return 0;
 }
 
+/** @param {AggregatedStat | undefined} metric */
 function getMetricPositions(metric) {
   const min = Number(metric?.min);
   const max = Number(metric?.max);
@@ -185,6 +213,7 @@ function getMetricPositions(metric) {
   };
 }
 
+/** @param {{ row: MetricRow, metric: AggregatedStat }} props */
 function MetricRangeViz({ row, metric }) {
   const { i18n } = useLingui();
   const spreadRatio = getSpreadRatio(metric);
@@ -208,23 +237,23 @@ function MetricRangeViz({ row, metric }) {
         }}
       >
         <div className='flex items-center justify-between gap-2'>
-          <div className={STATISTICS_SMALL_LABEL_CLASS}>
+          <SmallLabel>
             <Trans>Range</Trans>
-          </div>
+          </SmallLabel>
           <div className='text-right'>
             <div className='text-base-content/60 text-[10px]'>
               <Trans>Std Dev</Trans>
             </div>
-            <div className={`text-xs ${STATISTICS_DENSE_VALUE_CLASS}`}>
+            <DenseValue as='div' className='text-xs'>
               {fmt(metric.stdDev, row.digits)}
-            </div>
+            </DenseValue>
           </div>
         </div>
 
         <div className='mt-2 flex items-center gap-2'>
-          <div className={`shrink-0 text-[11px] opacity-65 ${STATISTICS_DENSE_VALUE_CLASS}`}>
+          <DenseValue as='div' className='shrink-0 text-[11px] opacity-65'>
             {fmt(metric.min, row.digits)}
-          </div>
+          </DenseValue>
           <div className='relative h-5 min-w-0 flex-1'>
             <div className='bg-base-content/20 absolute top-1/2 right-0 left-0 h-px -translate-y-1/2' />
             <div className='bg-base-content/30 absolute top-1/2 left-0 h-2 w-px -translate-y-1/2' />
@@ -252,15 +281,16 @@ function MetricRangeViz({ row, metric }) {
               }}
             />
           </div>
-          <div className={`shrink-0 text-[11px] opacity-65 ${STATISTICS_DENSE_VALUE_CLASS}`}>
+          <DenseValue as='div' className='shrink-0 text-[11px] opacity-65'>
             {fmt(metric.max, row.digits)}
-          </div>
+          </DenseValue>
         </div>
       </div>
     </div>
   );
 }
 
+/** @param {{ metrics: import('../types').StatisticsMetrics | null | undefined }} props */
 export function MetricsTable({ metrics }) {
   if (!metrics || Object.keys(metrics).length === 0) return null;
 
