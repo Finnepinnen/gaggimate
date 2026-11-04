@@ -4,6 +4,9 @@ Possible bugs, dead code and loose types found while adding types for `noImplici
 `strict`. None of these have been fixed yet; each needs a quick check in the running app before changing behaviour.
 Paths are relative to `web/src/`.
 
+The Gaggiuino importer and phase-number bugs have `test.fails` cases in `web/test/`; they pass
+while the bug is there, so turn each into a normal test when fixing it.
+
 ## Likely bugs
 
 - **Phase number concatenated as a string** —
