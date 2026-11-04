@@ -7,3 +7,5 @@ package-lock.json
 /dist-app
 /android
 /ios
+/test-results/
+/playwright-report/
