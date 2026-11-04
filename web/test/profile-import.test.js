@@ -46,10 +46,16 @@ describe('Gaggiuino import', () => {
 
   test('converts phases, pump targets and stop conditions', () => {
     const [profile] = parseJson(gaggiuino);
-    expect(profile).toMatchObject({ label: 'Londinium', type: 'pro', temperature: 92 });
+    expect(profile).toMatchObject({
+      label: 'Londinium',
+      type: 'pro',
+      description: '',
+      temperature: 92,
+    });
     expect(profile.phases).toEqual([
       {
         name: 'Fill',
+        phase: 'preinfusion',
         valve: 1,
         pump: { target: 'flow', pressure: 3, flow: 4 },
         duration: 10,
@@ -63,6 +69,7 @@ describe('Gaggiuino import', () => {
       },
       {
         name: 'Phase 2',
+        phase: 'brew',
         valve: 1,
         pump: { target: 'pressure', pressure: 9, flow: 2.5 },
         duration: 30,
@@ -87,32 +94,53 @@ describe('Gaggiuino import', () => {
     expect(profile.phases[0].pump).toBe(0);
   });
 
-  // Known bugs, see web/IMPROVEMENTS.md ("Gaggiuino importer produces incomplete profiles").
-  // These fail today; when one is fixed, turn it into a normal test.
-  test.fails('maps EASE_IN_OUT to a valid transition type', () => {
+  test.each([
+    ['INSTANT', 'instant'],
+    ['LINEAR', 'linear'],
+    ['EASE_IN', 'ease-in'],
+    ['EASE_OUT', 'ease-out'],
+    ['EASE_IN_OUT', 'ease-in-out'],
+    ['ease_in_out', 'ease-in-out'],
+    ['WIGGLE', 'linear'],
+  ])('maps the %s curve to %s', (curve, type) => {
     const [profile] = parseJson({
       waterTemperature: 93,
-      phases: [
-        { target: { time: 0, end: 9, curve: 'EASE_IN_OUT' }, stopConditions: { time: 1000 } },
-      ],
+      phases: [{ target: { time: 0, end: 9, curve }, stopConditions: { time: 1000 } }],
     });
-    expect(profile.phases[0].transition?.type).toBe('ease-in-out');
+    expect(profile.phases[0].transition?.type).toBe(type);
   });
 
-  test.fails('gives a phase without a stop time a finite duration', () => {
+  test('runs a phase without a time stop for the maximum duration', () => {
     const [profile] = parseJson({
       waterTemperature: 93,
-      phases: [{ target: { time: 2000, end: 9, curve: 'LINEAR' }, stopConditions: {} }],
+      phases: [{ target: { time: 2000, end: 9, curve: 'LINEAR' }, stopConditions: { weight: 36 } }],
     });
-    expect(profile.phases[0].duration).toBe(2);
+    expect(profile.phases[0].duration).toBe(300);
   });
 
-  test.fails('imports a phase without stop conditions', () => {
-    const profiles = parseJson({
+  test('imports sparse phases with defaults', () => {
+    const [profile] = parseJson({ waterTemperature: 93, phases: [{ type: 'PRESSURE' }] });
+    expect(profile.label).toBe('Imported Profile');
+    expect(profile.phases).toEqual([
+      {
+        name: 'Phase 1',
+        phase: 'brew',
+        valve: 1,
+        pump: 0,
+        duration: 300,
+        targets: [],
+        temperature: 0,
+        transition: { type: 'instant', duration: 0, adaptive: true },
+      },
+    ]);
+  });
+
+  test('never puts an undefined restriction into the pump', () => {
+    const [profile] = parseJson({
       waterTemperature: 93,
-      phases: [{ target: { time: 2000, end: 9, curve: 'LINEAR' } }],
+      phases: [{ type: 'PRESSURE', target: { time: 0, end: 9, curve: 'INSTANT' } }],
     });
-    expect(profiles).toHaveLength(1);
+    expect(profile.phases[0].pump).toEqual({ target: 'pressure', pressure: 9, flow: 0 });
   });
 });
 

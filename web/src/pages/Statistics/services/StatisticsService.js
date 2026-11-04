@@ -411,8 +411,8 @@ function buildPhaseMap(entries) {
   for (const { analysis } of entries) {
     if (!analysis.phases) continue;
     for (const phase of analysis.phases) {
-      // Executed phases carry a string `number` (sample phaseNumber key), so this can concatenate.
-      const phaseNumber = /** @type {number} */ (phase.number) + 1;
+      // Executed phases carry the sample phaseNumber key as a string; skipped ones a number.
+      const phaseNumber = Number(phase.number) + 1;
       const name = phase.displayName || phase.name || t`Phase ${phaseNumber}`;
       if (!phaseMap.has(name)) {
         phaseMap.set(name, []);

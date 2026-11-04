@@ -94,9 +94,8 @@ describe('computeStatistics', () => {
     expect(trends[1]).toMatchObject({ duration: 10, weight: 36, water: 30, avgTemp: 92 });
   });
 
-  // Known bug, see web/IMPROVEMENTS.md ("Phase number concatenated as a string"): an unnamed
-  // executed phase is labelled "Phase 01". Turn this into a normal test once it is fixed.
-  test.fails('labels an unnamed phase by its 1-based number', () => {
+  // Executed phases carry their number as a string; this used to give "Phase 01".
+  test('labels an unnamed phase by its 1-based number', () => {
     const named = entry({ id: 'a', timestamp: 0, profileName: 'P', source: 'gaggimate' });
     const analysis = /** @type {import('../src/pages/ShotAnalyzer/types').ShotAnalysis} */ (
       named.analysis

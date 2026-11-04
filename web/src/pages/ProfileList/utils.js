@@ -15,8 +15,8 @@ import { TclConverter } from './TclConverter.js';
  *   type?: string,
  *   restriction?: number,
  *   waterTemperature?: number,
- *   target: { time: number, end: number, curve: string },
- *   stopConditions: {
+ *   target?: { time: number, end: number, curve: string },
+ *   stopConditions?: {
  *     time?: number,
  *     pressureAbove?: number,
  *     pressureBelow?: number,
@@ -121,92 +121,96 @@ function convertJsonProfile(input) {
   return input;
 }
 
+/** Gaggiuino `target.curve` values. */
+/** @type {Record<string, TransitionType>} */
+const GAGGIUINO_CURVES = {
+  INSTANT: 'instant',
+  LINEAR: 'linear',
+  EASE_IN: 'ease-in',
+  EASE_OUT: 'ease-out',
+  EASE_IN_OUT: 'ease-in-out',
+};
+
 /**
  * @param {GaggiuinoProfile} input
  * @returns {ImportedProfile}
  */
 function parseJsonProfile(input) {
-  if (input.waterTemperature) {
-    // No description (and possibly no name) in a Gaggiuino profile; imported as-is.
-    let profile = /** @type {ImportedProfile} */ (
-      /** @type {unknown} */ ({
-        label: input.name,
-        type: 'pro',
-        temperature: input.waterTemperature,
-        phases: [],
-      })
-    );
+  if (!input.waterTemperature)
+    return /** @type {ImportedProfile} */ (/** @type {unknown} */ (input));
 
-    /**
-     * @param {unknown} v
-     * @returns {v is number}
-     */
-    let isPositive = function (v) {
-      return typeof v === 'number' && v > 0 && Number.isFinite(v);
-    };
+  /** @type {ImportedProfile} */
+  const profile = {
+    label: typeof input.name === 'string' && input.name.trim() ? input.name : 'Imported Profile',
+    type: 'pro',
+    description: '',
+    temperature: input.waterTemperature,
+    phases: [],
+  };
 
-    for (let i = 0; i < input.phases.length; i++) {
-      let p = input.phases[i];
-      // Gaggiuino phases carry no phase type, so `phase` stays unset as before.
-      let phase = /** @type {ProfilePhase & { targets: PhaseTarget[] }} */ (
-        /** @type {unknown} */ ({
-          name: p && typeof p.name === 'string' && p.name.trim() ? p.name : `Phase ${i + 1}`,
-          valve: 1,
-          pump: /** @type {PumpSettings} */ (0),
-          duration: Math.max(p.target.time, /** @type {number} */ (p.stopConditions.time)) / 1000,
-          targets: [],
-          temperature: isPositive(p.waterTemperature) ? p.waterTemperature : 0,
-          transition: {
-            type: p.target.curve.toLowerCase().replace('_', '-'),
-            duration: p.target.time / 1000,
-            adaptive: true,
-          },
-        })
-      );
-      if (p.target.end > 0) {
-        if (p.type == 'PRESSURE') {
-          phase.pump = {
-            target: 'pressure',
-            pressure: p.target.end,
-            flow: /** @type {number} */ (p.restriction),
-          };
-        } else {
-          phase.pump = {
-            target: 'flow',
-            pressure: /** @type {number} */ (p.restriction),
-            flow: p.target.end,
-          };
-        }
-      }
+  input.phases.forEach((p, i) => {
+    const target = p.target || { time: 0, end: 0, curve: 'INSTANT' };
+    const conditions = p.stopConditions || {};
+    const name = typeof p.name === 'string' && p.name.trim() ? p.name : `Phase ${i + 1}`;
+    const rampSeconds = isPositive(target.time) ? target.time / 1000 : 0;
+    // Without a time stop the phase runs until another stop condition, so give it the maximum.
+    const duration = isPositive(conditions.time)
+      ? Math.max(rampSeconds, conditions.time / 1000)
+      : 300;
+    const restriction = isPositive(p.restriction) ? p.restriction : 0;
 
-      const conditions = p.stopConditions || {};
-      if (isPositive(conditions.pressureAbove)) {
-        phase.targets.push({ type: 'pressure', value: conditions.pressureAbove });
-      }
-      if (isPositive(conditions.pressureBelow)) {
-        phase.targets.push({ type: 'pressure', operator: 'lte', value: conditions.pressureBelow });
-      }
-      if (isPositive(conditions.flowAbove)) {
-        phase.targets.push({ type: 'flow', value: conditions.flowAbove });
-      }
-      if (isPositive(conditions.flowBelow)) {
-        phase.targets.push({ type: 'flow', operator: 'lte', value: conditions.flowBelow });
-      }
-      if (isPositive(conditions.weight)) {
-        phase.targets.push({ type: 'volumetric', value: conditions.weight });
-      } else if (isPositive(input.globalStopConditions?.weight)) {
-        phase.targets.push({ type: 'volumetric', value: input.globalStopConditions.weight });
-      }
-      if (isPositive(conditions.waterPumpedInPhase)) {
-        phase.targets.push({ type: 'pumped', value: conditions.waterPumpedInPhase });
-      }
-
-      profile.phases.push(phase);
+    /** @type {PhaseTarget[]} */
+    const targets = [];
+    if (isPositive(conditions.pressureAbove)) {
+      targets.push({ type: 'pressure', value: conditions.pressureAbove });
+    }
+    if (isPositive(conditions.pressureBelow)) {
+      targets.push({ type: 'pressure', operator: 'lte', value: conditions.pressureBelow });
+    }
+    if (isPositive(conditions.flowAbove)) {
+      targets.push({ type: 'flow', value: conditions.flowAbove });
+    }
+    if (isPositive(conditions.flowBelow)) {
+      targets.push({ type: 'flow', operator: 'lte', value: conditions.flowBelow });
+    }
+    if (isPositive(conditions.weight)) {
+      targets.push({ type: 'volumetric', value: conditions.weight });
+    } else if (isPositive(input.globalStopConditions?.weight)) {
+      targets.push({ type: 'volumetric', value: input.globalStopConditions.weight });
+    }
+    if (isPositive(conditions.waterPumpedInPhase)) {
+      targets.push({ type: 'pumped', value: conditions.waterPumpedInPhase });
     }
 
-    return profile;
-  }
-  return /** @type {ImportedProfile} */ (/** @type {unknown} */ (input));
+    /** @type {PumpSettings} */
+    let pump = 0;
+    if (isPositive(target.end)) {
+      pump =
+        p.type === 'PRESSURE'
+          ? { target: 'pressure', pressure: target.end, flow: restriction }
+          : { target: 'flow', pressure: restriction, flow: target.end };
+    }
+
+    profile.phases.push({
+      name,
+      // Gaggiuino has no phase type; recognise preinfusion by name, like the Meticulous importer.
+      phase: PREINFUSION_KEYWORDS.some(kw => name.toLowerCase().includes(kw))
+        ? 'preinfusion'
+        : 'brew',
+      valve: 1,
+      pump,
+      duration,
+      targets,
+      temperature: isPositive(p.waterTemperature) ? p.waterTemperature : 0,
+      transition: {
+        type: GAGGIUINO_CURVES[String(target.curve).toUpperCase()] ?? 'linear',
+        duration: rampSeconds,
+        adaptive: true,
+      },
+    });
+  });
+
+  return profile;
 }
 
 // ---- Meticulous JSON → Gaggimate ------------------------------------------
