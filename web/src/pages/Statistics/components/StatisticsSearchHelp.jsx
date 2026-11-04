@@ -144,6 +144,7 @@ export function StatisticsSearchHelp() {
     <details ref={detailsRef} className='statistics-search-help dropdown dropdown-end'>
       <AnalyzerControl
         as='summary'
+        tone='none'
         className='text-base-content/60 hover:text-base-content flex h-9 min-h-0 w-9 list-none items-center justify-center bg-transparent px-0 [&::-webkit-details-marker]:hidden'
         aria-label={t`Search help`}
         title={t`Search help`}

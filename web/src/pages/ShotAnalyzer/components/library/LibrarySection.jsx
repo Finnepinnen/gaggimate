@@ -372,6 +372,7 @@ export function LibrarySection({
                             key={option.value}
                             type='button'
                             variant='surface'
+                            tone='none'
                             className={cx(
                               'flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-[10px] font-bold',
                               sourceFilter === option.value
