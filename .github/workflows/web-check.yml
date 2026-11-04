@@ -4,10 +4,16 @@ on:
   push:
     paths:
       - 'web/**'
+      - 'src/display/**'
+      - 'docs/websocket-api.yaml'
+      - 'schema/**'
       - '.github/workflows/web-check.yml'
   pull_request:
     paths:
       - 'web/**'
+      - 'src/display/**'
+      - 'docs/websocket-api.yaml'
+      - 'schema/**'
       - '.github/workflows/web-check.yml'
 
 jobs:
@@ -35,3 +41,6 @@ jobs:
       # Type-checks every .js/.jsx file with noImplicitAny; see web/jsconfig.json.
       - name: Type check
         run: npm run typecheck
+      # docs/websocket-api.yaml must cover every message type used by the firmware and web UI.
+      - name: WebSocket contract check
+        run: npm run contract:check

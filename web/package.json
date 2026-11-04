@@ -12,6 +12,7 @@
     "lint:check": "eslint src",
     "typecheck": "tsc -p jsconfig.json",
     "i18n:extract": "lingui extract --clean",
+    "contract:check": "node scripts/check-ws-contract.mjs",
     "build:app": "vite build --mode app",
     "dev:app": "vite --mode app --host",
     "cap:sync": "npm run build:app && cap sync",
