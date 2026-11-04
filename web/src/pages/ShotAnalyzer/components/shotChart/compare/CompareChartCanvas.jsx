@@ -250,9 +250,7 @@ export function CompareChartCanvas({
 
     const chart = new Chart(canvasRef.current, nextConfig);
     chartRef.current = chart;
-    /** @type {any} */ (chart).$compareTooltipShowDifference = Boolean(
-      config.compareTooltipShowDifference,
-    );
+    chart.$compareTooltipShowDifference = Boolean(config.compareTooltipShowDifference);
     if (chartInstanceRef) {
       chartInstanceRef.current = chart;
     }

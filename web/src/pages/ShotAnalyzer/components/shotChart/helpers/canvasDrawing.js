@@ -25,11 +25,19 @@ export function drawFontAwesomeIcon(ctx, { iconDef, x, y, size, color }) {
   const height = Number(icon?.[1]) || 512;
   const scale = size / Math.max(width, height);
 
+  // Duotone icons carry [secondary, primary] paths; Font Awesome draws the secondary at 40 %.
+  const paths = Array.isArray(pathData) ? pathData : [pathData];
+  const baseAlpha = ctx.globalAlpha;
+
   ctx.save();
   ctx.fillStyle = color;
   ctx.translate(x - (width * scale) / 2, y - (height * scale) / 2);
   ctx.scale(scale, scale);
-  ctx.fill(new Path2D(/** @type {string} */ (pathData)));
+  paths.forEach((path, index) => {
+    if (!path) return;
+    ctx.globalAlpha = paths.length > 1 && index === 0 ? baseAlpha * 0.4 : baseAlpha;
+    ctx.fill(new Path2D(path));
+  });
   ctx.restore();
 }
 

@@ -1,48 +1,16 @@
 # Improvements
 
-Dead code and loose types found while adding types for `noImplicitAny` and `strict`. Each
-needs a quick check in the running app before changing behaviour.
+Loose types and loose ends found while adding types for `noImplicitAny` and `strict`.
 Paths are relative to `web/src/`.
 
-## Dead or ineffective code
+## Unfinished
 
-- **Compare stop-annotation filter never matches** —
-  `pages/ShotAnalyzer/components/shotChart/compare/compareChartConfig.js:951`. Filters keys
-  starting with `phase_exit_` and `brew_mode`, but the chart model creates `phase_stop_N` and
-  `shot_end_stop`. Turning stop annotations off therefore doesn't remove them (they happen to be
-  created with `display: false`).
-- **Final-weight overlays are never shown** — same file, lines 250 and 266. Look for annotation
-  keys ending in `final_weight_callout_meta` / `final_weight`, which the model never produces.
-- **Unsupported `clip: false` on annotation labels** — `components/OverviewChart.jsx:178` and
-  `:212`, `components/ExtendedProfileChart.jsx:358`. chartjs-plugin-annotation's label options
-  have no `clip`, so it's ignored.
-- **Legend `borderDash` branch never runs** — `components/ExtendedProfileChart.jsx:229`. The
-  `generateLabels` code copies `dataset.borderDash`, but these datasets only set
-  `segment.borderDash` (lines 47 and 58).
-- **Unused arguments to `createPhaseSeparatorAnnotation`** —
-  `pages/ShotAnalyzer/components/shotChart/model/phaseAnnotations.js:273`. Callers pass
-  `colors` and `visibility`, which it ignores (currently silenced with `@ts-expect-error`).
-- **`phase.key` fallback is dead** — `pages/ShotAnalyzer/components/analysisTable/AnalysisTable.jsx`.
-  `AnalyzedPhase` never has a `key`.
-- **Title icons never have a `label`** —
-  `pages/ShotAnalyzer/components/shotChart/compare/CompareMetricContent.jsx:394`.
-  `key={item.key || item.label}` only ever uses `item.key`. Harmless.
-- **Leftover `any` cast** —
-  `pages/ShotAnalyzer/components/shotChart/compare/CompareChartCanvas.jsx:253`.
-  `$compareTooltipShowDifference` is now declared on `Chart`, so the cast can go.
-
-## Fragile, but fine today
-
-- **Duotone icons would break `Path2D`** —
-  `pages/ShotAnalyzer/components/shotChart/helpers/canvasDrawing.js:32`. A duotone Font Awesome
-  icon has an array path; only solid icons are used now.
-- **`resolveTooltipRows` needs optional-looking callbacks** —
-  `pages/ShotAnalyzer/components/shotChart/tooltip/tooltipModel.js:398`. Single mode crashes if
-  `getHoverWaterValuesAtX` or `tooltipColorByLabel` is omitted; all current callers pass both.
-- **Phase overview assumes a shot** —
-  `pages/ShotAnalyzer/components/shotChart/model/phaseAnnotations.js` (`buildPhaseOverviewRows`, line 901).
-  Casts `shotData` to non-null in the results branch; it would throw if results came without a
-  shot and a phase had no name (as it did before).
+- **Final-weight overlays are never shown** —
+  `pages/ShotAnalyzer/components/shotChart/compare/compareChartConfig.js` and
+  `single/createShotChartConfigs.js` wire up `finalWeightCalloutLine` / `finalWeightBadgeOverlay`
+  (`helpers/overlayPlugins.js`) and look for `final_weight_callout_meta` / `final_weight`
+  annotations, but no chart model creates them. Either finish the feature or remove the
+  plugins.
 
 ## Types that are looser or stricter than reality
 

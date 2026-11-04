@@ -1,12 +1,12 @@
 import { t } from '@lingui/core/macro';
 
 /**
- * @param {{ phaseTransitions?: Array<{ phaseNumber: number, phaseName?: string }>, profile?: string | { phases?: Array<{ name: string }> } | null }} shot
+ * @param {{ phaseTransitions?: Array<{ phaseNumber: number, phaseName?: string }>, profile?: string | { phases?: Array<{ name: string }> } | null } | null | undefined} shot
  * @param {number} phaseNumber
  * @returns {string}
  */
 export function getPhaseName(shot, phaseNumber) {
-  const transitions = shot.phaseTransitions;
+  const transitions = shot?.phaseTransitions;
   if (transitions && transitions.length > 0) {
     const transition = transitions.find(t => t.phaseNumber === phaseNumber);
     if (transition?.phaseName) {
@@ -15,7 +15,7 @@ export function getPhaseName(shot, phaseNumber) {
   }
 
   const profile = /** @type {{ phases?: Array<{ name: string }> } | null | undefined} */ (
-    shot.profile
+    shot?.profile
   );
   if (profile?.phases?.[phaseNumber]) {
     return profile.phases[phaseNumber].name;

@@ -223,13 +223,8 @@ function makeChartData(
               /** @type {import('chart.js').LegendItem[]} */
               const labels = original.call(this, chart);
 
-              labels.forEach((label, index) => {
-                const dataset = chart.data.datasets[index];
+              labels.forEach(label => {
                 label.lineWidth = 3;
-                if (dataset.borderDash && dataset.borderDash.length > 0) {
-                  // Datasets here only set static dash arrays.
-                  label.lineDash = /** @type {number[]} */ (dataset.borderDash);
-                }
               });
 
               return labels;
@@ -355,7 +350,6 @@ function makeChartData(
               size: isSmall ? 9 : 11,
               weight: 500,
             },
-            clip: false,
           }
         : undefined,
     });

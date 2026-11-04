@@ -385,6 +385,11 @@ function resolveCompareXValue(chart, tooltip, tooltipItems, isCompareTooltipMode
   return Number.isFinite(scaleXValue) ? /** @type {number} */ (scaleXValue) : null;
 }
 
+/** Water getter for charts that have none: water rows show no value. */
+function getNoHoverWaterValues() {
+  return { totalWaterMl: null, phaseWaterMl: null, phaseTotalWaterMl: null };
+}
+
 /**
  * @param {object} options
  * @param {string} options.tooltipMode
@@ -409,11 +414,10 @@ function resolveTooltipRows({
   if (tooltipMode === 'compareTitleOnly') {
     return [];
   }
-  // Single mode: the caller must supply the water getter and colour map.
   return buildExternalTooltipRows(
     tooltipItems,
-    /** @type {HoverWaterValuesGetter} */ (getHoverWaterValuesAtX),
-    /** @type {Record<string, string>} */ (tooltipColorByLabel),
+    getHoverWaterValuesAtX || getNoHoverWaterValues,
+    tooltipColorByLabel || {},
   );
 }
 
@@ -543,8 +547,8 @@ function resolveTitleLines({ isCompareTooltipMode, compareXValue, tooltip }) {
  * @param {object} options
  * @param {ShotChartInstance} options.chart
  * @param {ShotChartTooltipModel} options.tooltip
- * @param {HoverWaterValuesGetter} [options.getHoverWaterValuesAtX] Required for the 'single' tooltip mode.
- * @param {Record<string, string>} [options.tooltipColorByLabel] Required for the 'single' tooltip mode.
+ * @param {HoverWaterValuesGetter} [options.getHoverWaterValuesAtX] Water rows show no value without it.
+ * @param {Record<string, string>} [options.tooltipColorByLabel] Rows use a neutral colour without it.
  * @param {string} [options.tooltipMode]
  * @param {PhaseTooltipGroup[]} [options.phaseTooltipGroups]
  * @param {boolean} [options.showPhaseNames]

@@ -392,7 +392,7 @@ export function CompareChartTitle({
         {titleIcons.map(item =>
           item.icon ? (
             <FontAwesomeIcon
-              key={item.key || item.label}
+              key={item.key}
               icon={item.icon}
               className='text-[10px]'
               style={item.color ? { color: item.color } : undefined}
