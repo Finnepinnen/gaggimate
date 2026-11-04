@@ -1,4 +1,3 @@
-import { useContext } from 'preact/hooks';
 import { useLocation } from 'preact-iso';
 import PropTypes from 'prop-types';
 import { Trans, useLingui, Plural } from '@lingui/react/macro';
@@ -6,9 +5,9 @@ import { msg } from '@lingui/core/macro';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck } from '@fortawesome/free-solid-svg-icons/faCheck';
 import { faPlay } from '@fortawesome/free-solid-svg-icons/faPlay';
-import { ApiServiceContext } from '../../../services/ApiService.js';
 import Section from '../../../components/Card.jsx';
 import { InputGroupField } from '../../../components/SettingsFormField.jsx';
+import { useApiService } from '../../../services/hooks.js';
 
 /** @typedef {(typeof TASKS)[number]} CleaningTaskDef */
 
@@ -120,10 +119,7 @@ CleaningTask.propTypes = {
  * }} props
  */
 export function CleaningSection({ formData, onChange, setField }) {
-  // Provided at the app root, so never null here.
-  const apiService = /** @type {import('../../../services/ApiService.js').default} */ (
-    useContext(ApiServiceContext)
-  );
+  const apiService = useApiService();
   const { route } = useLocation();
   const { t } = useLingui();
 

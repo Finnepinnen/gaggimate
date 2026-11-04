@@ -558,9 +558,6 @@ function addPhaseSeparatorAndStops({
     const shotStartTime = (samples[0].t || 0) / 1000;
     phaseAnnotations.shot_start = createPhaseSeparatorAnnotation({
       value: shotStartTime,
-      // @ts-expect-error colors/visibility are passed but createPhaseSeparatorAnnotation ignores them
-      colors,
-      visibility,
     });
   }
 
@@ -575,9 +572,6 @@ function addPhaseSeparatorAndStops({
 
     phaseAnnotations[`phase_line_${index}`] = createPhaseSeparatorAnnotation({
       value: timeInSeconds,
-      // @ts-expect-error colors/visibility are passed but createPhaseSeparatorAnnotation ignores them
-      colors,
-      visibility,
     });
 
     const previousTransition = transitions[index - 1];
@@ -914,10 +908,7 @@ export function buildPhaseOverviewRows({ shotData, results }) {
       return {
         phaseNumber: zeroBasedPhaseNumber + 1,
         phaseName:
-          phase?.displayName ||
-          phase?.name ||
-          // Analyzer results are computed from shotData, so it is set here.
-          getPhaseName(/** @type {ChartShotData} */ (shotData), zeroBasedPhaseNumber),
+          phase?.displayName || phase?.name || getPhaseName(shotData, zeroBasedPhaseNumber),
         skipNotice,
         stopReason: stopReason || '-',
         stopValue: getPhaseStopValue(phase),
@@ -940,8 +931,7 @@ export function buildPhaseOverviewRows({ shotData, results }) {
       if (phaseNameByNumber.has(zeroBasedPhaseNumber)) return;
       phaseNameByNumber.set(
         zeroBasedPhaseNumber,
-        transition?.phaseName ||
-          getPhaseName(/** @type {ChartShotData} */ (shotData), zeroBasedPhaseNumber),
+        transition?.phaseName || getPhaseName(shotData, zeroBasedPhaseNumber),
       );
     });
 

@@ -200,10 +200,9 @@ export function getProfileCompareBadgeNumber({
  * @returns {string}
  */
 export function getLibraryProfileDeleteKey(item) {
-  // Device profiles always carry an id, browser profiles their name (the IndexedDB key).
-  return /** @type {string} */ (
-    item.source === 'gaggimate' ? item.profileId || item.id : item.label || item.name
-  );
+  // Device profiles are deleted by id, browser profiles by name (the IndexedDB key).
+  const key = item.source === 'gaggimate' ? item.profileId || item.id : item.label || item.name;
+  return key == null ? '' : String(key);
 }
 
 /**
@@ -534,14 +533,13 @@ export function getShotPinToggleBucketKey({
 
 /** @param {LibraryItem} item */
 export async function deleteLibraryItem(item) {
-  if (item.duration !== undefined || item.samples) {
-    await libraryService.deleteShot(getShotStorageKey(item), item.source);
-    return;
-  }
-  await libraryService.deleteProfile(
-    getLibraryProfileDeleteKey(/** @type {LibraryProfileItem} */ (item)),
-    item.source,
-  );
+  const isShot = item.duration !== undefined || Boolean(item.samples);
+  const key = isShot
+    ? getShotStorageKey(item)
+    : getLibraryProfileDeleteKey(/** @type {LibraryProfileItem} */ (item));
+  if (key === '' || key == null) throw new Error(t`This item has no id to delete it by.`);
+  if (isShot) await libraryService.deleteShot(key, item.source);
+  else await libraryService.deleteProfile(String(key), item.source);
 }
 
 /**

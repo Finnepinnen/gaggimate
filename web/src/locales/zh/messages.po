@@ -5077,6 +5077,10 @@ msgstr "此功能可连接到 Home Assistant 或 MQTT 服务并推送当前状�
 msgid "This feature controls a Tasmota Plug to turn off your grinder after the target has been reached."
 msgstr "此功能可控制 Tasmota 插座，在达到目标后关闭磨豆机。"
 
+#: src/pages/ShotAnalyzer/components/library/libraryDisplay.js
+msgid "This item has no id to delete it by."
+msgstr "此项目没有可用于删除的 ID。"
+
 #: src/pages/Settings/tabs/BluetoothTab.jsx
 msgid "This scale model couldn't be set up."
 msgstr "无法设置此型号的秤。"

@@ -39,6 +39,8 @@ jobs:
       # Type-checks every .js/.jsx file with noImplicitAny; see web/jsconfig.json.
       - name: Type check
         run: npm run typecheck
+      - name: Unit tests
+        run: npm test
       # docs/websocket-api.yaml must cover every message type used by the firmware and web UI.
       - name: WebSocket contract check
         run: npm run contract:check

@@ -99,10 +99,12 @@ export function RunButtonBadge({ children }) {
  * @param {{ className?: string, children?: import('preact').ComponentChildren } & Record<string, any>} props
  */
 function ToolbarButton({ className, children, ...props }) {
+  // Callers set their own colours.
   return (
     <AnalyzerControl
       {...props}
       variant='surface'
+      tone='none'
       className={cx(
         'btn btn-md inline-flex h-10 min-h-10 justify-center rounded-lg border-none px-0 shadow-none disabled:cursor-not-allowed disabled:opacity-40',
         className,
@@ -123,6 +125,7 @@ function CompactNeutralButton({ active = false, className, children, ...props })
     <AnalyzerControl
       {...props}
       variant='text'
+      tone='none'
       className={cx(
         'hover:text-base-content h-9 min-h-0 rounded-lg bg-transparent px-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-40',
         active ? 'text-base-content' : 'text-base-content/65',
@@ -326,6 +329,7 @@ export function ModeSelectionDropdown({
       <AnalyzerControl
         as='summary'
         variant='surface'
+        tone='none'
         className={cx(
           'btn btn-md bg-primary text-primary-content hover:bg-primary/92 h-10 min-h-10 w-[7rem] list-none justify-between rounded-lg border-none px-2 text-sm font-semibold shadow-none [&::-webkit-details-marker]:hidden',
           isBusy && 'pointer-events-none opacity-40',
@@ -478,6 +482,7 @@ export function SourceSelectionDropdown({
       <AnalyzerControl
         as='summary'
         variant='surface'
+        tone='none'
         className={cx(
           'text-base-content/70 hover:text-base-content flex h-9 min-h-0 w-[15rem] max-w-full list-none items-center justify-between gap-2 rounded-lg bg-transparent px-2 text-xs font-bold [&::-webkit-details-marker]:hidden',
           isBusy && 'pointer-events-none opacity-40',
@@ -549,6 +554,7 @@ export function DateRangeDropdown({
       <AnalyzerControl
         as='summary'
         variant='surface'
+        tone='none'
         className={cx(
           'flex h-9 min-h-0 w-[11.25rem] list-none items-center gap-1.5 rounded-lg bg-transparent px-2 text-left text-xs sm:w-[12.5rem] md:w-[15rem] [&::-webkit-details-marker]:hidden',
           hasDateFilter ? 'text-base-content' : 'text-base-content/70 hover:text-base-content',

@@ -498,7 +498,7 @@ function CompareLargeMetricValue({ row, showIcon = true }) {
         .filter(Boolean)
         .join(' ')}
     >
-      {shouldShowIcon ? (
+      {shouldShowIcon && metricIcon ? (
         <span
           className='analyzer-icon-metric__icon'
           style={{ color: row.color }}

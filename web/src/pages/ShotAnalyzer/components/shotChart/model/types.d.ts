@@ -223,7 +223,7 @@ export interface HoverWaterValues {
   phaseWaterMl: number | null;
   phaseTotalWaterMl: number | null;
 }
-export type HoverWaterValueGetter = (xValue: number) => HoverWaterValues;
+export type HoverWaterValueGetter = (xValue: number | null | undefined) => HoverWaterValues;
 
 /** Resolves a raw phase number (and optional name) to a zero-based profile phase index. */
 export type PhaseNumberResolver = (

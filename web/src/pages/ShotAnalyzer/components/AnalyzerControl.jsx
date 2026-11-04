@@ -6,7 +6,9 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { cx } from '../../../utils/cx.js';
 
+// 'none' leaves the text colour to the control's own classes.
 const ICON_TONES = {
+  none: '',
   neutral: 'text-base-content/55 hover:text-primary',
   subtle: 'text-base-content/35 hover:text-primary',
   primary: 'text-primary hover:text-primary',
@@ -16,6 +18,7 @@ const ICON_TONES = {
 
 /** @type {Partial<Record<AnalyzerControlTone, string>>} */
 const TEXT_TONES = {
+  none: '',
   neutral: 'text-base-content/70 hover:text-primary',
   primary: 'text-primary hover:text-primary',
   success: 'text-base-content/55 hover:text-success',
@@ -31,7 +34,7 @@ const SIZES = {
 
 /**
  * @typedef {'icon' | 'text' | 'surface'} AnalyzerControlVariant
- * @typedef {'neutral' | 'subtle' | 'primary' | 'success' | 'error'} AnalyzerControlTone
+ * @typedef {'none' | 'neutral' | 'subtle' | 'primary' | 'success' | 'error'} AnalyzerControlTone
  */
 
 /**
@@ -53,7 +56,7 @@ export function analyzerControlClasses({
   if (variant === 'surface') {
     return cx(
       'hover:bg-base-content/5 cursor-pointer rounded-md transition-colors duration-150',
-      TEXT_TONES[tone] || TEXT_TONES.neutral,
+      TEXT_TONES[tone] ?? TEXT_TONES.neutral,
       size && SIZES[size],
       className,
     );
@@ -64,8 +67,8 @@ export function analyzerControlClasses({
       : 'inline-flex items-center rounded-md',
     'hover:bg-base-content/5 cursor-pointer transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-30',
     variant === 'icon'
-      ? ICON_TONES[tone] || ICON_TONES.neutral
-      : TEXT_TONES[tone] || TEXT_TONES.neutral,
+      ? (ICON_TONES[tone] ?? ICON_TONES.neutral)
+      : (TEXT_TONES[tone] ?? TEXT_TONES.neutral),
     size && SIZES[size],
     className,
   );
@@ -96,7 +99,12 @@ export function AnalyzerControl({
   ...rest
 }) {
   // Typed loosely: the ref's element type depends on `as`.
-  const elementProps = /** @type {Record<string, any>} */ ({ ...rest, ref: controlRef });
+  const elementProps = /** @type {Record<string, any>} */ ({
+    // A plain button, not a form submit, unless the caller says otherwise.
+    ...(Tag === 'button' ? { type: 'button' } : {}),
+    ...rest,
+    ref: controlRef,
+  });
   return (
     <Tag {...elementProps} className={analyzerControlClasses({ variant, tone, size, className })}>
       {children}

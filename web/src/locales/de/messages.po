@@ -5077,6 +5077,10 @@ msgstr "Diese Funktion ermöglicht die Verbindung mit einer Home-Assistant- oder
 msgid "This feature controls a Tasmota Plug to turn off your grinder after the target has been reached."
 msgstr "Diese Funktion steuert eine Tasmota-Steckdose, um deine Mühle nach Erreichen des Ziels auszuschalten."
 
+#: src/pages/ShotAnalyzer/components/library/libraryDisplay.js
+msgid "This item has no id to delete it by."
+msgstr "Dieser Eintrag hat keine ID, über die er gelöscht werden kann."
+
 #: src/pages/Settings/tabs/BluetoothTab.jsx
 msgid "This scale model couldn't be set up."
 msgstr "Dieses Waagenmodell konnte nicht eingerichtet werden."

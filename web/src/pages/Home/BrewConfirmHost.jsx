@@ -1,15 +1,13 @@
-import { useContext, useEffect, useState } from 'preact/hooks';
-import { ApiServiceContext, machine } from '../../services/ApiService.js';
+import { useEffect, useState } from 'preact/hooks';
+import { machine } from '../../services/ApiService.js';
 import { activeWarnings, parseWarningStates } from '../../utils/warnings.js';
 import { BrewConfirmModal } from './BrewConfirmModal.jsx';
+import { useApiService } from '../../services/hooks.js';
 
 // Shows the brew confirmation whenever the controller asks for it, whichever UI or button started the brew.
 // It closes when any UI answers: a cancel event, or the brew actually starting.
 export function BrewConfirmHost() {
-  // Provided at the app root, so never null here.
-  const apiService = /** @type {import('../../services/ApiService.js').default} */ (
-    useContext(ApiServiceContext)
-  );
+  const apiService = useApiService();
   const [warnings, setWarnings] = useState(
     /** @type {import('./BrewConfirmModal.jsx').ActiveWarning[] | null} */ (null),
   );

@@ -384,8 +384,7 @@ export function LibraryPanel({
 
   /** @param {LibraryItem} item */
   const handleDelete = async item => {
-    // Library rows always have a name or an id.
-    const itemName = /** @type {string} */ (item.name || item.id);
+    const itemName = String(item.name || item.id || '');
     if (!confirm(t`Are you sure you want to delete "${itemName}"?`)) return;
     try {
       await deleteLibraryItem(item);

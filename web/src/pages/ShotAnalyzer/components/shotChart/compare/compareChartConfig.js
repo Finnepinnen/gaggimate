@@ -948,7 +948,8 @@ function filterCompareAnnotations(
       if (!showPhaseAnnotations && (key === 'shot_start' || key.startsWith('phase_line_'))) {
         return false;
       }
-      if (!showStopAnnotations && (key === 'shot_end' || key.startsWith('phase_exit_'))) {
+      // Stop markers: phase_stop_N plus shot_end / shot_end_stop / shot_end_stop_line.
+      if (!showStopAnnotations && (key.startsWith('shot_end') || key.startsWith('phase_stop_'))) {
         return false;
       }
       if (!showBrewModeAnnotation && key === 'brew_mode') {

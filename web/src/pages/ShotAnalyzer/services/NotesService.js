@@ -59,12 +59,11 @@ class NotesService {
   }
 
   /**
-   * `null` builds the placeholder used while no shot is loaded; its id stays null at runtime.
-   * @param {ShotId | null} shotId
+   * @param {ShotId | null} shotId `null` builds the placeholder used while no shot is loaded.
    * @returns {AnalyzerNotes}
    */
   getDefaults(shotId) {
-    return { ...DEFAULT_NOTES, id: /** @type {ShotId} */ (shotId) };
+    return { ...DEFAULT_NOTES, id: shotId ?? '' };
   }
 
   /**

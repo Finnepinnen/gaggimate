@@ -3,10 +3,10 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import homekitImage from '../../assets/homekit.png';
 import { faCalendarDays } from '@fortawesome/free-solid-svg-icons/faCalendarDays';
 import { computed } from '@preact/signals';
-import { machine, ApiServiceContext } from '../../services/ApiService.js';
-import { useContext, useEffect, useState } from 'preact/hooks';
+import { machine } from '../../services/ApiService.js';
+import { useEffect, useState } from 'preact/hooks';
 import { Trans, useLingui } from '@lingui/react/macro';
-import { useProfileList } from '../../services/hooks.js';
+import { useApiService, useProfileList } from '../../services/hooks.js';
 
 const gearpumpAddon = computed(() => machine.value.capabilities.gearpumpAddon);
 
@@ -21,10 +21,7 @@ const MAHLKONIG_MIN_RECIPES = 4;
  */
 function MahlkonigRecipeProfiles({ formData, onChange }) {
   const { t } = useLingui();
-  // Provided at the app root, so never null here.
-  const apiService = /** @type {import('../../services/ApiService.js').default} */ (
-    useContext(ApiServiceContext)
-  );
+  const apiService = useApiService();
   const [lastRecipe, setLastRecipe] = useState(/** @type {number | null} */ (null));
   const { profiles: allProfiles } = useProfileList();
   const profiles = allProfiles.filter(p => !p.utility);

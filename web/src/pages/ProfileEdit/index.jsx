@@ -1,5 +1,5 @@
 import { useLocation, useRoute } from 'preact-iso';
-import { useCallback, useEffect, useState, useContext } from 'preact/hooks';
+import { useCallback, useEffect, useState } from 'preact/hooks';
 import {
   CategoryScale,
   Chart,
@@ -13,11 +13,12 @@ import {
 } from 'chart.js';
 import { ProfileTypeSelection } from './ProfileTypeSelection.jsx';
 import { StandardProfileForm } from './StandardProfileForm.jsx';
-import { ApiServiceContext, machine } from '../../services/ApiService.js';
+import { machine } from '../../services/ApiService.js';
 import { computed } from '@preact/signals';
 import { Spinner } from '../../components/Spinner.jsx';
 import { ExtendedProfileForm } from './ExtendedProfileForm.jsx';
 import { Trans, useLingui } from '@lingui/react/macro';
+import { useApiService } from '../../services/hooks.js';
 
 Chart.register(
   LineController,
@@ -36,10 +37,7 @@ const pressureAvailable = computed(() => machine.value.capabilities.pressure);
 export function ProfileEdit() {
   const { t } = useLingui();
   const isConnected = connected.value;
-  // Provided at the app root, so never null here.
-  const apiService = /** @type {import('../../services/ApiService.js').default} */ (
-    useContext(ApiServiceContext)
-  );
+  const apiService = useApiService();
   const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

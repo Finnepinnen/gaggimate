@@ -178,7 +178,6 @@ function getChartData(data) {
             size: isSmall ? 9 : 11,
             weight: 500,
           },
-          clip: false,
         },
       };
     }
@@ -212,7 +211,6 @@ function getChartData(data) {
             size: isSmall ? 9 : 11,
             weight: 500,
           },
-          clip: false,
         },
       };
     }

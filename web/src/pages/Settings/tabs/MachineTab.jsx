@@ -1,7 +1,7 @@
-import { useCallback, useContext, useState } from 'preact/hooks';
+import { useCallback, useState } from 'preact/hooks';
 import { computed } from '@preact/signals';
 import { Trans, useLingui } from '@lingui/react/macro';
-import { ApiServiceContext, machine } from '../../../services/ApiService.js';
+import { machine } from '../../../services/ApiService.js';
 import Section from '../../../components/Card.jsx';
 import { HeaterCoordinationSection } from './HeaterCoordinationSection.jsx';
 import { Tooltip } from '../../../components/Tooltip.jsx';
@@ -10,6 +10,7 @@ import { faCrosshairs } from '@fortawesome/free-solid-svg-icons/faCrosshairs';
 import { faWeightScale } from '@fortawesome/free-solid-svg-icons/faWeightScale';
 import { InputGroupField, SettingsFormField } from '../../../components/SettingsFormField.jsx';
 import { CleaningSection } from './CleaningSection.jsx';
+import { useApiService } from '../../../services/hooks.js';
 
 const ledControl = computed(() => machine.value.capabilities.ledControl);
 const pressureAvailable = computed(() => machine.value.capabilities.pressure);
@@ -95,10 +96,7 @@ function TankDistanceField({ id, label, value, onChange, onUseCurrent }) {
  */
 export function MachineTab({ formData, onChange, setField }) {
   const { t } = useLingui();
-  // Provided at the app root, so never null here.
-  const apiService = /** @type {import('../../../services/ApiService.js').default} */ (
-    useContext(ApiServiceContext)
-  );
+  const apiService = useApiService();
   const [steamPumpDraft, setSteamPumpDraft] = useState(/** @type {string | null} */ (null));
   const [calibrationWeight, setCalibrationWeight] = useState('');
 

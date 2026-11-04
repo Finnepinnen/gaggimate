@@ -59,12 +59,11 @@ export function buildProfileLookupMap(profileList, existingMap = null) {
 
 /**
  * @param {StatisticsShotMeta} shot
- * @returns {string | number}
+ * @returns {string | number | null} null when the shot has nothing to load it by.
  */
 export function getStatisticsShotId(shot) {
-  // Listed shots always carry an id (browser shots also a storageKey / name).
-  if (shot.source === 'gaggimate') return /** @type {string} */ (shot.id);
-  return /** @type {string} */ (shot.storageKey || shot.name || shot.id);
+  const id = shot.source === 'gaggimate' ? shot.id : shot.storageKey || shot.name || shot.id;
+  return id == null || id === '' ? null : id;
 }
 
 /**
@@ -172,6 +171,7 @@ export async function analyzeStatisticsShot({
 }) {
   try {
     const shotId = getStatisticsShotId(shot);
+    if (shotId == null) return null;
     // Listed shots always carry their library source.
     const shotSource = /** @type {LibrarySource} */ (shot.source);
     const loadedShot = await libraryService.loadShot(shotId, shotSource);

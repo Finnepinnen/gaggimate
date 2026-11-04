@@ -1,9 +1,8 @@
-import { useState, useEffect, useRef, useContext, useCallback } from 'preact/hooks';
+import { useState, useEffect, useRef, useCallback } from 'preact/hooks';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlay } from '@fortawesome/free-solid-svg-icons/faPlay';
 import { Trans, useLingui } from '@lingui/react/macro';
 // Main StatisticsView orchestrator: wires hooks, toolbar, summary cards, and the detail section panel
-import { ApiServiceContext } from '../../../../services/ApiService';
 import { libraryService } from '../../../ShotAnalyzer/services/LibraryService';
 import {
   ANALYZER_DB_KEYS,
@@ -34,6 +33,7 @@ import {
   useStatisticsResultViewState,
 } from './hooks';
 import { StatisticsDetailSectionPanel } from './StatisticsDetailSection';
+import { useApiService } from '../../../../services/hooks.js';
 
 /**
  * @typedef {import('../../types').DateBasisMode} DateBasisMode
@@ -52,10 +52,7 @@ import { StatisticsDetailSectionPanel } from './StatisticsDetailSection';
 /** @param {{ initialContext: StatisticsInitialContext | null }} props */
 export function StatisticsView({ initialContext }) {
   const { t } = useLingui();
-  // Provided at the app root, so never null here.
-  const apiService = /** @type {import('../../../../services/ApiService.js').default} */ (
-    useContext(ApiServiceContext)
-  );
+  const apiService = useApiService();
   const initialProfileName = getInitialProfileName(initialContext);
 
   const [shotSource, setShotSource] = useState(() =>
@@ -136,8 +133,8 @@ export function StatisticsView({ initialContext }) {
 
   /** @param {ProfileSelectionItem} item */
   const handleProfilePinToggle = item => {
-    // Selection items always carry a non-empty `id`, so the object fallback is never reached.
-    const result = toggleProfilePin(/** @type {string} */ (item?.id || item?.primary || item));
+    // toggleProfilePin ignores an empty key.
+    const result = toggleProfilePin(item.id || item.primary);
     if (!result.changed) return;
     setPinnedProfiles(result.pinnedProfiles);
   };

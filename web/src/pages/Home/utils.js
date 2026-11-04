@@ -85,3 +85,20 @@ export const getPrimaryLabel = (active, finished) => {
   if (finished) return t({ message: 'Finish', context: 'process action' });
   return t({ message: 'Start', context: 'process action' });
 };
+
+/**
+ * Tank level from the ToF distance, or null until it is calibrated and a reading has arrived.
+ * @param {object} args
+ * @param {boolean} args.tof Whether the controller has a ToF sensor.
+ * @param {number} args.emptyTankDistance mm
+ * @param {number} args.fullTankDistance mm
+ * @param {number | null | undefined} args.distance Latest reading, mm.
+ * @returns {number | null} 0–100
+ */
+export function getWaterLevelPercent({ tof, emptyTankDistance, fullTankDistance, distance }) {
+  if (!tof || !(emptyTankDistance > 0) || !(fullTankDistance > 0)) return null;
+  if (typeof distance !== 'number' || !Number.isFinite(distance)) return null;
+  if (emptyTankDistance === fullTankDistance) return null;
+  const percent = ((emptyTankDistance - distance) / (emptyTankDistance - fullTankDistance)) * 100;
+  return Math.max(0, Math.min(100, percent));
+}

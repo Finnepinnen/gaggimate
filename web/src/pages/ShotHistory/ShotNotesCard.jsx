@@ -1,10 +1,10 @@
-import { useState, useEffect, useContext, useCallback } from 'preact/hooks';
+import { useState, useEffect, useCallback } from 'preact/hooks';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { ApiServiceContext } from '../../services/ApiService.js';
 import { Spinner } from '../../components/Spinner.jsx';
 import { faEdit } from '@fortawesome/free-solid-svg-icons/faEdit';
 import { faSave } from '@fortawesome/free-solid-svg-icons/faSave';
 import { Trans, useLingui } from '@lingui/react/macro';
+import { useApiService } from '../../services/hooks.js';
 
 /** @typedef {import('../../types').Shot} Shot */
 /** @typedef {import('../../types').ShotNotes} ShotNotes */
@@ -19,10 +19,7 @@ import { Trans, useLingui } from '@lingui/react/macro';
  */
 export default function ShotNotesCard({ shot, onNotesUpdate, onNotesLoaded }) {
   const { t } = useLingui();
-  // Provided at the app root, so never null here.
-  const apiService = /** @type {import('../../services/ApiService.js').default} */ (
-    useContext(ApiServiceContext)
-  );
+  const apiService = useApiService();
 
   const [notes, setNotes] = useState(
     /** @type {FilledShotNotes} */ ({

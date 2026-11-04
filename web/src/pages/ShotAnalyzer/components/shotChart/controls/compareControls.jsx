@@ -82,6 +82,7 @@ function CompareAnnotationToggle({
       <AnalyzerControl
         type='button'
         variant='text'
+        tone='none'
         onClick={onCompareAnnotationsToggle}
         className={cx(
           'h-6 min-h-0 px-2 text-xs font-medium',

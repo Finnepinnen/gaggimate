@@ -370,7 +370,8 @@ export function LibraryProfilesPanelSection({
       confirm(t`WARNING: Do you really want to IRREVOCABLY delete all ${count} filtered profiles?`)
     ) {
       for (const profile of profiles) {
-        await libraryService.deleteProfile(getLibraryProfileDeleteKey(profile), profile.source);
+        const key = getLibraryProfileDeleteKey(profile);
+        if (key) await libraryService.deleteProfile(key, profile.source);
       }
       refreshLibraries();
     }
@@ -406,9 +407,9 @@ export function LibraryProfilesPanelSection({
         getCompareStatus={item =>
           Boolean(
             secondaryDisplayProfileName &&
-              normalizedCompareSecondaryProfileName &&
-              normalizedCompareSecondaryProfileName !== 'no profile loaded' &&
-              doesProfileLabelMatchShot(item, secondaryDisplayShot),
+            normalizedCompareSecondaryProfileName &&
+            normalizedCompareSecondaryProfileName !== 'no profile loaded' &&
+            doesProfileLabelMatchShot(item, secondaryDisplayShot),
           )
         }
         getCompareBadgeNumber={item =>

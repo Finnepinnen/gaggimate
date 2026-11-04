@@ -38,9 +38,8 @@ import { resolveProfileFieldValue } from './profiles';
  */
 export const getShotStorageKey = shot => {
   if (!shot) return '';
-  // GaggiMate shots always carry their device id.
   return shot.source === 'gaggimate'
-    ? /** @type {Id} */ (shot.id)
+    ? (shot.id ?? '')
     : shot.storageKey || shot.name || shot.id || '';
 };
 

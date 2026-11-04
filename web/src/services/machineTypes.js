@@ -153,7 +153,7 @@
  * BLE scale lifecycle from evt:scale:* events.
  * @typedef {object} ScaleState
  * @property {boolean} scanning
- * @property {{ address: string, reason: string, at: number } | null} connectError
+ * @property {{ address: string | null, reason: string, at: number } | null} connectError No address for a failed scan.
  * @property {{ address: string, name: string, at: number } | null} disconnected
  */
 

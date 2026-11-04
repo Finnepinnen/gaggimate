@@ -112,6 +112,8 @@ export function parseWarningStates(raw) {
 export function activeWarnings(states = []) {
   return states
     .filter(s => s.level > WARNING_LEVEL.IGNORE && (s.active ?? true))
-    .map(s => ({ ...warningByKey(s.key), ...s }))
-    .filter(w => w.icon);
+    .flatMap(s => {
+      const def = warningByKey(s.key);
+      return def?.icon ? [{ ...def, ...s }] : [];
+    });
 }
