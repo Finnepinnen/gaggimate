@@ -1,0 +1,72 @@
+{
+  "tp": "evt:status",
+  "m": 0,
+  "p": "Default",
+  "puid": "gp8B2HzGy1",
+  "cp": true,
+  "cd": true,
+  "gp": false,
+  "hs": false,
+  "scaleSource": "inactive",
+  "led": true,
+  "tofc": true,
+  "sd": false,
+  "tw": 36,
+  "bta": 0,
+  "bt": 0,
+  "btd": 28,
+  "gtd": 25000,
+  "gtv": 18,
+  "gt": 0,
+  "gact": 0,
+  "up": false,
+  "sys": {
+    "s": "ready",
+    "m": "",
+    "c": 0
+  },
+  "bc": false,
+  "sbat": null,
+  "warn": [
+    {
+      "k": "water",
+      "l": 1,
+      "a": false
+    },
+    {
+      "k": "flush",
+      "l": 1,
+      "a": false
+    },
+    {
+      "k": "switch",
+      "l": 1,
+      "a": false
+    },
+    {
+      "k": "scaleConnected",
+      "l": 1,
+      "a": false
+    },
+    {
+      "k": "scaleBattery",
+      "l": 2,
+      "a": false
+    },
+    {
+      "k": "temperature",
+      "l": 1,
+      "a": true
+    },
+    {
+      "k": "backflush",
+      "l": 1,
+      "a": false
+    },
+    {
+      "k": "descaling",
+      "l": 1,
+      "a": false
+    }
+  ]
+}

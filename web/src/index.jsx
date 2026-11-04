@@ -121,7 +121,7 @@ export function App() {
             collapsed={navCollapsed}
             onToggleCollapsed={() => setNavCollapsed(collapsed => !collapsed)}
           />
-          <div className='flex flex-1 flex-col overflow-x-hidden overflow-y-auto'>
+          <main className='flex flex-1 flex-col overflow-x-hidden overflow-y-auto'>
             <div className='flex min-h-0 w-full flex-1 flex-col p-4'>
               <div className='grid min-h-0 flex-1 grid-cols-1'>
                 <div className='min-h-0'>
@@ -157,7 +157,7 @@ export function App() {
                 </div>
               </div>
             </div>
-          </div>
+          </main>
           {navCollapsed && (
             <div className='fab end-auto bottom-[max(1rem,env(safe-area-inset-bottom))] left-[max(1rem,env(safe-area-inset-left))] md:hidden landscape:hidden'>
               <button

@@ -50,9 +50,9 @@
     },
     "dose": {
       "type": "number",
-      "minimum": 1,
+      "minimum": 0,
       "maximum": 100,
-      "description": "The dose in grams to use for this specific shot. This dose can be referenced in a ratio type target. Quick adjustments of the dose will then be reflect in volumetric brewing."
+      "description": "The dose in grams to use for this specific shot. This dose can be referenced in a ratio type target. Quick adjustments of the dose will then be reflect in volumetric brewing. `0` (the parser default, also written for profiles without a dose) means no dose: ratio targets are then ignored (`src/display/models/profile.h`)."
     },
     "favorite": {
       "type": "boolean",
@@ -172,10 +172,16 @@
             "Accelerates at start, decelerates at end."
           ]
         },
+        "target": {
+          "type": "string",
+          "enum": ["time", "volumetric", "pumped"],
+          "default": "time",
+          "description": "What the ramp is measured in: elapsed time, weight in the cup (only while brewing to a volumetric target) or water pumped. Any other value becomes `time`. For `volumetric` and `pumped`, a `duration` of `0` ramps over the phase's own weight or pumped target (`transitionAlpha` in `src/display/core/process/BrewProcess.h`)."
+        },
         "duration": {
           "type": "number",
           "minimum": 0,
-          "description": "Ramp length in **seconds**. If `0` (or omitted), the ramp collapses to instant. If greater than the phase `duration`, the runtime uses the phase duration instead (`src/display/core/process/BrewProcess.h:217-221`)."
+          "description": "Ramp length in **seconds** (or grams / ml for a `volumetric` / `pumped` `target`). If `0` (or omitted), a time ramp collapses to instant. If greater than the phase `duration`, the runtime uses the phase duration instead (`src/display/core/process/BrewProcess.h:217-221`)."
         },
         "adaptive": {
           "type": "boolean",
