@@ -16,4 +16,4 @@ nvm use  # or fnm use
 
 - `npm run preview` - Starts a server at http://localhost:4173/ to test production build locally
 
-- `npm test` - Runs the unit tests in `test/` (node:test)
+- `npm test` - Runs the unit tests in `test/` (Vitest; `npx vitest test/<file>` to watch one file)

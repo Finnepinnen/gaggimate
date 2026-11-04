@@ -54,6 +54,12 @@ export default defineConfig(({ mode }) => ({
     },
   },
 
+  // Unit tests (npm test). Playwright's e2e/*.spec.js run separately.
+  test: {
+    include: ['test/**/*.test.js'],
+    setupFiles: ['test/setup.js'],
+  },
+
   server: {
     proxy: {
       '/api': {
