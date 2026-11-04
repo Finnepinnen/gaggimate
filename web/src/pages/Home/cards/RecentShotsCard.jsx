@@ -149,7 +149,7 @@ function ShotMiniCard({ shot, slots }) {
                   </span>
                 )}
               </div>
-              <div className='text-base-content/50 text-[0.6rem] font-semibold tracking-wider uppercase'>
+              <div className='text-base-content/70 text-[0.6rem] font-semibold tracking-wider uppercase'>
                 {def ? i18n._(def.labelMsg) : slotId}
               </div>
             </div>
@@ -266,7 +266,7 @@ export function RecentShotsCard() {
 
   return (
     <div className='card bg-base-100 flex flex-col gap-2 rounded-xl p-3'>
-      <div className='text-base-content/50 text-[0.6rem] tracking-wider uppercase'>
+      <div className='text-base-content/70 text-[0.6rem] tracking-wider uppercase'>
         <Trans>Recent Shots</Trans>
       </div>
       <div className='grid grid-cols-1 gap-3 sm:[grid-template-columns:repeat(auto-fit,minmax(180px,1fr))]'>

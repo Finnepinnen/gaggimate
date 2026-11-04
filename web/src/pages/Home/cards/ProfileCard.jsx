@@ -46,7 +46,7 @@ function ProgressCard({ processInfo, isBrewing, isGrinding, selectedProfile }) {
         </div>
         {target && (
           <div className='text-right'>
-            <div className='text-base-content/50 text-[0.6rem] tracking-wider uppercase'>
+            <div className='text-base-content/70 text-[0.6rem] tracking-wider uppercase'>
               <Trans context='process'>Target</Trans>
             </div>
             <div className='text-base-content text-lg font-bold tabular-nums'>{target}</div>
@@ -105,7 +105,7 @@ function FinishedProcessCard({ processInfo, isBrewing, selectedProfile, stats, w
           {items.map(item => (
             <div key={item.key} className='flex-1 text-center'>
               <div className='text-base-content text-sm font-bold tabular-nums'>{item.value}</div>
-              <div className='text-base-content/50 text-[0.6rem] font-semibold tracking-wider uppercase'>
+              <div className='text-base-content/70 text-[0.6rem] font-semibold tracking-wider uppercase'>
                 {item.label}
               </div>
             </div>
@@ -247,14 +247,14 @@ export function ProfileCard({
 
   const inner = (
     <>
-      <div className='text-base-content/50 text-[0.6rem] tracking-wider uppercase'>
+      <div className='text-base-content/70 text-[0.6rem] tracking-wider uppercase'>
         <Trans>Profile</Trans>
       </div>
       <div className='flex items-center justify-between gap-2'>
         <span className='text-base-content truncate text-sm font-semibold'>
           {selectedProfile || t({ message: 'Default', context: 'profile' })}
         </span>
-        <a href='/profiles'>
+        <a href='/profiles' aria-label={t`Profiles`}>
           <FontAwesomeIcon
             icon={faRectangleList}
             className='text-base-content/40 shrink-0 text-sm'

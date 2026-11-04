@@ -2961,6 +2961,10 @@ msgstr "Abrir en el analizador"
 msgid "Open library"
 msgstr "Abrir biblioteca"
 
+#: src/index.jsx
+msgid "Open menu"
+msgstr ""
+
 #: src/pages/ShotAnalyzer/components/EmptyState.jsx
 msgid "Open or close the library."
 msgstr "Abrir o cerrar la biblioteca."
@@ -3451,6 +3455,7 @@ msgid "Profile: {profileLabel}"
 msgstr "Perfil: {profileLabel}"
 
 #: src/components/Navigation.jsx
+#: src/pages/Home/cards/ProfileCard.jsx
 #: src/pages/ProfileList/index.jsx
 #: src/pages/ShotAnalyzer/components/library/LibraryDropdown.jsx
 #: src/pages/Statistics/components/toolbar/subcomponents.jsx

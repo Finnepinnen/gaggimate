@@ -2961,6 +2961,10 @@ msgstr "在分析器中打开"
 msgid "Open library"
 msgstr "打开库"
 
+#: src/index.jsx
+msgid "Open menu"
+msgstr ""
+
 #: src/pages/ShotAnalyzer/components/EmptyState.jsx
 msgid "Open or close the library."
 msgstr "打开或关闭库。"
@@ -3451,6 +3455,7 @@ msgid "Profile: {profileLabel}"
 msgstr "曲线：{profileLabel}"
 
 #: src/components/Navigation.jsx
+#: src/pages/Home/cards/ProfileCard.jsx
 #: src/pages/ProfileList/index.jsx
 #: src/pages/ShotAnalyzer/components/library/LibraryDropdown.jsx
 #: src/pages/Statistics/components/toolbar/subcomponents.jsx

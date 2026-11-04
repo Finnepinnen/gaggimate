@@ -63,7 +63,7 @@ function MetricCell({
     <div
       className={`flex flex-col items-center justify-between rounded-xl ${compact ? 'gap-0.5 p-1' : 'gap-1 p-2'} ${inCard ? 'bg-base-200/60' : 'card bg-base-100'}`}
     >
-      <div className='text-base-content/50 text-[0.6rem] font-semibold tracking-wider uppercase'>
+      <div className='text-base-content/70 text-[0.6rem] font-semibold tracking-wider uppercase'>
         {label}
       </div>
       <div className='flex w-full items-center justify-between'>

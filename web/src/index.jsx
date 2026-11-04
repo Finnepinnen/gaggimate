@@ -1,6 +1,7 @@
 import './style.css';
 import { initializeTheme } from './utils/themeManager.js';
 import { I18nProvider } from '@lingui/react';
+import { useLingui } from '@lingui/react/macro';
 import { activateLocale, i18n } from './i18n.js';
 import { isApp } from './app/platform.js';
 import { hasConnected, initApp, onAppRendered } from './app/index.js';
@@ -81,6 +82,7 @@ const RedirectTo = to =>
   };
 
 export function App() {
+  const { t } = useLingui();
   const [navCollapsed, setNavCollapsed] = useState(readInitialDesktopNavCollapsed);
 
   useEffect(() => {
@@ -150,6 +152,7 @@ export function App() {
             <div className='fab end-auto bottom-[max(1rem,env(safe-area-inset-bottom))] left-[max(1rem,env(safe-area-inset-left))] md:hidden landscape:hidden'>
               <button
                 className='btn btn-lg btn-circle btn-primary'
+                aria-label={t`Open menu`}
                 onClick={() => setNavCollapsed(false)}
               >
                 <FontAwesomeIcon icon={faBars} />
