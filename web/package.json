@@ -12,6 +12,7 @@
     "lint:check": "eslint src",
     "typecheck": "tsc -p jsconfig.json",
     "i18n:extract": "lingui extract --clean",
+    "test": "node --test \"test/**/*.test.js\"",
     "contract:check": "node scripts/check-ws-contract.mjs",
     "test:e2e": "playwright test",
     "test:e2e:record": "node scripts/record-device-fixtures.mjs --brew",
