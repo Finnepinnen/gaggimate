@@ -46,6 +46,16 @@ channels:
           - $ref: '#/components/messages/FlushStartResponse'
           - $ref: '#/components/messages/CleaningResponse'
           - $ref: '#/components/messages/FlushStopResponse'
+          - $ref: '#/components/messages/AutotuneFailedEvent'
+          - $ref: '#/components/messages/HardwareScaleEvent'
+          - $ref: '#/components/messages/HistoryRebuildProgressEvent'
+          - $ref: '#/components/messages/HistoryShotSavedEvent'
+          - $ref: '#/components/messages/ShotFinishedStatsEvent'
+          - $ref: '#/components/messages/HistoryRebuildResponse'
+          - $ref: '#/components/messages/HistoryDeleteResponse'
+          - $ref: '#/components/messages/HistoryNotesGetResponse'
+          - $ref: '#/components/messages/HistoryNotesSaveResponse'
+          - $ref: '#/components/messages/MahlkonigStatusResponse'
     publish:
       description: Messages sent from the client to the server.
       message:
@@ -67,6 +77,19 @@ channels:
           - $ref: '#/components/messages/CleaningStartRequest'
           - $ref: '#/components/messages/CleaningCompleteRequest'
           - $ref: '#/components/messages/FlushStopRequest'
+          - $ref: '#/components/messages/ProcessDeactivateRequest'
+          - $ref: '#/components/messages/ProcessClearRequest'
+          - $ref: '#/components/messages/GrindActivateRequest'
+          - $ref: '#/components/messages/GrindDeactivateRequest'
+          - $ref: '#/components/messages/ChangeModeRequest'
+          - $ref: '#/components/messages/ChangeTargetRequest'
+          - $ref: '#/components/messages/AdjustSetpointRequest'
+          - $ref: '#/components/messages/ScaleTareRequest'
+          - $ref: '#/components/messages/HistoryRebuildRequest'
+          - $ref: '#/components/messages/HistoryDeleteRequest'
+          - $ref: '#/components/messages/HistoryNotesGetRequest'
+          - $ref: '#/components/messages/HistoryNotesSaveRequest'
+          - $ref: '#/components/messages/MahlkonigStatusRequest'
 components:
   schemas:
     StatusPayload:
@@ -125,7 +148,151 @@ components:
         cd:
           type: boolean
           description: Indicates dimming capability
+        puid:
+          type: string
+          description: Selected profile ID
+        gp:
+          type: boolean
+          description: Indicates the addon-7 capability (grinder port)
+        hs:
+          type: boolean
+          description: Indicates hardware scale capability
+        scaleSource:
+          type: string
+          enum: [hardware, bluetooth, estimation, inactive]
+          description: Scale that feeds volumetric measurement
+        led:
+          type: boolean
+          description: Indicates LED control capability
+        tofc:
+          type: boolean
+          description: Indicates ToF water level sensor capability
+        sd:
+          type: boolean
+          description: Shot history is stored on an SD card
+        tw:
+          type: number
+          description: Total target weight of the selected profile
+        bta:
+          type: integer
+          enum: [0, 1]
+          description: Volumetric brewing available (a scale source is active)
+        bt:
+          type: integer
+          enum: [0, 1]
+          description: Selected profile brews to a volumetric target
+        btd:
+          type: number
+          description: Total duration of the selected profile (s)
+        gtd:
+          type: number
+          description: Target grind duration (ms)
+        gtv:
+          type: number
+          description: Target grind weight
+        gt:
+          type: integer
+          enum: [0, 1]
+          description: Grind uses a volumetric target
+        gact:
+          type: integer
+          enum: [0, 1]
+          description: Grinder is running
+        up:
+          type: boolean
+          description: A firmware update is available
+        bc:
+          type: boolean
+          description: A BLE scale is connected
+        sbat:
+          type: [integer, 'null']
+          description: BLE scale battery percent; null when disconnected or unknown
+        cst:
+          type: number
+          description: Current steam boiler temperature (dual boiler)
+        tst:
+          type: number
+          description: Target steam temperature
+        db:
+          type: boolean
+          description: Indicates dual boiler capability
+        wl:
+          type: integer
+          description: Water tank level in percent (ToF sensor)
+        tof:
+          type: integer
+          description: Raw ToF distance (mm)
+        rssi:
+          type: integer
+          description: Controller BLE signal strength (dBm), 0 when disconnected
+        lat:
+          type: integer
+          description: Display-controller round trip latency (ms), -1 = not yet measured
+        rtx:
+          type: integer
+          description: Controller link frames resent since boot
+        pw:
+          type: number
+          description: Current pump power (%)
+        hp:
+          type: number
+          description: Current heater power (%)
+        bw:
+          type: number
+          description: Current BLE scale weight, 0 when disconnected
+        cw:
+          type: number
+          description: Current weight from the active scale source
+        pkr:
+          type: number
+          description: Puck resistance, 0 without a process
+        pf:
+          type: number
+          description: Puck flow, 0 without a process
+        tf:
+          type: number
+          description: Target flow, 0 without a process
+        wp:
+          type: number
+          description: Water pumped in the current process; absent without a process
+        process:
+          description: Current or last process; null when there is none (telemetry frame).
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/ProcessState'
       required: [tp]
+    ProcessState:
+      type: object
+      properties:
+        a:
+          type: integer
+          enum: [0, 1]
+          description: Process is active
+        s:
+          type: string
+          enum: [infusion, brew, grind]
+          description: Current phase type (only brew and grind processes report details)
+        l:
+          type: string
+          description: Current phase name, or "Finished" / "Grinding"
+        e:
+          type: integer
+          description: Elapsed time (ms)
+        u:
+          type: integer
+          enum: [0, 1]
+          description: Brew runs a utility profile (backflush, descaling)
+        tt:
+          type: string
+          enum: [volumetric, time]
+          description: Kind of the current phase target
+        pt:
+          type: number
+          description: Phase target (weight, or ms for time targets)
+        pp:
+          type: number
+          description: Phase progress in the unit of pt
+      required: [a]
     WarningState:
       type: object
       properties:
@@ -330,6 +497,9 @@ components:
             type: integer
           samples:
             type: integer
+          wattage:
+            type: integer
+            description: Heater wattage; 0 or absent skips the feed-forward derivation.
         required: [tp]
     ProfilesListRequest:
       payload:
@@ -340,6 +510,9 @@ components:
             enum: ['req:profiles:list']
           rid:
             type: string
+          minimal:
+            type: boolean
+            description: Return only id and label per profile.
         required: [tp]
     ProfilesLoadRequest:
       payload:
@@ -632,3 +805,346 @@ components:
             type: string
             enum: ['req:brew:confirm:cancel']
         required: [tp]
+
+    AutotuneFailedEvent:
+      summary: Autotune timed out on the controller (no result follows).
+      payload:
+        type: object
+        properties:
+          tp:
+            type: string
+            enum: ['evt:autotune-failed']
+        required: [tp]
+
+    HardwareScaleEvent:
+      summary: Raw load cell diagnostics, every 200 ms while a client is connected and the controller has a hardware scale.
+      payload:
+        type: object
+        properties:
+          tp:
+            type: string
+            enum: ['evt:hardware-scale']
+          c1:
+            type: number
+            description: Weight of load cell 1
+          c2:
+            type: number
+            description: Weight of load cell 2
+          c1v:
+            type: boolean
+            description: Load cell 1 reading is valid
+          c2v:
+            type: boolean
+            description: Load cell 2 reading is valid
+        required: [tp, c1, c2, c1v, c2v]
+
+    HistoryRebuildProgressEvent:
+      summary: Progress of the shot history index rebuild started with req:history:rebuild.
+      payload:
+        type: object
+        properties:
+          tp:
+            type: string
+            enum: ['evt:history-rebuild-progress']
+          total:
+            type: integer
+            description: Number of shot files to process (0 while scanning)
+          current:
+            type: integer
+            description: Number of shot files processed so far
+          status:
+            type: string
+            enum: [scanning, started, processing, completed, error]
+        required: [tp, total, current, status]
+
+    HistoryShotSavedEvent:
+      summary: A finished shot was written to history; clients can refetch it.
+      payload:
+        type: object
+        properties:
+          tp:
+            type: string
+            enum: ['evt:history-shot-saved']
+          id:
+            type: integer
+            description: Shot id
+        required: [tp, id]
+
+    ShotFinishedStatsEvent:
+      summary: Summary stats of a just-finished shot, sent before the history file is written.
+      payload:
+        type: object
+        properties:
+          tp:
+            type: string
+            enum: ['evt:shot-finished-stats']
+          maxPressure:
+            type: number
+            description: Peak pressure (bar)
+          avgFlow:
+            type: number
+            description: Average pump flow (ml/s)
+        required: [tp, maxPressure, avgFlow]
+
+    ProcessDeactivateRequest:
+      summary: Stop the running process and clear it.
+      payload:
+        type: object
+        properties:
+          tp:
+            type: string
+            enum: ['req:process:deactivate']
+        required: [tp]
+
+    ProcessClearRequest:
+      summary: Clear the last (finished) process, e.g. to dismiss the finished-shot view.
+      payload:
+        type: object
+        properties:
+          tp:
+            type: string
+            enum: ['req:process:clear']
+        required: [tp]
+
+    GrindActivateRequest:
+      summary: Start grinding with the current grind target.
+      payload:
+        type: object
+        properties:
+          tp:
+            type: string
+            enum: ['req:grind:activate']
+        required: [tp]
+
+    GrindDeactivateRequest:
+      summary: Stop grinding.
+      payload:
+        type: object
+        properties:
+          tp:
+            type: string
+            enum: ['req:grind:deactivate']
+        required: [tp]
+
+    ChangeModeRequest:
+      summary: Stop and clear any process and switch the machine mode. Ignored unless the system state is ready.
+      payload:
+        type: object
+        properties:
+          tp:
+            type: string
+            enum: ['req:change-mode']
+          mode:
+            type: integer
+            enum: [0, 1, 2, 3, 4]
+            description: 0 standby, 1 brew, 2 steam, 3 water, 4 grind
+        required: [tp, mode]
+
+    ChangeTargetRequest:
+      summary: Choose between a time and a volumetric target. Both types set the same shared setting.
+      payload:
+        type: object
+        properties:
+          tp:
+            type: string
+            enum: ['req:change-brew-target', 'req:change-grind-target']
+          target:
+            type: integer
+            enum: [0, 1]
+            description: 0 time, 1 volumetric
+        required: [tp, target]
+
+    AdjustSetpointRequest:
+      summary: >-
+        Step a setpoint up or down, like the display's +/- buttons: target temperature by 1 degree,
+        the selected profile's brew target or the grind target (time or weight, by one step).
+      payload:
+        type: object
+        properties:
+          tp:
+            type: string
+            enum:
+              - 'req:raise-temp'
+              - 'req:lower-temp'
+              - 'req:raise-brew-target'
+              - 'req:lower-brew-target'
+              - 'req:raise-grind-target'
+              - 'req:lower-grind-target'
+        required: [tp]
+
+    ScaleTareRequest:
+      summary: Tare the active scale.
+      payload:
+        type: object
+        properties:
+          tp:
+            type: string
+            enum: ['req:scale:tare']
+        required: [tp]
+
+    HistoryRebuildRequest:
+      summary: Rebuild the shot history index from the shot files in the background; progress follows as evt:history-rebuild-progress.
+      payload:
+        type: object
+        properties:
+          tp:
+            type: string
+            enum: ['req:history:rebuild']
+          rid:
+            type: string
+        required: [tp]
+    HistoryRebuildResponse:
+      summary: Immediate acknowledgement of req:history:rebuild.
+      payload:
+        type: object
+        properties:
+          tp:
+            type: string
+            enum: ['res:history:rebuild']
+          rid:
+            type: string
+          msg:
+            type: string
+          error:
+            type: string
+            description: Set when refused, e.g. during a firmware update.
+        required: [tp]
+
+    HistoryDeleteRequest:
+      summary: Delete a shot, its notes and its index entry.
+      payload:
+        type: object
+        properties:
+          tp:
+            type: string
+            enum: ['req:history:delete']
+          rid:
+            type: string
+          id:
+            type: [string, integer]
+            description: Shot id without zero padding
+        required: [tp, id]
+    HistoryDeleteResponse:
+      payload:
+        type: object
+        properties:
+          tp:
+            type: string
+            enum: ['res:history:delete']
+          rid:
+            type: string
+          msg:
+            type: string
+          error:
+            type: string
+            description: Set when refused, e.g. during a firmware update.
+        required: [tp]
+
+    HistoryNotesGetRequest:
+      summary: Load the notes of a shot.
+      payload:
+        type: object
+        properties:
+          tp:
+            type: string
+            enum: ['req:history:notes:get']
+          rid:
+            type: string
+          id:
+            type: [string, integer]
+            description: Shot id without zero padding
+        required: [tp, id]
+    HistoryNotesGetResponse:
+      payload:
+        type: object
+        properties:
+          tp:
+            type: string
+            enum: ['res:history:notes:get']
+          rid:
+            type: string
+          notes:
+            description: The stored notes, null when the shot has none.
+            oneOf:
+              - type: 'null'
+              - $ref: '../schema/shot_notes.json'
+          error:
+            type: string
+            description: Set when refused, e.g. during a firmware update.
+        required: [tp]
+
+    HistoryNotesSaveRequest:
+      summary: Replace the notes of a shot; rating and doseOut are also written to the history index.
+      payload:
+        type: object
+        properties:
+          tp:
+            type: string
+            enum: ['req:history:notes:save']
+          rid:
+            type: string
+          id:
+            type: [string, integer]
+            description: Shot id without zero padding
+          notes:
+            $ref: '../schema/shot_notes.json'
+        required: [tp, id, notes]
+    HistoryNotesSaveResponse:
+      payload:
+        type: object
+        properties:
+          tp:
+            type: string
+            enum: ['res:history:notes:save']
+          rid:
+            type: string
+          msg:
+            type: string
+          error:
+            type: string
+            description: Set when refused, e.g. during a firmware update.
+        required: [tp]
+
+    MahlkonigStatusRequest:
+      summary: Status of the Mahlkönig grind-by-sync integration. Only answered when that plugin is enabled.
+      payload:
+        type: object
+        properties:
+          tp:
+            type: string
+            enum: ['req:mahlkonig:status']
+          rid:
+            type: string
+        required: [tp]
+    MahlkonigStatusResponse:
+      payload:
+        type: object
+        properties:
+          tp:
+            type: string
+            enum: ['res:mahlkonig:status']
+          rid:
+            type: string
+          connected:
+            type: boolean
+            description: The grinder polled the display recently
+          phase:
+            type: string
+            enum: [idle, brewing, settling, finishing]
+          grind:
+            type: object
+            properties:
+              targetWeight:
+                type: number
+              recipe:
+                type: integer
+              profileId:
+                type: string
+          shot:
+            type: object
+            properties:
+              timeMs:
+                type: integer
+              weight:
+                type: number
+        required: [tp, connected, phase]
