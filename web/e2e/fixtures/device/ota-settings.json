@@ -1,0 +1,20 @@
+{
+  "latestVersion": "",
+  "tp": "res:ota-settings",
+  "displayUpdateAvailable": false,
+  "controllerUpdateAvailable": false,
+  "displayVersion": "",
+  "controllerVersion": "sim-3.0",
+  "hardware": "GaggiMate Sim",
+  "channel": "latest",
+  "updating": false,
+  "spiffsTotal": 16777216,
+  "spiffsUsed": 1048576,
+  "spiffsFree": 15728640,
+  "spiffsUsedPct": 6,
+  "heapFree": 4194304,
+  "heapLargest": 2097152,
+  "heapTotal": 8388608,
+  "controllerTaskHealth": true,
+  "uiTaskHealth": true
+}

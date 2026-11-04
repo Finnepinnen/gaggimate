@@ -1,0 +1,307 @@
+[
+  {
+    "id": "descale",
+    "label": "[Utility] Descale",
+    "type": "pro",
+    "description": "",
+    "temperature": 0,
+    "dose": 0,
+    "favorite": false,
+    "selected": false,
+    "utility": true,
+    "phases": [
+      {
+        "name": "300ml Steam Flush",
+        "phase": "brew",
+        "valve": 0,
+        "duration": 40,
+        "temperature": 0,
+        "transition": {
+          "type": "instant",
+          "target": "time",
+          "duration": 0,
+          "adaptive": false
+        },
+        "pump": 100,
+        "targets": [
+          {
+            "type": "pumped",
+            "operator": "gte",
+            "value": 300
+          }
+        ]
+      },
+      {
+        "name": "Wait 1 of 3",
+        "phase": "preinfusion",
+        "valve": 0,
+        "duration": 200,
+        "temperature": 0,
+        "transition": {
+          "type": "instant",
+          "target": "time",
+          "duration": 0,
+          "adaptive": false
+        },
+        "pump": 0
+      },
+      {
+        "name": "Wait 2 of 3",
+        "phase": "preinfusion",
+        "valve": 0,
+        "duration": 200,
+        "temperature": 0,
+        "transition": {
+          "type": "instant",
+          "target": "time",
+          "duration": 0,
+          "adaptive": false
+        },
+        "pump": 0
+      },
+      {
+        "name": "Wait 3 of 3",
+        "phase": "preinfusion",
+        "valve": 0,
+        "duration": 200,
+        "temperature": 0,
+        "transition": {
+          "type": "instant",
+          "target": "time",
+          "duration": 0,
+          "adaptive": false
+        },
+        "pump": 0
+      },
+      {
+        "name": "300ml Steam Flush",
+        "phase": "brew",
+        "valve": 0,
+        "duration": 40,
+        "temperature": 0,
+        "transition": {
+          "type": "instant",
+          "target": "time",
+          "duration": 0,
+          "adaptive": false
+        },
+        "pump": 100,
+        "targets": [
+          {
+            "type": "pumped",
+            "operator": "gte",
+            "value": 300
+          }
+        ]
+      },
+      {
+        "name": "Rinse and Refill",
+        "phase": "preinfusion",
+        "valve": 0,
+        "duration": 120,
+        "temperature": 0,
+        "transition": {
+          "type": "instant",
+          "target": "time",
+          "duration": 0,
+          "adaptive": false
+        },
+        "pump": 0
+      },
+      {
+        "name": "1lt Flush",
+        "phase": "brew",
+        "valve": 0,
+        "duration": 120,
+        "temperature": 0,
+        "transition": {
+          "type": "instant",
+          "target": "time",
+          "duration": 0,
+          "adaptive": false
+        },
+        "pump": 100,
+        "targets": [
+          {
+            "type": "pumped",
+            "operator": "gte",
+            "value": 1000
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "flush",
+    "label": "[Utility] Backflush",
+    "type": "standard",
+    "description": "",
+    "temperature": 93,
+    "dose": 0,
+    "favorite": false,
+    "selected": false,
+    "utility": true,
+    "phases": [
+      {
+        "name": "Pressurize",
+        "phase": "brew",
+        "valve": 1,
+        "duration": 10,
+        "temperature": 0,
+        "transition": {
+          "type": "instant",
+          "target": "time",
+          "duration": 0,
+          "adaptive": false
+        },
+        "pump": 100
+      },
+      {
+        "name": "Depressurize",
+        "phase": "brew",
+        "valve": 0,
+        "duration": 10,
+        "temperature": 0,
+        "transition": {
+          "type": "instant",
+          "target": "time",
+          "duration": 0,
+          "adaptive": false
+        },
+        "pump": 0
+      },
+      {
+        "name": "Pressurize",
+        "phase": "brew",
+        "valve": 1,
+        "duration": 10,
+        "temperature": 0,
+        "transition": {
+          "type": "instant",
+          "target": "time",
+          "duration": 0,
+          "adaptive": false
+        },
+        "pump": 100
+      },
+      {
+        "name": "Depressurize",
+        "phase": "brew",
+        "valve": 0,
+        "duration": 10,
+        "temperature": 0,
+        "transition": {
+          "type": "instant",
+          "target": "time",
+          "duration": 0,
+          "adaptive": false
+        },
+        "pump": 0
+      },
+      {
+        "name": "Pressurize",
+        "phase": "brew",
+        "valve": 1,
+        "duration": 10,
+        "temperature": 0,
+        "transition": {
+          "type": "instant",
+          "target": "time",
+          "duration": 0,
+          "adaptive": false
+        },
+        "pump": 100
+      },
+      {
+        "name": "Depressurize",
+        "phase": "brew",
+        "valve": 0,
+        "duration": 10,
+        "temperature": 0,
+        "transition": {
+          "type": "instant",
+          "target": "time",
+          "duration": 0,
+          "adaptive": false
+        },
+        "pump": 0
+      },
+      {
+        "name": "Pressurize",
+        "phase": "brew",
+        "valve": 1,
+        "duration": 10,
+        "temperature": 0,
+        "transition": {
+          "type": "instant",
+          "target": "time",
+          "duration": 0,
+          "adaptive": false
+        },
+        "pump": 100
+      },
+      {
+        "name": "Depressurize",
+        "phase": "brew",
+        "valve": 0,
+        "duration": 10,
+        "temperature": 0,
+        "transition": {
+          "type": "instant",
+          "target": "time",
+          "duration": 0,
+          "adaptive": false
+        },
+        "pump": 0
+      },
+      {
+        "name": "Pressurize",
+        "phase": "brew",
+        "valve": 1,
+        "duration": 10,
+        "temperature": 0,
+        "transition": {
+          "type": "instant",
+          "target": "time",
+          "duration": 0,
+          "adaptive": false
+        },
+        "pump": 100
+      }
+    ]
+  },
+  {
+    "id": "gp8B2HzGy1",
+    "label": "Default",
+    "type": "standard",
+    "description": "Default profile",
+    "temperature": 93,
+    "dose": 0,
+    "favorite": true,
+    "selected": true,
+    "utility": false,
+    "phases": [
+      {
+        "name": "Brew",
+        "phase": "brew",
+        "valve": 1,
+        "duration": 28,
+        "temperature": 0,
+        "transition": {
+          "type": "instant",
+          "target": "time",
+          "duration": 0,
+          "adaptive": false
+        },
+        "pump": 100,
+        "targets": [
+          {
+            "type": "volumetric",
+            "operator": "gte",
+            "value": 36
+          }
+        ]
+      }
+    ]
+  }
+]
