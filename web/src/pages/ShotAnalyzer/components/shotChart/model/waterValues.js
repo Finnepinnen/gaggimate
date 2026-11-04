@@ -57,7 +57,7 @@ export function createHoverWaterValueGetter({
   cumulativeWaterTotalBySample,
 }) {
   return xValue => {
-    if (!Number.isFinite(xValue) || sampleTimesSec.length === 0) {
+    if (typeof xValue !== 'number' || !Number.isFinite(xValue) || sampleTimesSec.length === 0) {
       return { totalWaterMl: null, phaseWaterMl: null, phaseTotalWaterMl: null };
     }
 

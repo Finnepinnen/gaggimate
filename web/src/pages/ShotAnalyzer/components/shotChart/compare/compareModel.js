@@ -552,7 +552,8 @@ function alignCompareModel(model, alignmentMode) {
     phaseOverviewRows: shiftPhaseRows(model.phaseOverviewRows, xOffset),
     getHoverWaterValuesAtX:
       typeof originalWaterGetter === 'function'
-        ? /** @param {number} xValue */ xValue => originalWaterGetter(Number(xValue) + xOffset)
+        ? /** @param {number | null | undefined} xValue */ xValue =>
+            originalWaterGetter(Number(xValue) + xOffset)
         : originalWaterGetter,
   };
 }

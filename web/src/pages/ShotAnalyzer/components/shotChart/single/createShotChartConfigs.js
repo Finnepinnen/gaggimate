@@ -381,7 +381,9 @@ export function createShotChartConfigs({
               title:
                 /** @param {import('chart.js').TooltipItem<'line'>[]} tooltipItems */ tooltipItems => {
                   const xValue = tooltipItems?.[0]?.parsed?.x;
-                  return Number.isFinite(xValue) ? `${xValue.toFixed(2)} s` : '';
+                  return typeof xValue === 'number' && Number.isFinite(xValue)
+                    ? `${xValue.toFixed(2)} s`
+                    : '';
                 },
             },
             external: updateExternalTooltip,

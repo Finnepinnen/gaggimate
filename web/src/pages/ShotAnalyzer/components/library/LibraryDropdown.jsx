@@ -406,9 +406,9 @@ export function LibraryProfilesPanelSection({
         getCompareStatus={item =>
           Boolean(
             secondaryDisplayProfileName &&
-              normalizedCompareSecondaryProfileName &&
-              normalizedCompareSecondaryProfileName !== 'no profile loaded' &&
-              doesProfileLabelMatchShot(item, secondaryDisplayShot),
+            normalizedCompareSecondaryProfileName &&
+            normalizedCompareSecondaryProfileName !== 'no profile loaded' &&
+            doesProfileLabelMatchShot(item, secondaryDisplayShot),
           )
         }
         getCompareBadgeNumber={item =>

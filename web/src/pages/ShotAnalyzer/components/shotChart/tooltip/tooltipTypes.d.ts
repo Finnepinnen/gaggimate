@@ -14,7 +14,7 @@ export interface HoverWaterValues {
   phaseTotalWaterMl: number | null;
 }
 
-export type HoverWaterValuesGetter = (xValue: number) => HoverWaterValues;
+export type HoverWaterValuesGetter = (xValue: number | null | undefined) => HoverWaterValues;
 
 /** Custom fields compare charts attach to their datasets. */
 export type ShotChartTooltipDataset = ChartDataset<'line', unknown[]> & {

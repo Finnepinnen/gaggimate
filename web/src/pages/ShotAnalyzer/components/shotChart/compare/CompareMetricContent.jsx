@@ -389,15 +389,17 @@ export function CompareChartTitle({
 
     return (
       <div className='shot-chart-statistics-chart-title text-base-content/80 mb-2 inline-flex items-center gap-1.5 px-0.5 py-1 text-[10px] font-semibold'>
-        {titleIcons.map(item => (
-          <FontAwesomeIcon
-            key={item.key || item.label}
-            icon={item.icon}
-            className='text-[10px]'
-            style={item.color ? { color: item.color } : undefined}
-            aria-hidden='true'
-          />
-        ))}
+        {titleIcons.map(item =>
+          item.icon ? (
+            <FontAwesomeIcon
+              key={item.key || item.label}
+              icon={item.icon}
+              className='text-[10px]'
+              style={item.color ? { color: item.color } : undefined}
+              aria-hidden='true'
+            />
+          ) : null,
+        )}
         <span>{displayLabel}</span>
       </div>
     );

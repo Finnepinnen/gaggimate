@@ -205,7 +205,7 @@ function MenuItem({
         aria-current={isActive ? 'page' : undefined}
         title={collapsed ? label : undefined}
       >
-        <FontAwesomeIcon size='md' icon={icon} />
+        <FontAwesomeIcon icon={icon} />
         {isUnread && (
           <span className='indicator-item status status-warning absolute -top-0 -right-0' />
         )}
@@ -446,10 +446,7 @@ export function Navigation({ collapsed = false, onToggleCollapsed }) {
               aria-label={collapsed ? t`Expand navigation` : t`Collapse navigation`}
               title={collapsed ? t`Expand navigation` : t`Collapse navigation`}
             >
-              <FontAwesomeIcon
-                size='md'
-                icon={collapsed ? faCircleChevronRight : faCircleChevronLeft}
-              />
+              <FontAwesomeIcon icon={collapsed ? faCircleChevronRight : faCircleChevronLeft} />
               {!collapsed ? (
                 <div className='indicator'>
                   <span>

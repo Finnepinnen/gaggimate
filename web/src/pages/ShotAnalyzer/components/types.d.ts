@@ -49,10 +49,7 @@ export interface LibrarySortConfig {
 export type PinnedShotsByProfile = Record<string, string[]>;
 
 export type LibrarySelectionTarget =
-  | 'primaryShot'
-  | 'secondaryShot'
-  | 'primaryProfile'
-  | 'secondaryProfile';
+  'primaryShot' | 'secondaryShot' | 'primaryProfile' | 'secondaryProfile';
 
 export type LibraryMobileSection = 'shots' | 'profiles';
 

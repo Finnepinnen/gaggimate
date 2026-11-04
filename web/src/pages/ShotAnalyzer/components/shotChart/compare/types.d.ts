@@ -18,10 +18,7 @@ export type ShotStylePreset = 'analyzer' | 'statistics';
 export type CompareStyle = 'linePattern' | 'fade';
 export type CompareTooltipMode = 'compare' | 'compareTitleOnly';
 export type StaticTooltipVariant =
-  | 'default'
-  | 'singleLine'
-  | 'comparePreview'
-  | 'statisticsCompact';
+  'default' | 'singleLine' | 'comparePreview' | 'statisticsCompact';
 
 /** min / avg / max of one metric (services/analyzer/metricStats.js). */
 export type AnalyzerMetricStats = {
@@ -302,8 +299,7 @@ export interface CompareControlsProps {
   onCompareAlignmentModeChange: ((mode: string) => void) | null;
   onCompareSwap: (() => void) | null;
   onCompareTargetDisplayModeChange?:
-    | ((mode: import('../../../utils/constants.js').CompareTargetDisplayMode) => void)
-    | null;
+    ((mode: import('../../../utils/constants.js').CompareTargetDisplayMode) => void) | null;
   onFullDisplayToggle: () => void;
   onLegendToggle: LegendToggleHandler;
   shotStylePreset: ShotStylePreset;

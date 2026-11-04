@@ -115,11 +115,7 @@ export type MetricStats = {
 export type MetricStatKey = 'p' | 'tp' | 'f' | 'pf' | 'tf' | 't' | 'tt' | 'w' | 'wf' | 'pr' | 'lr';
 
 export type SysStatKey =
-  | 'sys_shot_vol'
-  | 'sys_curr_vol'
-  | 'sys_scale'
-  | 'sys_vol_avail'
-  | 'sys_ext';
+  'sys_shot_vol' | 'sys_curr_vol' | 'sys_scale' | 'sys_vol_avail' | 'sys_ext';
 
 /** First in-phase sample whose system flag differs from the phase's final value. */
 export interface SysAnomaly {
