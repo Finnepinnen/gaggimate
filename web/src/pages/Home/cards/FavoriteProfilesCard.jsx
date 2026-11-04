@@ -1,5 +1,3 @@
-import { useContext } from 'preact/hooks';
-import { ApiServiceContext } from '../../../services/ApiService.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTemperatureFull } from '@fortawesome/free-solid-svg-icons/faTemperatureFull';
 import { faClock } from '@fortawesome/free-solid-svg-icons/faClock';
@@ -7,7 +5,7 @@ import { faScaleBalanced } from '@fortawesome/free-solid-svg-icons/faScaleBalanc
 import PropTypes from 'prop-types';
 import { Trans } from '@lingui/react/macro';
 import { SkeletonBlock } from '../../../components/SkeletonBlock.jsx';
-import { useProfileList } from '../../../services/hooks.js';
+import { useApiService, useProfileList } from '../../../services/hooks.js';
 
 /** @typedef {import('../../../types').Profile & { id: string }} StoredProfile */
 
@@ -71,10 +69,7 @@ ProfileMiniCard.propTypes = {
  * @param {boolean} [props.compact]
  */
 export function FavoriteProfilesCard({ selectedProfileId, inCard = false, compact = false }) {
-  // Provided at the app root, so never null here.
-  const apiService = /** @type {import('../../../services/ApiService.js').default} */ (
-    useContext(ApiServiceContext)
-  );
+  const apiService = useApiService();
   const { profiles, loading } = useProfileList();
   const favorites = profiles.filter(p => p.favorite).slice(0, 3);
 

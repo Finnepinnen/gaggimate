@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback, useContext } from 'preact/hooks';
+import { useState, useEffect, useCallback } from 'preact/hooks';
 import { Trans, useLingui } from '@lingui/react/macro';
-import { ApiServiceContext } from '../../../services/ApiService.js';
 import { OverviewChart } from '../../../components/OverviewChart.jsx';
 import { Spinner } from '../../../components/Spinner.jsx';
 import Section from '../../../components/Card.jsx';
 import PumpFlowCalibration from '../../../components/PumpFlowCalibration/index.jsx';
 import { SettingsFormField } from '../../../components/SettingsFormField.jsx';
+import { useApiService } from '../../../services/hooks.js';
 
 /**
  * @param {{
@@ -15,10 +15,7 @@ import { SettingsFormField } from '../../../components/SettingsFormField.jsx';
  */
 export function CalibrationTab({ formData, setField }) {
   const { t } = useLingui();
-  // Provided at the app root, so never null here.
-  const apiService = /** @type {import('../../../services/ApiService.js').default} */ (
-    useContext(ApiServiceContext)
-  );
+  const apiService = useApiService();
 
   // Autotune state
   const [autotuneActive, setAutotuneActive] = useState(false);

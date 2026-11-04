@@ -113,7 +113,7 @@ export function ActionCard({
             <WarningIcon
               key={w.key}
               // activeWarnings drops entries without an icon.
-              icon={/** @type {string} */ (w.icon)}
+              icon={w.icon}
               title={w.label}
               className={`text-xl ${w.level === WARNING_LEVEL.ERROR ? 'text-error' : 'text-warning'}`}
             />

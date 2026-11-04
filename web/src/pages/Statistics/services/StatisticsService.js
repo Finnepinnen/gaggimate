@@ -30,6 +30,14 @@ import { t } from '@lingui/core/macro';
  * @typedef {{ phase: AnalyzedPhase, actuals: TargetDeltaValues, targets: TargetDeltaValues }} TargetDeltaContext
  */
 
+/**
+ * @param {unknown} value
+ * @returns {value is number}
+ */
+function isFiniteNumber(value) {
+  return Number.isFinite(value);
+}
+
 /** @param {number[]} values */
 function averageOf(values) {
   if (!values.length) return 0;
@@ -133,7 +141,7 @@ function addTotalSummaryValues(acc, total) {
   if (!total) return;
   if (Number.isFinite(total.duration)) acc.totalDuration += total.duration;
   if (Number.isFinite(total.water)) acc.totalWater += total.water;
-  if (Number.isFinite(total.weight)) acc.totalWeight += total.weight;
+  if (isFiniteNumber(total.weight)) acc.totalWeight += total.weight;
   if (Number.isFinite(total.t?.avg)) acc.tempAvgs.push(/** @type {number} */ (total.t.avg));
   const tempTargetDeviation = getTotalTempTargetDeviation(total);
   if (tempTargetDeviation !== null && Number.isFinite(tempTargetDeviation)) {
@@ -234,7 +242,7 @@ function computeProfileGroups(entries) {
       groupEntries.map(e => e.analysis.total).filter(Boolean)
     );
     const durations = totals.map(t => t.duration).filter(Number.isFinite);
-    const weights = totals.map(t => t.weight).filter(Number.isFinite);
+    const weights = totals.map(t => t.weight).filter(isFiniteNumber);
     const waters = totals.map(t => t.water).filter(Number.isFinite);
 
     /** @type {AggregatedMetricKey[]} */

@@ -282,8 +282,7 @@ export function calculateShotMetrics(shotData, rawProfileData, settings) {
   const totalStats = {
     duration: gDuration,
     water: gWater,
-    // TotalStats.weight is typed number; undefined when no sample carries `v`.
-    weight: /** @type {number} */ (gWeight),
+    weight: gWeight,
     p: getMetricStats(gSamples, 'cp'),
     tp: getMetricStats(gSamples, 'tp'),
     f: getMetricStats(gSamples, 'fl'),

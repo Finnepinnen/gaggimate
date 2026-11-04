@@ -5077,6 +5077,10 @@ msgstr "This feature allows connection to a Home Assistant or MQTT installation 
 msgid "This feature controls a Tasmota Plug to turn off your grinder after the target has been reached."
 msgstr "This feature controls a Tasmota Plug to turn off your grinder after the target has been reached."
 
+#: src/pages/ShotAnalyzer/components/library/libraryDisplay.js
+msgid "This item has no id to delete it by."
+msgstr "This item has no id to delete it by."
+
 #: src/pages/Settings/tabs/BluetoothTab.jsx
 msgid "This scale model couldn't be set up."
 msgstr "This scale model couldn't be set up."

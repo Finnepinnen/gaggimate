@@ -19,8 +19,8 @@ Chart.register(LineElement);
 Chart.register(Filler);
 Chart.register(Legend);
 
-import { ApiServiceContext, machine } from '../../services/ApiService.js';
-import { useCallback, useEffect, useRef, useState, useContext, useMemo } from 'preact/hooks';
+import { machine } from '../../services/ApiService.js';
+import { useCallback, useEffect, useRef, useState, useMemo } from 'preact/hooks';
 import { computed } from '@preact/signals';
 import { Trans, useLingui } from '@lingui/react/macro';
 import { Spinner } from '../../components/Spinner.jsx';
@@ -32,6 +32,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch } from '@fortawesome/free-solid-svg-icons/faSearch';
 import { faSort } from '@fortawesome/free-solid-svg-icons/faSort';
 import { faFilter } from '@fortawesome/free-solid-svg-icons/faFilter';
+import { useApiService } from '../../services/hooks.js';
 
 const connected = computed(() => machine.value.connected);
 
@@ -41,10 +42,7 @@ const connected = computed(() => machine.value.connected);
 export function ShotHistory() {
   const { t } = useLingui();
   const isConnected = connected.value;
-  // Provided at the app root, so never null here.
-  const apiService = /** @type {import('../../services/ApiService.js').default} */ (
-    useContext(ApiServiceContext)
-  );
+  const apiService = useApiService();
   const [history, setHistory] = useState(/** @type {Shot[]} */ ([]));
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

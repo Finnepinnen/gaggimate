@@ -2,8 +2,14 @@ import { useCallback, useContext } from 'preact/hooks';
 import { ApiServiceContext, machine } from './ApiService.js';
 import { signal, computed, effect, useSignalEffect } from '@preact/signals';
 
+/**
+ * The app's ApiService. Every page renders under ApiServiceContext.Provider (index.jsx).
+ * @returns {import('./ApiService.js').default}
+ */
 const useApiService = () => {
-  return useContext(ApiServiceContext);
+  const apiService = useContext(ApiServiceContext);
+  if (!apiService) throw new Error('useApiService must be used under ApiServiceContext.Provider');
+  return apiService;
 };
 
 const connected = computed(() => machine.value.connected);
@@ -90,8 +96,7 @@ const setProfiles = update => {
 };
 
 const useProfileList = () => {
-  // Only used under ApiServiceContext.Provider, which always has the service.
-  const apiService = /** @type {import('./ApiService.js').default} */ (useApiService());
+  const apiService = useApiService();
 
   const invalidate = useCallback(async () => {
     if (profilesInflight) await profilesInflight;

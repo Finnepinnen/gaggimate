@@ -20,8 +20,8 @@ import 'chartjs-adapter-dayjs-4/dist/chartjs-adapter-dayjs-4.esm';
 import { ExtendedProfileChart } from '../../components/ExtendedProfileChart.jsx';
 import { useConfirmAction } from '../../hooks/useConfirmAction.js';
 import { ProfileAddCard } from './ProfileAddCard.jsx';
-import { ApiServiceContext, machine } from '../../services/ApiService.js';
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { machine } from '../../services/ApiService.js';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { Spinner } from '../../components/Spinner.jsx';
 import Card from '../../components/Card.jsx';
 import { parseProfile } from './utils.js';
@@ -48,7 +48,7 @@ import { buildStatisticsProfileHref } from '../Statistics/utils/statisticsRoute.
 import { isSystemProfile } from '../../utils/systemProfiles.js';
 import { msg } from '@lingui/core/macro';
 import { Plural, Trans, useLingui } from '@lingui/react/macro';
-import { useProfileList } from '../../services/hooks.js';
+import { useApiService, useProfileList } from '../../services/hooks.js';
 
 Chart.register(
   LineController,
@@ -692,10 +692,7 @@ async function withExportedImage(profile) {
 
 export function ProfileList() {
   const { t } = useLingui();
-  // Provided at the app root, so never null here.
-  const apiService = /** @type {import('../../services/ApiService.js').default} */ (
-    useContext(ApiServiceContext)
-  );
+  const apiService = useApiService();
   const {
     profiles,
     loading,

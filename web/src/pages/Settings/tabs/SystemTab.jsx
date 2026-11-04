@@ -1,6 +1,6 @@
-import { useCallback, useContext, useEffect, useRef, useState } from 'preact/hooks';
+import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { Trans, useLingui } from '@lingui/react/macro';
-import { ApiServiceContext, machine } from '../../../services/ApiService.js';
+import { machine } from '../../../services/ApiService.js';
 import { downloadJson } from '../../../utils/download.js';
 import { SystemTabSkeleton } from '../../../components/skeletons/SettingsSkeletons.jsx';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -8,6 +8,7 @@ import { faCheck } from '@fortawesome/free-solid-svg-icons/faCheck';
 import { faCaretRight } from '@fortawesome/free-solid-svg-icons/faCaretRight';
 import { Spinner } from '../../../components/Spinner.jsx';
 import Section from '../../../components/Card.jsx';
+import { useApiService } from '../../../services/hooks.js';
 
 /**
  * @param {Blob} blob
@@ -261,10 +262,7 @@ function MaintenanceSection({
 
 export function SystemTab() {
   const { t } = useLingui();
-  // Provided at the app root, so never null here.
-  const apiService = /** @type {import('../../../services/ApiService.js').default} */ (
-    useContext(ApiServiceContext)
-  );
+  const apiService = useApiService();
   const [isLoading, setIsLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState(/** @type {OtaSettings} */ ({}));
