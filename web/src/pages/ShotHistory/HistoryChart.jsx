@@ -1,6 +1,7 @@
 import { Chart } from 'chart.js';
 import { ChartComponent } from '../../components/Chart.jsx';
 import { t } from '@lingui/core/macro';
+import { getHistoryChartRange } from './chartRange.js';
 
 /** @typedef {import('../../types').Shot} Shot */
 /** @typedef {import('../../types').ShotSample} ShotSample */
@@ -81,14 +82,10 @@ function getChartData(shot) {
     }));
   }
   // No phase tracking for versions before v5
-  // Math.min/max turn a missing temperature into NaN, as before.
-  const tempValues = /** @type {number[]} */ (ct.map(i => i.y).concat(tt.map(i => i.y)));
-  const timeValues = ct.map(i => i.x);
-  const minTemp = Math.floor(Math.min(...tempValues));
-  const maxTemp = Math.ceil(Math.max(...tempValues));
-  const minX = Math.min(...timeValues);
-  const maxX = Math.max(...timeValues);
-  const padding = maxTemp - minTemp > 10 ? 2 : 5;
+  const range = getHistoryChartRange(
+    ct.map(i => i.y).concat(tt.map(i => i.y)),
+    ct.map(i => i.x),
+  );
 
   // Check if weight data has any non-zero values
   const hasWeight = v.some(point => (point.y ?? 0) > 0);
@@ -285,8 +282,7 @@ function getChartData(shot) {
       animation: false,
       scales: {
         x: {
-          min: minX,
-          max: maxX,
+          ...range.x,
           type: 'linear',
           title: { display: true, text: t`Time (s)` },
           ticks: { font: { size: window.innerWidth < 640 ? 10 : 12 } },
@@ -299,8 +295,7 @@ function getChartData(shot) {
               size: window.innerWidth < 640 ? 10 : 12,
             },
           },
-          min: Math.max(minTemp - padding, 0),
-          max: maxTemp + padding,
+          ...range.y,
         },
         y1: {
           type: 'linear',

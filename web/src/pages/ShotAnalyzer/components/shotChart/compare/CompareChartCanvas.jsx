@@ -15,6 +15,7 @@ import {
   getScrubberValueFromPointerEvent,
 } from '../scrubberUtils';
 import { extractClientPoint } from '../hoverSync';
+import { scheduleFrame } from '../helpers/frameScheduler';
 import { useMobileScrubberReset } from '../useMobileScrubberReset';
 import { createCompareChartConfig } from './compareChartConfig';
 import {
@@ -75,8 +76,8 @@ export function CompareChartCanvas({
   const tooltipRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const ignoreScrubInputUntilRef = useRef(0);
   const lastPointerScrubAtRef = useRef(0);
-  // requestAnimationFrame id, or a setTimeout id where rAF is unavailable.
-  const hoverFrameRef = useRef(/** @type {number | null} */ (null));
+  // Cancels the pending hover frame (see scheduleFrame).
+  const hoverFrameRef = useRef(/** @type {(() => void) | null} */ (null));
   const pendingHoverPointRef = useRef(
     /** @type {{ clientX: number, clientY: number } | null} */ (null),
   );
@@ -112,8 +113,7 @@ export function CompareChartCanvas({
     if (!hasMobileScrubberRange) return;
 
     if (hoverFrameRef.current != null) {
-      globalThis.cancelAnimationFrame?.(hoverFrameRef.current);
-      globalThis.clearTimeout?.(hoverFrameRef.current);
+      hoverFrameRef.current();
       hoverFrameRef.current = null;
       pendingHoverPointRef.current = null;
     }
@@ -260,8 +260,7 @@ export function CompareChartCanvas({
     const hoverSurface = containerRef.current || chart.canvas;
     const clearPendingHoverFrame = () => {
       if (hoverFrameRef.current != null) {
-        globalThis.cancelAnimationFrame?.(hoverFrameRef.current);
-        globalThis.clearTimeout?.(hoverFrameRef.current);
+        hoverFrameRef.current();
         hoverFrameRef.current = null;
       }
       pendingHoverPointRef.current = null;
@@ -288,11 +287,7 @@ export function CompareChartCanvas({
     const handleHoverMove = event => {
       pendingHoverPointRef.current = extractClientPoint(event);
       if (!pendingHoverPointRef.current || hoverFrameRef.current != null) return;
-      hoverFrameRef.current = globalThis.requestAnimationFrame
-        ? globalThis.requestAnimationFrame(flushHoverMove)
-        : /** @type {number} */ (
-            /** @type {unknown} */ (globalThis.setTimeout(flushHoverMove, 16))
-          );
+      hoverFrameRef.current = scheduleFrame(flushHoverMove);
     };
     const supportsPointerEvents = Boolean(globalThis.window?.PointerEvent);
     const shouldAttachHover = enableHoverInfo && !(disableDirectHoverOnMobile && useStaticTooltip);

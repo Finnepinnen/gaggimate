@@ -100,10 +100,8 @@ export interface StatisticsProgress {
   total: number;
 }
 
-/** Entry handed to CompareShotCharts; `shotName` falls back to the (possibly numeric) shot id. */
-export type StatisticsCompareEntry = Omit<AnalysisCompareEntry, 'shotName'> & {
-  shotName: string | number;
-};
+/** Entry handed to CompareShotCharts. */
+export type StatisticsCompareEntry = AnalysisCompareEntry;
 
 // ---------------------------------------------------------------------------
 // StatisticsService output

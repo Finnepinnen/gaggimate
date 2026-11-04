@@ -81,12 +81,12 @@ export function getDisplayStopReasonParts(reason = '') {
 }
 
 /**
- * @param {string | null | undefined} name
+ * @param {string | number | null | undefined} name A file name, or a shot id as a fallback.
  * @returns {string}
  */
 export const cleanName = name => {
-  if (!name) return '';
-  return name.replace(/\.json$/i, '');
+  if (name == null || name === '') return '';
+  return String(name).replace(/\.json$/i, '');
 };
 
 /**

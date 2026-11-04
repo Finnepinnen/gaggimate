@@ -2,7 +2,7 @@ import { computed } from '@preact/signals';
 import { useContext, useEffect, useState } from 'preact/hooks';
 import { useQuery } from 'preact-fetching';
 import { ApiServiceContext, machine } from '../../services/ApiService.js';
-import { MODES } from './utils.js';
+import { MODES, getWaterLevelPercent } from './utils.js';
 import { t } from '@lingui/core/macro';
 
 const status = computed(() => machine.value.status);
@@ -67,18 +67,12 @@ export function useDashboardState() {
   const emptyTankDistance = settings?.emptyTankDistance || 0;
   const fullTankDistance = settings?.fullTankDistance || 0;
   const albaCalibrated = emptyTankDistance > 0 && fullTankDistance > 0;
-  const waterLevelPercent =
-    tof && albaCalibrated
-      ? Math.max(
-          0,
-          Math.min(
-            100,
-            ((emptyTankDistance - /** @type {number} */ (s.tofDistance)) /
-              (emptyTankDistance - fullTankDistance)) *
-              100,
-          ),
-        )
-      : null;
+  const waterLevelPercent = getWaterLevelPercent({
+    tof,
+    emptyTankDistance,
+    fullTankDistance,
+    distance: s.tofDistance,
+  });
 
   // ── handlers ─────────────────────────────────────────────
   /** @param {string} tp */

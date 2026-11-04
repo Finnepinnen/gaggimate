@@ -256,7 +256,8 @@ export function buildStatisticsCompareEntry(entry, { key, isReference = false } 
     // Every caller passes a key.
     key: /** @type {string} */ (key),
     shot: entry.shotData,
-    shotName: entry.shotData.name || entry.meta?.id,
+    // Falls back to the shot id, which is numeric for GaggiMate shots.
+    shotName: String(entry.shotData.name || entry.meta?.id || ''),
     label: entry.meta?.displayName || getShotDisplayName(entry.shotData),
     profile: entry.profileData || null,
     profileName: entry.meta?.profileName,

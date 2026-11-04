@@ -407,10 +407,9 @@ export const axisUnitLabelPlugin = {
     const labelScale = getChartLabelScale(chart);
 
     yLabels.forEach(({ scaleId, label, side = 'left', fontSize = 10, yOffset }, index) => {
-      const scale = /** @type {import('chart.js').Scale & { display?: boolean }} */ (
-        chart.scales[scaleId]
-      );
-      if (!scale || scale.display === false) return;
+      const scale = chart.scales[scaleId];
+      // Chart.js keeps the axis' display flag in its options.
+      if (!scale || scale.options?.display === false) return;
 
       const y = Math.max(2, top - 22) + (yOffset == null ? index * 14 : yOffset);
       drawAxisUnitLabel(chart.ctx, {

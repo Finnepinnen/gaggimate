@@ -1,63 +1,8 @@
 # Improvements
 
-Possible bugs, dead code and loose types found while adding types for `noImplicitAny` and
-`strict`. None of these have been fixed yet; each needs a quick check in the running app before changing behaviour.
+Dead code and loose types found while adding types for `noImplicitAny` and `strict`. Each
+needs a quick check in the running app before changing behaviour.
 Paths are relative to `web/src/`.
-
-The Gaggiuino importer and phase-number bugs have `test.fails` cases in `web/test/`; they pass
-while the bug is there, so turn each into a normal test when fixing it.
-
-## Likely bugs
-
-- **Phase number concatenated as a string** —
-  `pages/Statistics/services/StatisticsService.js:415`. `AnalyzedPhase.number` is the sample
-  `phaseNumber` key, which is a string for phases that ran, so `phase.number + 1` gives `"01"`
-  instead of `1`. Only visible in the fallback `Phase N` label when a phase has no
-  `displayName` or `name`.
-- **`cleanName` can throw on a numeric id** —
-  `pages/ShotAnalyzer/components/library/LibraryRow.jsx:36` and
-  `pages/ShotAnalyzer/components/useShotNotesState.js:40`. The fallback chain ends in
-  `item.id`, which can be a number, and `cleanName` calls `.replace`. Only reachable for a
-  non-GaggiMate shot with an empty `name` and `storageKey`.
-- **Hidden axes may still get unit labels** —
-  `pages/ShotAnalyzer/components/shotChart/helpers/axisPlugins.js:413`. Checks
-  `scale.display === false`, but Chart.js keeps the flag at `scale.options.display`, so the
-  check probably never matches.
-- **`aria-pressed` gets `0`/`1` instead of `true`/`false`** —
-  `pages/ProfileEdit/StandardProfileForm.jsx:322` and `pages/ProfileEdit/ExtendedPhase.jsx:197`.
-  `aria-pressed={phase.valve}` passes the numeric valve flag; it should be `Boolean(phase.valve)`
-  (the sibling button already uses `!phase.valve`).
-- **Gaggiuino importer produces incomplete profiles** — `pages/ProfileList/utils.js`
-  (`parseJsonProfile`, around line 160). Imported phases have no `phase` field, the profile has
-  no `description`, and the transition `type` comes from
-  `curve.toLowerCase().replace('_', '-')` without checking it is a valid `TransitionType`
-  (`replace` also only replaces the first underscore). It can also produce an undefined
-  `label` (no `name`), put an undefined `restriction` into `pump.pressure`/`flow`, and give a
-  `NaN` `duration` when there is no `stopConditions.time` — `stopConditions` is read before the
-  `|| {}` fallback a few lines later (line 156).
-- **`shotName` can be a number** — `pages/Statistics/components/statisticsView/helpers.js:259`.
-  `entry.shotData.name || entry.meta?.id` falls back to a numeric id, while the compare views
-  expect a string.
-- **Water level can show `NaN%`** — `pages/Home/useDashboardState.js:76`. If the `tof`
-  capability arrives before a status frame carrying `tofDistance`, `waterLevelPercent` is `NaN`;
-  `utils/metricDefinitions.js:150` then renders it.
-- **Phase editor mutates props** — `pages/ProfileEdit/ExtendedPhase.jsx:38`. `onTargetChange`
-  writes into the `targets` array from props in place (the copy is shallow).
-- **History chart range becomes `NaN`** — `pages/ShotHistory/HistoryChart.jsx:87`. A missing
-  temperature makes `Math.min`/`Math.max` over the values `NaN`.
-- **Unrated shots get `rating: undefined`** — `pages/ShotHistory/index.jsx:321`.
-  `parseBinaryShot` never sets `rating`, so `h.rating ?? parsed.rating` falls back to
-  `undefined` instead of `null` (`Shot.rating` is typed `number | null`).
-- **Unstable library sort without timestamps** — `pages/ShotAnalyzer/services/LibraryService.js`
-  (`b.timestamp - a.timestamp`, line 289). Items without a timestamp give `NaN`, so their
-  order is undefined.
-- **Shot id can be missing** — `pages/Statistics/components/statisticsView/analysis.js:64`.
-  `getStatisticsShotId` returns `undefined` for a browser shot with no storage key, name or id,
-  although it is typed `string | number`.
-- **One id cancelled as both a frame and a timer** —
-  `pages/ShotAnalyzer/components/shotChart/compare/CompareChartCanvas.jsx:116` and `:264`.
-  Hover cleanup calls `cancelAnimationFrame` and `clearTimeout` with the same id, which could
-  cancel an unrelated timer that happens to share it.
 
 ## Dead or ineffective code
 

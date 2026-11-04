@@ -319,7 +319,7 @@ function Phase({ phase, index, onChange, onRemove, pressureAvailable }) {
               type='button'
               className={`join-item btn btn-sm ${phase.valve ? 'btn-primary' : 'btn-outline'}`}
               onClick={() => onFieldChange('valve', 1)}
-              aria-pressed={/** @type {boolean} */ (/** @type {unknown} */ (phase.valve))}
+              aria-pressed={Boolean(phase.valve)}
               aria-label={t`Valve open`}
             >
               <Trans context='valve state'>Open</Trans>

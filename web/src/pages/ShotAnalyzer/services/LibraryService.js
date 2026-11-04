@@ -13,6 +13,18 @@ import { indexedDBService } from './IndexedDBService';
 import { notesService } from './NotesService';
 import { getProfileDisplayLabel, getShotStorageKey } from '../utils/analyzerUtils';
 
+/**
+ * Sorts shots newest first; shots without a timestamp go last.
+ * @param {{ timestamp?: number | null }} a
+ * @param {{ timestamp?: number | null }} b
+ */
+export function compareNewestFirst(a, b) {
+  const aTime = Number.isFinite(a.timestamp) ? /** @type {number} */ (a.timestamp) : -Infinity;
+  const bTime = Number.isFinite(b.timestamp) ? /** @type {number} */ (b.timestamp) : -Infinity;
+  if (aTime === bTime) return 0;
+  return bTime > aTime ? 1 : -1;
+}
+
 /** @typedef {import('../../../types').ShotSample} ShotSample */
 /** @typedef {import('../../../types').ShotNotes} ShotNotes */
 /** @typedef {import('../types').AnalyzerShot} AnalyzerShot */
@@ -284,10 +296,7 @@ class LibraryService {
     const results = await Promise.all(promises);
     const merged = results.flat();
 
-    // Sort by timestamp (newest first)
-    return merged.sort(
-      (a, b) => /** @type {number} */ (b.timestamp) - /** @type {number} */ (a.timestamp),
-    );
+    return merged.sort(compareNewestFirst);
   }
 
   /**

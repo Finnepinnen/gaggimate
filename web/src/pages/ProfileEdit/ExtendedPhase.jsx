@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus } from '@fortawesome/free-solid-svg-icons/faPlus';
 import { Tooltip } from '../../components/Tooltip.jsx';
 import { Trans, useLingui } from '@lingui/react/macro';
+import { removePhaseTargetAt, updatePhaseTargetAt } from './profilePhases.js';
 
 /** @typedef {import('./types').EditorPhase} EditorPhase */
 /** @typedef {import('../../types').PhaseTarget} PhaseTarget */
@@ -35,31 +36,10 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
    * @param {number} index
    * @param {PhaseTarget} value
    */
-  const onTargetChange = (index, value) => {
-    const newPhase = {
-      ...phase,
-    };
-    // Only called from the rendered target list, so targets exist.
-    /** @type {PhaseTarget[]} */ (newPhase.targets)[index] = value;
-    onChange(newPhase);
-  };
+  const onTargetChange = (index, value) => onChange(updatePhaseTargetAt(phase, index, value));
 
   /** @param {number} index */
-  const onTargetRemove = index => {
-    // Only called from the rendered target list, so targets exist.
-    const targets = /** @type {PhaseTarget[]} */ (phase.targets);
-    /** @type {EditorPhase & { targets: PhaseTarget[] }} */
-    const newPhase = {
-      ...phase,
-      targets: [],
-    };
-    for (let i = 0; i < targets.length; i++) {
-      if (i !== index) {
-        newPhase.targets.push(targets[i]);
-      }
-    }
-    onChange(newPhase);
-  };
+  const onTargetRemove = index => onChange(removePhaseTargetAt(phase, index));
 
   /** @param {PhaseTarget} target */
   const onTargetAdd = target => {
@@ -194,7 +174,7 @@ export function ExtendedPhase({ phase, index, onChange, pressureAvailable }) {
               type='button'
               className={`join-item btn btn-sm ${phase.valve ? 'btn-primary' : 'btn-outline'}`}
               onClick={() => onFieldChange('valve', 1)}
-              aria-pressed={/** @type {boolean} */ (/** @type {unknown} */ (phase.valve))}
+              aria-pressed={Boolean(phase.valve)}
               aria-label={t`Valve open`}
             >
               <Trans context='valve state'>Open</Trans>

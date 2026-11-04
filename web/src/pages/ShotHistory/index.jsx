@@ -26,6 +26,7 @@ import { Trans, useLingui } from '@lingui/react/macro';
 import { Spinner } from '../../components/Spinner.jsx';
 import HistoryCard from './HistoryCard.jsx';
 import { parseBinaryShot } from './parseBinaryShot.js';
+import { mergeLoadedShot } from './mergeLoadedShot.js';
 import { parseBinaryIndex, indexToShotList } from './parseBinaryIndex.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch } from '@fortawesome/free-solid-svg-icons/faSearch';
@@ -308,23 +309,7 @@ export function ShotHistory() {
                 const parsed = parseBinaryShot(buf, id);
                 parsed.incomplete = (target?.incomplete ?? false) || parsed.incomplete;
                 if (target?.notes) parsed.notes = target.notes;
-                setHistory(prev =>
-                  prev.map(h =>
-                    h.id === id
-                      ? {
-                          ...h,
-                          ...parsed,
-                          // Preserve index metadata over shot file data
-                          volume: h.volume ?? parsed.volume, // Use index volume if available, fallback to shot volume
-                          // Use index rating if available. parseBinaryShot never sets one, so an
-                          // unrated shot ends up undefined here; Shot types it number | null.
-                          rating: /** @type {number | null} */ (h.rating ?? parsed.rating),
-                          incomplete: h.incomplete ?? parsed.incomplete,
-                          loaded: true,
-                        }
-                      : h,
-                  ),
-                );
+                setHistory(prev => prev.map(h => (h.id === id ? mergeLoadedShot(h, parsed) : h)));
               } catch (e) {
                 console.error('Failed loading shot', e);
               }
