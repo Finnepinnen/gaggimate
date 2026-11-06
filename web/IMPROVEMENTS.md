@@ -14,12 +14,6 @@ the audit on 2026-11-06 and will drift, so search for the quoted symbol if a lin
 
 ## Bugs
 
-- **Exit-reason labels exist twice and have drifted** —
-  `pages/ShotHistory/parseBinaryShot.js:129` `PHASE_EXIT_REASON_LABELS` is untranslated English
-  and includes code 8 "Hold released" (exposed as `transitionReasonLabel` at ~:169);
-  `pages/ShotAnalyzer/services/analyzer/exitReasons.js` is translated with `msg` but has no code 8.
-  Keep one table (the translated one, with code 8 added) and have the parser return only the code.
-
 - **Async effects without cancellation** — only 9 files use a `cancelled` flag or
   `AbortController`. `pages/ShotHistory/ShotNotesCard.jsx:57-117` can apply the previous shot's
   notes after `shot.id` changes and sets state after unmount. Uncleared timeouts that set state:
@@ -247,7 +241,7 @@ toggle-primary'` 9×; `'bg-base-200 rounded-lg p-4'` 7×; `'btn btn-sm …'` ~47
   `LAST_PHASE_OVERSHOOT_MAX_G`), but has an empty `##` heading and will drift unnoticed. Move it to
   a JSDoc block in `services/analyzer/phaseAnalysis.js` or to `web/docs/`.
 
-- **Minor i18n gaps** — `PHASE_EXIT_REASON_LABELS` (see exit-reason bug), `'Nord'`/`'Coffee'` theme
+- **Minor i18n gaps** — `'Nord'`/`'Coffee'` theme
   options (see theme picker). Check that `components/EmptyState.jsx:131` (nested bold spans in
   `<Trans>`) extracts with placeholders. Otherwise coverage is good, and type checking is on for all
   files via `checkJs` + `strict` in `jsconfig.json`.
