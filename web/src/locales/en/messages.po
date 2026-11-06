@@ -2076,6 +2076,14 @@ msgctxt "flush duration"
 msgid "Hold"
 msgstr "Hold"
 
+#: src/pages/ShotAnalyzer/services/analyzer/exitReasons.js
+msgid "Hold released"
+msgstr "Hold released"
+
+#: src/pages/ShotAnalyzer/utils/formatting.js
+msgid "Hold Released"
+msgstr "Hold Released"
+
 #: src/pages/Settings/tabs/GeneralTab.jsx
 msgid "Hold runs the flush for as long as the button is held. The valve stays open for one more second after the pump stops."
 msgstr "Hold runs the flush for as long as the button is held. The valve stays open for one more second after the pump stops."
@@ -2389,6 +2397,10 @@ msgstr "Longest streak:"
 #: src/app/MachineSetup.jsx
 msgid "Looking for machines… If yours doesn't show up, add it by its address."
 msgstr "Looking for machines… If yours doesn't show up, add it by its address."
+
+#: src/components/PumpFlowCalibration/usePumpFlowCalibration.js
+msgid "Lost connection to the machine."
+msgstr "Lost connection to the machine."
 
 #: src/pages/ShotHistory/index.jsx
 msgid "Lowest ID first"

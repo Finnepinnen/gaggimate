@@ -2076,6 +2076,14 @@ msgctxt "flush duration"
 msgid "Hold"
 msgstr "Maintien"
 
+#: src/pages/ShotAnalyzer/services/analyzer/exitReasons.js
+msgid "Hold released"
+msgstr ""
+
+#: src/pages/ShotAnalyzer/utils/formatting.js
+msgid "Hold Released"
+msgstr ""
+
 #: src/pages/Settings/tabs/GeneralTab.jsx
 msgid "Hold runs the flush for as long as the button is held. The valve stays open for one more second after the pump stops."
 msgstr "Maintien effectue le rinçage tant que le bouton est maintenu. La vanne reste ouverte une seconde de plus après l'arrêt de la pompe."
@@ -2389,6 +2397,10 @@ msgstr "Plus longue série :"
 #: src/app/MachineSetup.jsx
 msgid "Looking for machines… If yours doesn't show up, add it by its address."
 msgstr "Recherche de machines… Si la vôtre n'apparaît pas, ajoutez-la par son adresse."
+
+#: src/components/PumpFlowCalibration/usePumpFlowCalibration.js
+msgid "Lost connection to the machine."
+msgstr ""
 
 #: src/pages/ShotHistory/index.jsx
 msgid "Lowest ID first"
