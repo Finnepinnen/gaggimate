@@ -110,9 +110,12 @@ export function ChartComponent({ data, className, chartClassName, style }) {
     window.addEventListener('resize', handleResize);
 
     // iOS PWA specific: orientationchange event
+    /** @type {ReturnType<typeof setTimeout> | undefined} */
+    let orientationTimeout;
     const handleOrientationChange = () => {
       // Use a small delay to ensure the orientation change is complete
-      setTimeout(handleResize, 100);
+      clearTimeout(orientationTimeout);
+      orientationTimeout = setTimeout(handleResize, 100);
     };
     window.addEventListener('orientationchange', handleOrientationChange);
 
@@ -126,6 +129,8 @@ export function ChartComponent({ data, className, chartClassName, style }) {
 
     // Cleanup
     return () => {
+      // The chart may be destroyed by then; don't resize it afterwards.
+      clearTimeout(orientationTimeout);
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('orientationchange', handleOrientationChange);
       if (window.visualViewport) {

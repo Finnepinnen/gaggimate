@@ -165,5 +165,10 @@ export function persistStatisticsInitialContext({
   if (preferredDetailSection) {
     statsInitialContext.preferredDetailSection = preferredDetailSection;
   }
-  sessionStorage.setItem('statsInitialContext', JSON.stringify(statsInitialContext));
+  try {
+    sessionStorage.setItem('statsInitialContext', JSON.stringify(statsInitialContext));
+  } catch (error) {
+    // Blocked storage: Statistics then just opens without the preselection.
+    console.warn('Failed to store statistics context:', error);
+  }
 }

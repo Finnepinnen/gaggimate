@@ -14,17 +14,10 @@ the audit on 2026-11-06 and will drift, so search for the quoted symbol if a lin
 
 ## Bugs
 
-- **Async effects without cancellation** — only 9 files use a `cancelled` flag or
-  `AbortController`. `pages/ShotHistory/ShotNotesCard.jsx:57-117` can apply the previous shot's
-  notes after `shot.id` changes and sets state after unmount. Uncleared timeouts that set state:
-  `pages/ProfileList/index.jsx:119,125`, `pages/Settings/tabs/BluetoothTab.jsx:233`,
-  `components/Chart.jsx:115`. `pages/ShotAnalyzer/components/library/LibraryDropdown.jsx:220,363`
-  schedules a chain of export timeouts that can't be cancelled.
-
-- **Unguarded storage access** —
-  `pages/ShotAnalyzer/shotAnalyzer/shotAnalyzerViewModel.js:168` (`sessionStorage.setItem`) throws
-  in private mode / blocked storage. Check that callers of `JSON.parse` in
-  `pages/Settings/index.jsx:515` (settings import) and `pages/ProfileList/utils.js:81` catch.
+- **Leftover timers (low)** — timeouts in `pages/ProfileList/index.jsx:119,125` and
+  `pages/Settings/tabs/BluetoothTab.jsx:233` set state after unmount (a no-op in Preact, but
+  untidy). `pages/ShotAnalyzer/components/library/LibraryDropdown.jsx:220,363` schedules every
+  "export all" download up front with no way to cancel it.
 
 ## Data and state
 

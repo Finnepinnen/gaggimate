@@ -57,6 +57,8 @@ export default function ShotNotesCard({ shot, onNotesUpdate, onNotesLoaded }) {
   // Load notes on mount and again after the shot changes (see the reset below)
   useEffect(() => {
     if (initialLoaded) return; // Prevent reloading
+    // A slow answer must not overwrite the notes of a shot selected since, or set state after unmount.
+    let cancelled = false;
 
     const loadNotes = async () => {
       try {
@@ -64,6 +66,7 @@ export default function ShotNotesCard({ shot, onNotesUpdate, onNotesLoaded }) {
           tp: 'req:history:notes:get',
           id: shot.id,
         });
+        if (cancelled) return;
 
         /** @type {FilledShotNotes} */
         let loadedNotes = {
@@ -111,6 +114,7 @@ export default function ShotNotesCard({ shot, onNotesUpdate, onNotesLoaded }) {
           onNotesLoaded(loadedNotes);
         }
       } catch (error) {
+        if (cancelled) return;
         console.error('Failed to load notes:', error);
 
         // Even if loading fails, set up defaults
@@ -136,6 +140,9 @@ export default function ShotNotesCard({ shot, onNotesUpdate, onNotesLoaded }) {
     };
 
     loadNotes();
+    return () => {
+      cancelled = true;
+    };
   }, [apiService, calculateRatio, initialLoaded, onNotesLoaded, shot.id, shot.volume]);
 
   // Reset if shot changes
