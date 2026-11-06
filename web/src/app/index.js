@@ -46,11 +46,8 @@ function trackFirmwareVersion(apiService) {
   effect(() => {
     const connected = machine.value.connected;
     if (connected && !wasConnected) {
-      try {
-        apiService.send({ tp: 'req:ota-settings' });
-      } catch {
-        // Socket closed again in the meantime; the next connect asks again.
-      }
+      // If the socket closed again in the meantime, the next connect asks again.
+      apiService.send({ tp: 'req:ota-settings' });
     }
     wasConnected = connected;
   });

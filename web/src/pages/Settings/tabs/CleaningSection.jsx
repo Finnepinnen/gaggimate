@@ -125,13 +125,12 @@ export function CleaningSection({ formData, onChange, setField }) {
 
   /** @param {CleaningTaskDef} task */
   const start = task => {
-    apiService.send({ tp: `req:cleaning:${task.key}:start` });
-    route('/');
+    if (apiService.send({ tp: `req:cleaning:${task.key}:start` })) route('/');
   };
 
   /** @param {CleaningTaskDef} task */
   const complete = task => {
-    apiService.send({ tp: `req:cleaning:${task.key}:complete` });
+    if (!apiService.send({ tp: `req:cleaning:${task.key}:complete` })) return;
     setField(task.lastTimeField, Math.floor(Date.now() / 1000));
     setField(task.shotsSinceField, 0);
   };

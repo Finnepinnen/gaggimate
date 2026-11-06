@@ -103,7 +103,7 @@ export default class ApiService {
       ...this.state.value,
       connected: false,
       // scan:complete can't arrive on a dead socket, so don't leave the spinner latched.
-      scale: { ...machine.value.scale, scanning: false },
+      scale: { ...this.state.value.scale, scanning: false },
     };
     this._scheduleReconnect();
   }
@@ -158,13 +158,19 @@ export default class ApiService {
     }
   }
 
-  /** @param {SocketMessage} event */
+  /**
+   * Fire-and-forget send. Most callers are click handlers, so a dropped socket shouldn't throw;
+   * callers that must not continue without the message check the result.
+   * @param {SocketMessage} event
+   * @returns {boolean} Whether the message was handed to an open socket.
+   */
   send(event) {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
       this.socket.send(JSON.stringify(event));
-    } else {
-      throw new Error('WebSocket is not connected');
+      return true;
     }
+    console.warn(`WebSocket is not connected; dropped ${event.tp}`);
+    return false;
   }
 
   /**
@@ -224,7 +230,7 @@ export default class ApiService {
    * @param {string} id
    */
   off(type, id) {
-    delete this.listeners[type][id];
+    if (this.listeners[type]) delete this.listeners[type][id];
   }
 
   // evt:status frames are partial: fast telemetry every tick, slow state only when it changes

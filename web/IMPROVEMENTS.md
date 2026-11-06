@@ -29,19 +29,6 @@ the audit on 2026-11-06 and will drift, so search for the quoted symbol if a lin
   without try/catch). Prefer storing only the username, or an API token if visualizer.coffee
   offers one; at minimum use the native app's secure storage when running under Capacitor.
 
-- **`ApiService._onClose` reads the global machine signal** — `services/ApiService.js:106` builds
-  the new state from `machine.value.scale` instead of `this.state.value.scale`. The native app
-  creates extra per-machine `ApiService` instances (`app/machineConnections.js`); those get the
-  active machine's scale state on disconnect.
-
-- **`apiService.send()` throws when disconnected; callers don't catch it** — 18 call sites, mostly
-  click handlers with no try/catch or user feedback (e.g. `pages/Settings/tabs/MachineTab.jsx:104`,
-  `pages/Settings/tabs/CleaningSection.jsx:128`, `pages/Home/useDashboardState.js:77,82`). Worst:
-  `pages/Settings/tabs/SystemTab.jsx:336` calls `send` inside an uncleared 500 ms `setTimeout`, so
-  the throw is unhandled and the timer fires after unmount. Also `off()` crashes when no listener of
-  that type was ever registered (`ApiService.js:227`). Decide on one contract (return
-  `false`/reject vs throw) and handle it centrally, e.g. a toast.
-
 - **`OverviewChart` keeps brew state in module-level variables mutated during render** —
   `components/OverviewChart.jsx:10-20` (`phaseTransitions`, `lastKnownPhase`, `brewStartTime`,
   `lastProcessState`, `initialPhaseName`) are updated inside `getChartData()`, which runs during

@@ -140,7 +140,11 @@ export function usePumpFlowCalibration({ currentCoeffs, onApplied }) {
             const warnings = labels.join(', ') || t`unknown`;
             pushLog(t`Starting despite warnings: ${warnings}`, 'warn');
             const api = /** @type {ApiService} */ (apiService);
-            api.send({ tp: 'req:process:activate', ignoreWarnings: true });
+            if (!api.send({ tp: 'req:process:activate', ignoreWarnings: true })) {
+              waitRejectRef.current = null;
+              detachStatusListener();
+              reject(new Error(t`Lost connection to the machine.`));
+            }
           });
           listen('evt:brew:confirm:cancel', () => {
             waitRejectRef.current = null;
@@ -210,6 +214,11 @@ export function usePumpFlowCalibration({ currentCoeffs, onApplied }) {
       restoreProfileRef.current = previousProfileId;
     }
 
+    // The run must stop rather than wait out timeouts when a command can't be sent.
+    const sendOrThrow = (/** @type {SocketMessage} */ message) => {
+      if (!apiService.send(message)) throw new Error(t`Lost connection to the machine.`);
+    };
+
     try {
       // Validate the existing coefficients first so a malformed value can't
       // waste a full calibration shot (water + scale + portafilter).
@@ -222,7 +231,7 @@ export function usePumpFlowCalibration({ currentCoeffs, onApplied }) {
       await apiService.request({ tp: 'req:profiles:select', id: CALIBRATION_PROFILE_ID });
 
       pushLog(t`Switching to BREW mode...`);
-      apiService.send({ tp: 'req:change-mode', mode: MODE_BREW });
+      sendOrThrow({ tp: 'req:change-mode', mode: MODE_BREW });
       await new Promise(r => setTimeout(r, POST_MODE_SETTLE_MS));
 
       pushLog(t`Snapshotting shot history...`);
@@ -239,7 +248,7 @@ export function usePumpFlowCalibration({ currentCoeffs, onApplied }) {
         savedShotIdRef.current = m.id;
         savedWakeRef.current?.();
       });
-      apiService.send({ tp: 'req:process:activate' });
+      sendOrThrow({ tp: 'req:process:activate' });
       await shotEnd;
 
       pushLog(t`Shot finished. Waiting for it to be saved to history...`, 'ok');
