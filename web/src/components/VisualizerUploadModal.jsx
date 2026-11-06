@@ -37,15 +37,17 @@ export default function VisualizerUploadModal({
     try {
       await onUpload(username.trim(), password, rememberCredentials);
 
-      // Save credentials to localStorage if requested
-      if (rememberCredentials) {
-        localStorage.setItem('visualizer_username', username.trim());
-        localStorage.setItem('visualizer_password', password);
-        localStorage.setItem('visualizer_remember', 'true');
-      } else {
-        localStorage.removeItem('visualizer_username');
-        localStorage.removeItem('visualizer_password');
-        localStorage.removeItem('visualizer_remember');
+      // Only the username is remembered; the password would sit in plain text in localStorage.
+      try {
+        if (rememberCredentials) {
+          localStorage.setItem('visualizer_username', username.trim());
+          localStorage.setItem('visualizer_remember', 'true');
+        } else {
+          localStorage.removeItem('visualizer_username');
+          localStorage.removeItem('visualizer_remember');
+        }
+      } catch (error) {
+        console.warn('Failed to store Visualizer username:', error);
       }
 
       // Clear form and close modal on success
@@ -66,20 +68,20 @@ export default function VisualizerUploadModal({
     }
   };
 
-  // Load saved credentials when modal opens
+  // Load the saved username when the modal opens
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) return;
+    try {
+      // Older versions also stored the password; drop it.
+      localStorage.removeItem('visualizer_password');
       const savedUsername = localStorage.getItem('visualizer_username');
-      const savedPassword = localStorage.getItem('visualizer_password');
       const savedRemember = localStorage.getItem('visualizer_remember') === 'true';
-
       if (savedRemember && savedUsername) {
         setUsername(savedUsername);
         setRememberCredentials(true);
-        if (savedPassword) {
-          setPassword(savedPassword);
-        }
       }
+    } catch (error) {
+      console.warn('Failed to read Visualizer username:', error);
     }
   }, [isOpen]);
 
@@ -87,7 +89,7 @@ export default function VisualizerUploadModal({
 
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4'>
-      <div className='max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-white shadow-xl dark:bg-gray-800'>
+      <div className='bg-base-100 max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg shadow-xl'>
         <div className='p-6'>
           <div className='mb-4 flex items-center justify-between'>
             <h3 className='text-lg font-semibold'>
@@ -96,7 +98,7 @@ export default function VisualizerUploadModal({
             {!isUploading && (
               <button
                 onClick={handleClose}
-                className='text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                className='text-base-content/60 hover:text-base-content'
                 aria-label={t`Close`}
               >
                 ✕
@@ -105,27 +107,27 @@ export default function VisualizerUploadModal({
           </div>
 
           {shotInfo && (
-            <div className='mb-4 rounded-md bg-gray-100 p-3 dark:bg-gray-700'>
-              <p className='text-sm text-gray-600 dark:text-gray-300'>
+            <div className='bg-base-200 mb-4 rounded-md p-3'>
+              <p className='text-base-content/80 text-sm'>
                 <strong>
                   <Trans>Shot:</Trans>
                 </strong>{' '}
                 {shotInfo.profile}
               </p>
-              <p className='text-sm text-gray-600 dark:text-gray-300'>
+              <p className='text-base-content/80 text-sm'>
                 <strong>
                   <Trans>Date:</Trans>
                 </strong>{' '}
                 {new Date(shotInfo.timestamp * 1000).toLocaleString()}
               </p>
-              <p className='text-sm text-gray-600 dark:text-gray-300'>
+              <p className='text-base-content/80 text-sm'>
                 <strong>
                   <Trans>Duration:</Trans>
                 </strong>{' '}
                 {(shotInfo.duration / 1000).toFixed(1)}s
               </p>
               {shotInfo.volume != null && shotInfo.volume > 0 && (
-                <p className='text-sm text-gray-600 dark:text-gray-300'>
+                <p className='text-base-content/80 text-sm'>
                   <strong>
                     <Trans>Yield:</Trans>
                   </strong>{' '}
@@ -147,7 +149,7 @@ export default function VisualizerUploadModal({
                 value={username}
                 onChange={e => setUsername(e.currentTarget.value)}
                 disabled={isUploading}
-                className='w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+                className='input w-full'
                 placeholder={t`Enter your username`}
                 autoComplete='username'
                 required
@@ -166,7 +168,7 @@ export default function VisualizerUploadModal({
                   value={password}
                   onChange={e => setPassword(e.currentTarget.value)}
                   disabled={isUploading}
-                  className='w-full rounded-md border border-gray-300 px-3 py-2 pr-10 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+                  className='input w-full pr-10'
                   placeholder={t`Enter your password`}
                   autoComplete='current-password'
                   required
@@ -175,7 +177,7 @@ export default function VisualizerUploadModal({
                   type='button'
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={isUploading}
-                  className='absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 disabled:opacity-50'
+                  className='text-base-content/50 hover:text-base-content absolute inset-y-0 right-0 z-10 flex items-center pr-3 disabled:opacity-50'
                   aria-label={showPassword ? t`Hide password` : t`Show password`}
                 >
                   <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} />
@@ -190,9 +192,9 @@ export default function VisualizerUploadModal({
                 checked={rememberCredentials}
                 onChange={e => setRememberCredentials(e.currentTarget.checked)}
                 disabled={isUploading}
-                className='h-4 w-4 rounded-sm border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50'
+                className='checkbox checkbox-sm checkbox-primary'
               />
-              <label htmlFor='remember' className='ml-2 text-sm text-gray-600 dark:text-gray-300'>
+              <label htmlFor='remember' className='text-base-content/80 ml-2 text-sm'>
                 <Trans>Remember credentials</Trans>
               </label>
             </div>
@@ -202,14 +204,14 @@ export default function VisualizerUploadModal({
                 type='button'
                 onClick={handleClose}
                 disabled={isUploading}
-                className='rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300 disabled:opacity-50 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500'
+                className='btn btn-ghost'
               >
                 <Trans>Cancel</Trans>
               </button>
               <button
                 type='submit'
                 disabled={isUploading || !username.trim() || !password.trim()}
-                className='flex items-center space-x-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50'
+                className='btn btn-primary'
               >
                 {isUploading && <FontAwesomeIcon icon={faSpinner} spin />}
                 <span>{isUploading ? t`Uploading...` : t`Upload Shot`}</span>
@@ -217,7 +219,7 @@ export default function VisualizerUploadModal({
             </div>
           </form>
 
-          <div className='mt-4 text-xs text-gray-500 dark:text-gray-400'>
+          <div className='text-base-content/60 mt-4 text-xs'>
             <p>
               <Trans>
                 Your credentials are only used for this upload and will be stored locally only if

@@ -2,6 +2,7 @@ import { useRef } from 'preact/hooks';
 import { Chart } from 'chart.js';
 import { ChartComponent } from './Chart';
 import { t } from '@lingui/core/macro';
+import { isDarkTheme } from '../utils/themeManager.js';
 
 /** @typedef {import('../types').ProfilePhase} ProfilePhase */
 /** @typedef {import('../types').PumpAdvanced} PumpAdvanced */
@@ -430,8 +431,6 @@ export function ExtendedProfileChart({
   showPhaseLabels = true,
   style,
 }) {
-  const isDarkMode = () =>
-    window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   const phases = Array.isArray(data?.phases) ? data.phases : [];
   const phaseRanges = buildPhaseRanges(phases);
   const phaseRangesRef = useRef(phaseRanges);
@@ -441,7 +440,7 @@ export function ExtendedProfileChart({
     selectedPhase,
     phaseRanges,
     onPhaseClick,
-    isDarkMode(),
+    isDarkTheme(),
     showPhaseLabels,
   );
 

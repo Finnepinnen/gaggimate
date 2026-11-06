@@ -14,21 +14,6 @@ the audit on 2026-11-06 and will drift, so search for the quoted symbol if a lin
 
 ## Bugs
 
-- **`dark:` classes and chart labels follow the OS, not the app theme** — themes are applied via
-  `data-theme` (`utils/themeManager.js`), but `style.css` has no `@custom-variant dark` (only
-  `hmd`), so Tailwind's `dark:` means `prefers-color-scheme`. `components/VisualizerUploadModal.jsx`
-  (12 lines with `dark:` plus `bg-white`/`gray-*`) and `components/ExtendedProfileChart.jsx:433`
-  (`isDarkMode()` via `matchMedia`) therefore render wrong when OS and app theme disagree (e.g. OS
-  light + app dark → dark labels on dark background), and on nord/coffee. Fix: either add
-  `@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));` or, better, replace
-  `dark:`/`gray-*` with daisyUI tokens and read chart colours from CSS variables (see
-  _Chart colours_ below).
-
-- **Visualizer password stored in plaintext** — `components/VisualizerUploadModal.jsx:42-48`
-  writes `visualizer_password` to `localStorage` when "remember" is ticked (read back at :72-74
-  without try/catch). Prefer storing only the username, or an API token if visualizer.coffee
-  offers one; at minimum use the native app's secure storage when running under Capacitor.
-
 - **`OverviewChart` keeps brew state in module-level variables mutated during render** —
   `components/OverviewChart.jsx:10-20` (`phaseTransitions`, `lastKnownPhase`, `brewStartTime`,
   `lastProcessState`, `initialPhaseName`) are updated inside `getChartData()`, which runs during
@@ -49,8 +34,8 @@ the audit on 2026-11-06 and will drift, so search for the quoted symbol if a lin
   `components/Chart.jsx:115`. `pages/ShotAnalyzer/components/library/LibraryDropdown.jsx:220,363`
   schedules a chain of export timeouts that can't be cancelled.
 
-- **Unguarded storage access** — `components/VisualizerUploadModal.jsx:72-74` (reads) and
-  `pages/ShotAnalyzer/shotAnalyzer/shotAnalyzerViewModel.js:168` (`sessionStorage.setItem`) throw
+- **Unguarded storage access** —
+  `pages/ShotAnalyzer/shotAnalyzer/shotAnalyzerViewModel.js:168` (`sessionStorage.setItem`) throws
   in private mode / blocked storage. Check that callers of `JSON.parse` in
   `pages/Settings/index.jsx:515` (settings import) and `pages/ProfileList/utils.js:81` catch.
 
