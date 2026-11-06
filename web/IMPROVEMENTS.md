@@ -14,13 +14,6 @@ the audit on 2026-11-06 and will drift, so search for the quoted symbol if a lin
 
 ## Bugs
 
-- **`OverviewChart` keeps brew state in module-level variables mutated during render** —
-  `components/OverviewChart.jsx:10-20` (`phaseTransitions`, `lastKnownPhase`, `brewStartTime`,
-  `lastProcessState`, `initialPhaseName`) are updated inside `getChartData()`, which runs during
-  render (~:429). Render is impure and order-dependent; the state survives remounts and machine
-  switches in the app. Move it into a `useRef`/signal owned by the component (or derive it in
-  ApiService from `evt:status`). The exported `clearPhaseTransitions` is unused.
-
 - **Exit-reason labels exist twice and have drifted** —
   `pages/ShotHistory/parseBinaryShot.js:129` `PHASE_EXIT_REASON_LABELS` is untranslated English
   and includes code 8 "Hold released" (exposed as `transitionReasonLabel` at ~:169);
@@ -238,7 +231,7 @@ toggle-primary'` 9×; `'bg-base-200 rounded-lg p-4'` 7×; `'btn btn-sm …'` ~47
 
 - **Dead exports** — unused anywhere (including `test/`, `e2e/`): `warningLabel`
   (`utils/warnings.js:94`), `getAvailableThemes` (`utils/themeManager.js:46`, see theme picker),
-  `clearPhaseTransitions` (`components/OverviewChart.jsx:23`), `invalidateSettingsCache`
+  `invalidateSettingsCache`
   (`services/ApiService.js:435`, see settings caches), `BATCH_SIZE`/`NO_PROFILE_LOADED`
   (`statisticsView/constants.js:2,5`), `BREW_BY_TIME_TEXT`/`BREW_BY_WEIGHT_TEXT`
   (`shotChart/constants.js:10-11`), `getSamplesThroughLastNonExtended` (`weightRate.js:115`),
