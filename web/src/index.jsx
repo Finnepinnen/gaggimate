@@ -1,7 +1,6 @@
 import './style.css';
 import { initializeTheme } from './utils/themeManager.js';
 import { I18nProvider } from '@lingui/react';
-import { useLingui } from '@lingui/react/macro';
 import { activateLocale, i18n } from './i18n.js';
 import { isApp } from './app/platform.js';
 import { hasConnected, initApp, onAppRendered } from './app/index.js';
@@ -20,9 +19,8 @@ import { LocationProvider, Router, Route, ErrorBoundary, useLocation } from 'pre
 import lazy from 'preact-iso/lazy';
 
 import ApiService, { ApiServiceContext } from './services/ApiService.js';
-import { Navigation } from './components/Navigation.jsx';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBars } from '@fortawesome/free-solid-svg-icons/faBars';
+import { MobileTabBar, Navigation } from './components/Navigation.jsx';
+import { useDocked } from './hooks/useDocked.js';
 
 // Each page lazy-loads as its own Vite chunk so the initial bundle stays small.
 // Chart.js, FontAwesome icon sets, and the analyzer/statistics views are too
@@ -82,8 +80,8 @@ const RedirectTo = to =>
   };
 
 export function App() {
-  const { t } = useLingui();
   const [navCollapsed, setNavCollapsed] = useState(readInitialDesktopNavCollapsed);
+  const docked = useDocked();
 
   useEffect(() => {
     const storage = globalThis.window?.localStorage;
@@ -111,9 +109,15 @@ export function App() {
     <LocationProvider>
       <ApiServiceContext.Provider value={apiService}>
         {isApp && showMachineSetup.value && <MachineSetup />}
-        <div className='bg-base-300 flex h-screen overflow-hidden pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]'>
+        <div
+          className={`bg-base-300 flex h-screen overflow-hidden pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)] ${
+            // The tab bar pads itself for the home indicator so its background reaches the screen edge.
+            docked ? 'pb-[env(safe-area-inset-bottom)]' : 'flex-col'
+          }`}
+        >
           <Navigation
             collapsed={navCollapsed}
+            docked={docked}
             onToggleCollapsed={() => setNavCollapsed(collapsed => !collapsed)}
           />
           <main className='flex flex-1 flex-col overflow-x-hidden overflow-y-auto'>
@@ -148,16 +152,8 @@ export function App() {
               </div>
             </div>
           </main>
-          {navCollapsed && (
-            <div className='fab end-auto bottom-[max(1rem,env(safe-area-inset-bottom))] left-[max(1rem,env(safe-area-inset-left))] md:hidden landscape:hidden'>
-              <button
-                className='btn btn-lg btn-circle btn-primary'
-                aria-label={t`Open menu`}
-                onClick={() => setNavCollapsed(false)}
-              >
-                <FontAwesomeIcon icon={faBars} />
-              </button>
-            </div>
+          {!docked && (
+            <MobileTabBar menuOpen={!navCollapsed} onOpenMenu={() => setNavCollapsed(false)} />
           )}
         </div>
       </ApiServiceContext.Provider>

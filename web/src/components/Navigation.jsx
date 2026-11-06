@@ -15,6 +15,7 @@ import { faDiscord } from '@fortawesome/free-brands-svg-icons/faDiscord';
 import { useEffect, useMemo, useRef } from 'preact/hooks';
 import { faPencil } from '@fortawesome/free-solid-svg-icons/faPencil';
 import { faCheck } from '@fortawesome/free-solid-svg-icons/faCheck';
+import { faEllipsis } from '@fortawesome/free-solid-svg-icons/faEllipsis';
 import {
   DASHBOARD_MODES,
   dashboardModeSignal,
@@ -235,10 +236,14 @@ function MenuItem({
 /**
  * @param {object} props
  * @param {boolean} [props.collapsed]
+ * @param {boolean} props.docked - false below md in portrait, where the sidebar is an overlay drawer
  * @param {() => void} props.onToggleCollapsed
  */
-export function Navigation({ collapsed = false, onToggleCollapsed }) {
+export function Navigation({ collapsed: navCollapsed = false, docked, onToggleCollapsed }) {
   const { t, i18n } = useLingui();
+  // As an overlay the drawer always shows its full layout, so it stays intact while sliding out.
+  const collapsed = docked && navCollapsed;
+  const drawerOpen = !docked && !navCollapsed;
   // Compute the icon once per mount so the avatar doesn't reshuffle on every render.
   const randomIcon = useMemo(() => getRandomIcon(), []);
   const loc = useLocation();
@@ -254,25 +259,37 @@ export function Navigation({ collapsed = false, onToggleCollapsed }) {
     // Re-check viewport width INSIDE the effect (was captured once at module
     // init, so iPad orientation changes were ignored).
     const isMdDown = typeof window !== 'undefined' && window.innerWidth < 768;
-    if (pathChanged && !collapsed && isMdDown) {
+    if (pathChanged && !navCollapsed && isMdDown) {
       onToggleCollapsed();
     }
-  }, [loc.path, collapsed, onToggleCollapsed]);
+  }, [loc.path, navCollapsed, onToggleCollapsed]);
 
   return (
     <>
-      {!collapsed && (
+      {!docked && (
         <div
-          className='fixed end-0 top-0 bottom-0 left-0 z-9998 cursor-pointer backdrop-blur-sm backdrop-brightness-50 md:hidden'
+          aria-hidden='true'
+          className={`fixed inset-0 z-9998 cursor-pointer bg-black/50 backdrop-blur-sm transition-opacity ease-in-out motion-reduce:transition-none ${
+            drawerOpen ? 'opacity-100 duration-500' : 'pointer-events-none opacity-0 duration-300'
+          }`}
           onClick={onToggleCollapsed}
         />
       )}
       <aside
-        className={`sidebar border-base-300 bg-base-100 fixed top-0 left-0 z-9999 flex h-screen flex-col overflow-y-auto border-r px-5 pt-[max(1.25rem,env(safe-area-inset-top))] pb-[max(1.25rem,env(safe-area-inset-bottom))] md:static landscape:static ${
-          collapsed ? 'hidden md:flex md:w-[90px] landscape:flex landscape:w-[90px]' : 'w-[290px]'
+        className={`sidebar border-base-300 bg-base-100 top-0 left-0 z-9999 flex h-screen shrink-0 flex-col overflow-x-hidden overflow-y-auto border-r px-5 pt-[max(1.25rem,env(safe-area-inset-top))] pb-[max(1.25rem,env(safe-area-inset-bottom))] ${
+          docked
+            ? `static transition-[width] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${collapsed ? 'w-[90px]' : 'w-[290px]'}`
+            : `fixed w-[290px] max-w-[85vw] shadow-2xl transition-[translate,visibility] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${
+                drawerOpen
+                  ? 'translate-x-0 duration-500'
+                  : 'invisible -translate-x-full duration-300'
+              }`
         }`}
       >
-        <div className='flex h-full flex-col'>
+        {/* Fixed width while docked and expanded, so the content is revealed as the sidebar widens instead of reflowing every frame. */}
+        <div
+          className={`flex h-full flex-col whitespace-nowrap ${docked && !collapsed ? 'w-[250px]' : ''}`}
+        >
           <div>
             <div
               className={`flex h-12 flex-row items-center justify-center gap-2 ${collapsed ? 'w-12' : 'w-full'}`}
@@ -418,7 +435,7 @@ export function Navigation({ collapsed = false, onToggleCollapsed }) {
                   </a>
                 </div>
               </div>
-              <div className='my-5 text-center'>
+              <div className='my-5 text-center whitespace-normal'>
                 <Trans>
                   Crafted with <span className='mx-0.5'>{randomIcon}</span> in Italy by&nbsp;
                   <a
@@ -459,5 +476,69 @@ export function Navigation({ collapsed = false, onToggleCollapsed }) {
         </div>
       </aside>
     </>
+  );
+}
+
+const TAB_BAR_ITEMS = [
+  { label: msg`Dashboard`, link: '/', icon: faHome, alsoActiveOn: ['/dashboard-settings'] },
+  { label: msg`Profiles`, link: '/profiles', icon: faList },
+  { label: msg`History`, link: '/history', icon: faTimeline },
+  { label: msg`Settings`, link: '/settings', icon: faCog },
+];
+
+/**
+ * @param {string} path
+ * @param {(typeof TAB_BAR_ITEMS)[number]} item
+ */
+function isTabActive(path, item) {
+  if (item.link === '/') return path === '/' || !!item.alsoActiveOn?.includes(path);
+  return path === item.link || path.startsWith(`${item.link}/`);
+}
+
+/**
+ * Bottom tab bar for the mobile (overlay) layout; "More" opens the drawer with the remaining pages.
+ *
+ * @param {object} props
+ * @param {boolean} props.menuOpen
+ * @param {() => void} props.onOpenMenu
+ */
+export function MobileTabBar({ menuOpen, onOpenMenu }) {
+  const { t, i18n } = useLingui();
+  const { path } = useLocation();
+  const activeTab = TAB_BAR_ITEMS.find(item => isTabActive(path, item));
+
+  return (
+    <nav className='dock dock-md border-base-300 static shrink-0 border-t' aria-label={t`Main`}>
+      {TAB_BAR_ITEMS.map(item => (
+        <a
+          key={item.link}
+          href={item.link}
+          className={activeTab === item && !menuOpen ? 'text-primary' : 'text-base-content/70'}
+          aria-current={activeTab === item && !menuOpen ? 'page' : undefined}
+        >
+          <span className='relative flex h-6 items-center'>
+            <FontAwesomeIcon icon={item.icon} className='text-lg' />
+            {item.link === '/settings' && update.value && (
+              <span className='status status-warning absolute -top-0.5 -right-1.5' />
+            )}
+          </span>
+          <span className='dock-label'>{i18n._(item.label)}</span>
+        </a>
+      ))}
+      <button
+        type='button'
+        onClick={onOpenMenu}
+        className={menuOpen || !activeTab ? 'dock-active text-primary' : 'text-base-content/70'}
+        aria-haspopup='dialog'
+        aria-expanded={menuOpen}
+      >
+        <span className='flex h-6 items-center'>
+          <FontAwesomeIcon icon={faEllipsis} className='text-lg' />
+        </span>
+        <span className='dock-label'>
+          <Trans>More</Trans>
+        </span>
+      </button>
+    </nav>
   );
 }

@@ -2071,6 +2071,10 @@ msgstr "評価の高い順"
 msgid "Highest Volume"
 msgstr "量の多い順"
 
+#: src/components/Navigation.jsx
+msgid "History"
+msgstr "履歴"
+
 #: src/pages/Settings/tabs/GeneralTab.jsx
 msgctxt "flush duration"
 msgid "Hold"
@@ -2458,6 +2462,10 @@ msgstr "マシン設定"
 msgid "Machines"
 msgstr "マシン"
 
+#: src/components/Navigation.jsx
+msgid "Main"
+msgstr "メイン"
+
 #: src/pages/Settings/tabs/GeneralTab.jsx
 msgid "Main Brightness (1-16)"
 msgstr "メイン輝度（1-16）"
@@ -2626,6 +2634,10 @@ msgstr "月曜日"
 msgctxt "time bucket"
 msgid "Month"
 msgstr "月"
+
+#: src/components/Navigation.jsx
+msgid "More"
+msgstr "その他"
 
 #: src/pages/ShotAnalyzer/components/analyzerActionBar/MobileStatusActionsMenu.jsx
 #: src/pages/ShotAnalyzer/components/library/LibraryActionsMenu.jsx
@@ -2972,10 +2984,6 @@ msgstr "アナライザーで開く"
 #: src/pages/ShotAnalyzer/components/library/StatusBar.jsx
 msgid "Open library"
 msgstr "ライブラリを開く"
-
-#: src/index.jsx
-msgid "Open menu"
-msgstr ""
 
 #: src/pages/ShotAnalyzer/components/EmptyState.jsx
 msgid "Open or close the library."

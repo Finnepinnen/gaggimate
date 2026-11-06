@@ -2071,6 +2071,10 @@ msgstr "Highest Rated"
 msgid "Highest Volume"
 msgstr "Highest Volume"
 
+#: src/components/Navigation.jsx
+msgid "History"
+msgstr "History"
+
 #: src/pages/Settings/tabs/GeneralTab.jsx
 msgctxt "flush duration"
 msgid "Hold"
@@ -2458,6 +2462,10 @@ msgstr "Machine Settings"
 msgid "Machines"
 msgstr "Machines"
 
+#: src/components/Navigation.jsx
+msgid "Main"
+msgstr "Main"
+
 #: src/pages/Settings/tabs/GeneralTab.jsx
 msgid "Main Brightness (1-16)"
 msgstr "Main Brightness (1-16)"
@@ -2626,6 +2634,10 @@ msgstr "Monday"
 msgctxt "time bucket"
 msgid "Month"
 msgstr "Month"
+
+#: src/components/Navigation.jsx
+msgid "More"
+msgstr "More"
 
 #: src/pages/ShotAnalyzer/components/analyzerActionBar/MobileStatusActionsMenu.jsx
 #: src/pages/ShotAnalyzer/components/library/LibraryActionsMenu.jsx
@@ -2972,10 +2984,6 @@ msgstr "Open in Analyzer"
 #: src/pages/ShotAnalyzer/components/library/StatusBar.jsx
 msgid "Open library"
 msgstr "Open library"
-
-#: src/index.jsx
-msgid "Open menu"
-msgstr "Open menu"
 
 #: src/pages/ShotAnalyzer/components/EmptyState.jsx
 msgid "Open or close the library."
