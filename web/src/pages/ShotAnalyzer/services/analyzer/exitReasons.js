@@ -4,6 +4,7 @@ import { i18n } from '../../../../i18n.js';
 /** @typedef {import('../../types').AnalyzerShot} AnalyzerShot */
 /** @typedef {{ label: import('@lingui/core').MessageDescriptor, stopReason: string, exitType: string | null }} ExitReasonMeta */
 
+// Must match PHASE_EXIT_REASON_* in src/display/models/shot_log_format.h.
 export const PHASE_EXIT_REASON = Object.freeze({
   UNKNOWN: 0,
   TARGET_VOLUMETRIC: 1,
@@ -13,6 +14,7 @@ export const PHASE_EXIT_REASON = Object.freeze({
   DURATION: 5,
   SAFETY: 6,
   ABORTED: 7,
+  HOLD_RELEASED: 8,
   TARGET_RATIO: 9,
 });
 
@@ -57,6 +59,11 @@ const EXIT_REASON_META = Object.freeze({
     label: msg`Manually stopped`,
     stopReason: 'Manually Stopped',
     exitType: 'manual',
+  },
+  [PHASE_EXIT_REASON.HOLD_RELEASED]: {
+    label: msg`Hold released`,
+    stopReason: 'Hold Released',
+    exitType: null,
   },
   [PHASE_EXIT_REASON.TARGET_RATIO]: {
     label: msg`Ratio target`,

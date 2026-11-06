@@ -332,11 +332,15 @@ export function SystemTab() {
     };
   }, [apiService]);
 
+  const connected = machine.value.connected;
+  // Ask (again) once connected, so the tab doesn't stay loading after a reconnect.
   useEffect(() => {
-    setTimeout(() => {
+    if (!connected) return;
+    const timeoutId = setTimeout(() => {
       apiService.send({ tp: 'req:ota-settings' });
     }, 500);
-  }, [apiService]);
+    return () => clearTimeout(timeoutId);
+  }, [apiService, connected]);
 
   const formRef = useRef(/** @type {HTMLFormElement | null} */ (null));
 
@@ -347,7 +351,11 @@ export function SystemTab() {
       setSubmitting(true);
       const form = /** @type {HTMLFormElement} */ (formRef.current);
       const data = new FormData(form);
-      apiService.send({ tp: 'req:ota-settings', update: true, channel: data.get('channel') });
+      if (
+        !apiService.send({ tp: 'req:ota-settings', update: true, channel: data.get('channel') })
+      ) {
+        setSubmitting(false);
+      }
     },
     [apiService],
   );
@@ -368,7 +376,7 @@ export function SystemTab() {
     setRebuilt(false);
     setRebuilding(true);
     setRebuildProgress({ total: 0, current: 0, status: 'starting' });
-    apiService.send({ tp: 'req:history:rebuild' });
+    if (!apiService.send({ tp: 'req:history:rebuild' })) setRebuilding(false);
   }, [apiService]);
 
   if (phase > 0) {

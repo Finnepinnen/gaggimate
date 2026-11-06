@@ -16,6 +16,7 @@ const STOP_REASON_MESSAGES = {
   'Ratio Stop': msg`Ratio Stop`,
   'Safety Timeout': msg`Safety Timeout`,
   'Manually Stopped': msg`Manually Stopped`,
+  'Hold Released': msg`Hold Released`,
   'Time Limit': msg`Time Limit`,
 };
 

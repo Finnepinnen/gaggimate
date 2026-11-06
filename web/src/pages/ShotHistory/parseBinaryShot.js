@@ -3,6 +3,8 @@
 // Header: v4=128 bytes, v5+=512 bytes
 // Dynamic field parsing based on fieldsMask for future extensibility
 
+import { getPhaseExitReasonLabel } from '../ShotAnalyzer/services/analyzer/exitReasons.js';
+
 const HEADER_SIZE_V4 = 128;
 const HEADER_SIZE_V5 = 512;
 const MAGIC = 0x544f4853; // 'SHOT' - matches backend SHOT_LOG_MAGIC
@@ -123,22 +125,6 @@ function countSetBits(n) {
   return count;
 }
 
-// Phase exit reason codes (must match PhaseExitReason in shot_log_format.h / profile.h).
-// 0 (unknown) is also what legacy files carry in the formerly-reserved byte.
-/** @type {Record<number, string>} */
-export const PHASE_EXIT_REASON_LABELS = {
-  0: 'Unknown',
-  1: 'Volumetric target',
-  2: 'Pressure target',
-  3: 'Flow target',
-  4: 'Pumped target',
-  5: 'Duration',
-  6: 'Safety timeout',
-  7: 'Aborted',
-  8: 'Hold released',
-  9: 'Ratio target',
-};
-
 // Parse phase transitions from v5+ headers
 /**
  * @param {DataView} view
@@ -166,7 +152,7 @@ function parsePhaseTransitions(view, transitionCount) {
       phaseNumber,
       phaseName,
       transitionReason,
-      transitionReasonLabel: PHASE_EXIT_REASON_LABELS[transitionReason] ?? 'Unknown',
+      transitionReasonLabel: getPhaseExitReasonLabel(transitionReason),
     });
   }
 
@@ -381,7 +367,7 @@ export function parseBinaryShot(arrayBuffer, id) {
     samplesExpected: sampleCountHeader,
     phaseTransitions, // v5+ phase transition data
     finalExitReason, // v5+ reason the shot ended (last phase exit or manual abort)
-    finalExitReasonLabel: PHASE_EXIT_REASON_LABELS[finalExitReason] ?? 'Unknown',
+    finalExitReasonLabel: getPhaseExitReasonLabel(finalExitReason),
     brewDelay, // v5+ predictive brew delay (ms) the shot ran with
   };
 }

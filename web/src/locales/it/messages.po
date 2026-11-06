@@ -2080,6 +2080,14 @@ msgctxt "flush duration"
 msgid "Hold"
 msgstr "Tieni premuto"
 
+#: src/pages/ShotAnalyzer/services/analyzer/exitReasons.js
+msgid "Hold released"
+msgstr ""
+
+#: src/pages/ShotAnalyzer/utils/formatting.js
+msgid "Hold Released"
+msgstr ""
+
 #: src/pages/Settings/tabs/GeneralTab.jsx
 msgid "Hold runs the flush for as long as the button is held. The valve stays open for one more second after the pump stops."
 msgstr "Con Tieni premuto il flush dura finché il pulsante resta premuto. La valvola rimane aperta per un altro secondo dopo l'arresto della pompa."
@@ -2393,6 +2401,10 @@ msgstr "Serie più lunga:"
 #: src/app/MachineSetup.jsx
 msgid "Looking for machines… If yours doesn't show up, add it by its address."
 msgstr "Ricerca macchine in corso… Se la tua non compare, aggiungila tramite il suo indirizzo."
+
+#: src/components/PumpFlowCalibration/usePumpFlowCalibration.js
+msgid "Lost connection to the machine."
+msgstr ""
 
 #: src/pages/ShotHistory/index.jsx
 msgid "Lowest ID first"

@@ -1,3 +1,4 @@
+import { effect } from '@preact/signals';
 import { machine } from '../services/ApiService.js';
 import { Chart } from 'chart.js';
 import { ChartComponent } from './Chart.jsx';
@@ -7,7 +8,15 @@ import { t } from '@lingui/core/macro';
 /** @typedef {import('../types').ProcessProgress} ProcessProgress */
 /** @typedef {{ timestamp: Date, phaseName: string, phaseType: ProcessProgress['s'] }} LivePhaseTransition */
 
-// Global state to track phase transitions during brewing
+/**
+ * @param {ProcessProgress | null | undefined} process
+ * @returns {process is ProcessProgress}
+ */
+const isBrewing = process =>
+  !!process && (process.s === 'brew' || process.s === 'infusion') && !!process.a;
+
+// Phase transitions of the current/last brew. Tracked from status updates rather than during
+// render, so render stays pure and the markers survive navigating away and back mid-brew.
 /** @type {LivePhaseTransition[]} */
 let phaseTransitions = [];
 /** @type {string | null} */
@@ -17,16 +26,50 @@ let brewStartTime = null;
 /** @type {string | null} */
 let lastProcessState = null;
 /** @type {string | null | undefined} */
-let initialPhaseName = null; // Store the first phase name
+let initialPhaseName = null;
 
-// Function to clear phase transitions (can be called from outside)
-export const clearPhaseTransitions = () => {
-  phaseTransitions = [];
-  lastKnownPhase = null;
-  brewStartTime = null;
-  lastProcessState = null;
-  initialPhaseName = null;
-};
+/** @param {ProcessProgress | null | undefined} currentProcess */
+function trackPhaseTransitions(currentProcess) {
+  // Create a state key to detect when a new brew starts
+  const processState = currentProcess
+    ? `${currentProcess.s}_${currentProcess.a}_${currentProcess.e || 0}`
+    : null;
+  if (processState === lastProcessState) return;
+  const isBrewActive = isBrewing(currentProcess);
+
+  // Detect brew start/restart. Markers of a finished brew stay until the next one starts.
+  if (isBrewActive) {
+    // If elapsed time is very small (< 2 seconds), this is likely a new brew
+    if (!currentProcess.e || currentProcess.e < 2000) {
+      brewStartTime = new Date();
+      phaseTransitions = [];
+      lastKnownPhase = null;
+      initialPhaseName = currentProcess.l;
+    }
+  }
+
+  // Track phase changes during brewing
+  if (isBrewActive && currentProcess.l && brewStartTime) {
+    const currentPhase = currentProcess.l;
+    // Only add transition if phase name actually changed and we're not on the first phase
+    if (lastKnownPhase !== null && lastKnownPhase !== currentPhase) {
+      // Check if we already have this transition (avoid duplicates)
+      if (!phaseTransitions.some(t => t.phaseName === currentPhase)) {
+        phaseTransitions.push({
+          timestamp: new Date(),
+          phaseName: currentPhase,
+          phaseType: currentProcess.s,
+        });
+      }
+    }
+    lastKnownPhase = currentPhase;
+  }
+
+  lastProcessState = processState;
+}
+
+// Runs synchronously on every status update, before the chart re-renders.
+effect(() => trackPhaseTransitions(machine.value.status.process));
 
 /** @param {HistoryEntry[]} data */
 function getChartData(data) {
@@ -34,13 +77,8 @@ function getChartData(data) {
   let end = new Date();
   end.setMilliseconds(0); // Round to nearest second for stability
 
-  // Track phase transitions for brew process
   const currentProcess = machine.value.status.process;
-  const isBrewActive =
-    currentProcess &&
-    currentProcess.s &&
-    (currentProcess.s === 'brew' || currentProcess.s === 'infusion') &&
-    currentProcess.a;
+  const isBrewActive = isBrewing(currentProcess);
 
   // Determine time window based on brewing state
   let timeWindowMs;
@@ -99,50 +137,6 @@ function getChartData(data) {
     pressureFlowValues.length > 0
       ? Math.ceil(Math.max(.../** @type {number[]} */ (pressureFlowValues)) + 2)
       : 16;
-
-  // Create a state key to detect when a new brew starts
-  const processState = currentProcess
-    ? `${currentProcess.s}_${currentProcess.a}_${currentProcess.e || 0}`
-    : null;
-
-  // Detect brew start/restart - check if we transitioned to active or if process restarted
-  if (isBrewActive && (!brewStartTime || processState !== lastProcessState)) {
-    // If elapsed time is very small (< 2 seconds), this is likely a new brew
-    if (!currentProcess.e || currentProcess.e < 2000) {
-      brewStartTime = new Date();
-      phaseTransitions = [];
-      lastKnownPhase = null;
-      initialPhaseName = currentProcess.l; // Capture the initial phase name
-    }
-  }
-
-  // Detect brew end - process stopped being active
-  if (!isBrewActive && brewStartTime) {
-    // Don't immediately clear - let the user see the phase markers for a while
-    // They will be cleared when a new brew starts
-  }
-
-  // Track phase changes during brewing
-  if (isBrewActive && currentProcess.l && brewStartTime) {
-    const currentPhase = currentProcess.l;
-    const currentPhaseType = currentProcess.s;
-
-    // Only add transition if phase name actually changed and we're not on the first phase
-    if (lastKnownPhase !== null && lastKnownPhase !== currentPhase) {
-      // Check if we already have this transition (avoid duplicates)
-      const existingTransition = phaseTransitions.find(t => t.phaseName === currentPhase);
-      if (!existingTransition) {
-        phaseTransitions.push({
-          timestamp: new Date(),
-          phaseName: currentPhase,
-          phaseType: currentPhaseType,
-        });
-      }
-    }
-    lastKnownPhase = currentPhase;
-  }
-
-  lastProcessState = processState;
 
   // Create phase annotations for Chart.js
   // Not typed as the plugin's AnnotationOptions: the labels pass `clip`, which LabelOptions lacks.

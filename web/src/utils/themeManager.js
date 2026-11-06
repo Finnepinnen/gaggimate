@@ -43,6 +43,14 @@ export function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', actualTheme);
 }
 
+/**
+ * Whether the applied app theme is dark (dark, coffee), as opposed to the OS preference.
+ * Reads the `color-scheme` each daisyUI theme declares.
+ */
+export function isDarkTheme() {
+  return getComputedStyle(document.documentElement).colorScheme === 'dark';
+}
+
 export function getAvailableThemes() {
   /** @type {Record<string, string>} */
   const labels = {

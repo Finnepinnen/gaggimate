@@ -2076,6 +2076,14 @@ msgctxt "flush duration"
 msgid "Hold"
 msgstr "長押し"
 
+#: src/pages/ShotAnalyzer/services/analyzer/exitReasons.js
+msgid "Hold released"
+msgstr ""
+
+#: src/pages/ShotAnalyzer/utils/formatting.js
+msgid "Hold Released"
+msgstr ""
+
 #: src/pages/Settings/tabs/GeneralTab.jsx
 msgid "Hold runs the flush for as long as the button is held. The valve stays open for one more second after the pump stops."
 msgstr "長押しでは、ボタンを押している間フラッシュが続きます。ポンプ停止後、バルブはさらに 1 秒間開いたままになります。"
@@ -2389,6 +2397,10 @@ msgstr "最長連続記録:"
 #: src/app/MachineSetup.jsx
 msgid "Looking for machines… If yours doesn't show up, add it by its address."
 msgstr "マシンを検索中… 表示されない場合は、アドレスで追加してください。"
+
+#: src/components/PumpFlowCalibration/usePumpFlowCalibration.js
+msgid "Lost connection to the machine."
+msgstr ""
 
 #: src/pages/ShotHistory/index.jsx
 msgid "Lowest ID first"

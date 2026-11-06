@@ -26,12 +26,13 @@ export function CalibrationTab({ formData, setField }) {
   const [autotuneWattage, setAutotuneWattage] = useState(1360);
 
   const onStartAutotune = useCallback(() => {
-    apiService.send({
+    const sent = apiService.send({
       tp: 'req:autotune-start',
       time: autotuneTime,
       samples: autotuneSamples,
       wattage: autotuneWattage,
     });
+    if (!sent) return;
     setAutotuneFailed(false);
     setAutotuneResult(null);
     setAutotuneActive(true);
