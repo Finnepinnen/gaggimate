@@ -86,6 +86,7 @@ channels:
           - $ref: '#/components/messages/WifiScanRequest'
           - $ref: '#/components/messages/ProcessDeactivateRequest'
           - $ref: '#/components/messages/ProcessClearRequest'
+          - $ref: '#/components/messages/SteamToggleRequest'
           - $ref: '#/components/messages/GrindActivateRequest'
           - $ref: '#/components/messages/GrindDeactivateRequest'
           - $ref: '#/components/messages/ChangeModeRequest'
@@ -177,6 +178,27 @@ components:
         sd:
           type: boolean
           description: Shot history is stored on an SD card
+        awl:
+          type: boolean
+          description: Alba water level (wl as a percentage) available; false when a binary tank level switch is used instead
+        htl:
+          type: boolean
+          description: Tank level sensor present
+        tlo:
+          type: [boolean, 'null']
+          description: Tank level OK, null without a reading
+        hsl:
+          type: boolean
+          description: Steam boiler level sensor present
+        sbl:
+          type: [boolean, 'null']
+          description: Steam boiler water level low, null without a reading
+        sa:
+          type: boolean
+          description: Steam boiler heater on (dual boiler); toggled with req:steam:toggle
+        sca:
+          type: boolean
+          description: Steam controls available (dual boiler); req:steam:toggle is ignored while false
         tw:
           type: number
           description: Total target weight of the selected profile
@@ -1049,6 +1071,19 @@ components:
           tp:
             type: string
             enum: ['req:process:clear']
+        required: [tp]
+
+    SteamToggleRequest:
+      summary: >-
+        Switch the steam boiler heater on or off (dual boiler machines only). Ignored in standby or while steam
+        controls are unavailable (sca false in evt:status). With the persistent steam default mode the new state is saved.
+        No response; the new state arrives as sa in evt:status.
+      payload:
+        type: object
+        properties:
+          tp:
+            type: string
+            enum: ['req:steam:toggle']
         required: [tp]
 
     GrindActivateRequest:
