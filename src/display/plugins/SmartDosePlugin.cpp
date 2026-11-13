@@ -44,20 +44,20 @@ void SmartDosePlugin::registerWsHandlers(WebSocketHandler *ws) {
     if (ws == nullptr)
         return;
     auto handle = [this, ws](const char *type, std::function<bool(JsonDocument &)> action) {
-        ws->registerRequestHandler(String("req:") + type, [this, ws, type, action](uint32_t clientId, JsonDocument &request) {
+        ws->registerRequestHandler(type, [this, ws, type, action](uint32_t clientId, JsonDocument &request) {
             JsonDocument resp(&psramAllocator);
             resp["rid"] = request["rid"];
-            resp["tp"] = String("res:") + type;
+            resp["tp"] = String("res:") + String(type).substring(4);
             resp["ok"] = action(request);
             status(resp["smartDose"].to<JsonObject>());
             ws->sendJson(clientId, resp);
         });
     };
-    handle("smart-dose:set", [this](JsonDocument &) { return setDose(); });
-    handle("smart-dose:adjust", [this](JsonDocument &request) {
+    handle("req:smart-dose:set", [this](JsonDocument &) { return setDose(); });
+    handle("req:smart-dose:adjust", [this](JsonDocument &request) {
         return request["direction"].is<int>() && adjustDose(request["direction"].as<int>());
     });
-    handle("smart-dose:calibrate", [this](JsonDocument &request) { return calibrate(request["accessory"] | "cup"); });
+    handle("req:smart-dose:calibrate", [this](JsonDocument &request) { return calibrate(request["accessory"] | "cup"); });
     ws->registerStatusProvider([this](JsonDocument &doc) { status(doc["smartDose"].to<JsonObject>()); });
 }
 bool SmartDosePlugin::healthy(bool hardware) const {
