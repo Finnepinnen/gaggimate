@@ -22,6 +22,8 @@ const formatTimestamp = (timestamp, never) =>
 const TASKS = [
   {
     key: 'backflush',
+    startType: 'req:cleaning:backflush:start',
+    completeType: 'req:cleaning:backflush:complete',
     title: msg`Backflush`,
     timeField: 'backflushIntervalDays',
     timeUnit: msg`days`,
@@ -32,6 +34,8 @@ const TASKS = [
   },
   {
     key: 'descaling',
+    startType: 'req:cleaning:descaling:start',
+    completeType: 'req:cleaning:descaling:complete',
     title: msg`Descaling`,
     timeField: 'descalingIntervalWeeks',
     timeUnit: msg`weeks`,
@@ -129,13 +133,13 @@ export function CleaningSection({ formData, onChange, setField }) {
 
   /** @param {CleaningTaskDef} task */
   const start = task => {
-    apiService.send({ tp: `req:cleaning:${task.key}:start` });
+    apiService.send({ tp: task.startType });
     route('/');
   };
 
   /** @param {CleaningTaskDef} task */
   const complete = task => {
-    apiService.send({ tp: `req:cleaning:${task.key}:complete` });
+    apiService.send({ tp: task.completeType });
     setField(task.lastTimeField, Math.floor(Date.now() / 1000));
     setField(task.shotsSinceField, 0);
   };
